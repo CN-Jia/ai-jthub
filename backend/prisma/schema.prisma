@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 用户 ====================
+model User {
+  id        String   @id @default(cuid())
+  openid    String   @unique
+  nickname  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders        Order[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+// ==================== 需求类型（管理员维护）====================
+model OrderType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  price       String
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("order_types")
+}
+
+// ==================== 活动/公告 ====================
+model Activity {
+  id        String       @id @default(cuid())
+  title     String
+  content   String       @db.Text
+  type      ActivityType
+  startAt   DateTime
+  endAt     DateTime?
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([isActive, startAt])
+  @@map("activities")
+}
+
+enum ActivityType {
+  PROMO
+  NOTICE
+}
+
+// ==================== 订单 ====================
+model Order {
+  id            String      @id @default(cuid())
+  orderNo       String      @unique
+  courseName    String
+  grade         Grade
+  orderTypeId   String
+  orderType     OrderType   @relation(fields: [orderTypeId], references: [id])
+  deadline      DateTime
+  contactWechat String
+  status        OrderStatus @default(PENDING)
+  source        OrderSource
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  adminNote   String? @db.Text
+  quotedPrice String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  statusHistory StatusHistory[]
+  notifications Notification[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([contactWechat])
+  @@map("orders")
+}
+
+enum Grade {
+  FRESHMAN
+  SOPHOMORE
+  JUNIOR
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CLOSED
+}
+
+enum OrderSource {
+  MINIPROGRAM
+  PC
+}
+
+// ==================== 状态变更历史 ====================
+model StatusHistory {
+  id         String      @id @default(cuid())
+  orderId    String
+  order      Order       @relation(fields: [orderId], references: [id])
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  operator   String
+  remark     String?
+  createdAt  DateTime    @default(now())
+
+  @@index([orderId])
+  @@map("order_status_history")
+}
+
+// ==================== 通知日志 ====================
+model Notification {
+  id        String        @id @default(cuid())
+  orderId   String
+  order     Order         @relation(fields: [orderId], references: [id])
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id])
+  channel   NotifyChannel
+  type      NotifyType
+  status    NotifyStatus
+  error     String?
+  createdAt DateTime      @default(now())
+
+  @@index([orderId])
+  @@map("notifications")
+}
+
+enum NotifyChannel {
+  SERVERCHAN
+  WECOM
+}
+
+enum NotifyType {
+  NEW_ORDER
+  STATUS_CHANGE
+}
+
+enum NotifyStatus {
+  SUCCESS
+  FAILED
+  SKIPPED
+}

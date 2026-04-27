@@ -1,0 +1,36 @@
+{
+  "name": "JT-Hub",
+  "appid": "__UNI__JTHUB01",
+  "description": "项目需求对接与进度追踪",
+  "versionName": "1.0.0",
+  "versionCode": 100,
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wx60f2090c42815959",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "postcss": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "h5": {
+    "devServer": {
+      "port": 5175,
+      "proxy": {
+        "/api": {
+          "target": "http://localhost:3000",
+          "changeOrigin": true
+        },
+        "/s": {
+          "target": "http://localhost:3000",
+          "changeOrigin": true
+        }
+      }
+    },
+    "router": {
+      "mode": "hash"
+    }
+  }
+}
