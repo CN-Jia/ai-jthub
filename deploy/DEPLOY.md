@@ -102,7 +102,7 @@ sudo systemctl start postgresql
 
 # 创建数据库和用户
 sudo -u postgres psql <<EOF
-CREATE USER jthub WITH PASSWORD 'your_strong_password_here';
+CREATE USER jthub WITH PASSWORD 'jiao0924';
 CREATE DATABASE jthub_prod OWNER jthub;
 GRANT ALL PRIVILEGES ON DATABASE jthub_prod TO jthub;
 EOF
@@ -168,11 +168,11 @@ nano .env
 
 ```bash
 # ── 数据库 ───────────────────────────────────────────────────
-DATABASE_URL="postgresql://jthub:your_strong_password_here@localhost:5432/jthub_prod"
+DATABASE_URL="postgresql://jiao0924@localhost:5432/jthub_prod"
 
 # ── JWT ──────────────────────────────────────────────────────
 # 生成随机密钥：node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-JWT_SECRET="填入上面命令生成的随机字符串"
+JWT_SECRET="610dab1866633cb5644b75f8a1aa66ed71cf3629841889646c7c45efcbdd4bcb261e98e5432dd0ba6259769bff9643cf22da2d44bd3c511542d2c145134a87dd"
 JWT_EXPIRES_IN="7d"
 
 # ── Server酱推送（管理员新订单通知）─────────────────────────
