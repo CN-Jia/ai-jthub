@@ -328,3 +328,51 @@
 ------------------
 [2026/4/27 22:28:37] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
 ------------------
+[2026/4/27 22:47:07] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.stat C:\Users\Admin\AppData\Roaming\Typora\backups
+------------------
+[2026/4/27 22:47:07] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/sum
+------------------
+[2026/4/27 22:47:07] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
+------------------
+[2026/4/27 22:47:08] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.stat C:\Users\Admin\AppData\Roaming\Typora\backups
+------------------
+[2026/4/27 22:47:08] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/sum
+------------------
+[2026/4/27 22:47:08] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
+------------------
+[2026/4/27 22:47:09] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.stat C:\Users\Admin\AppData\Roaming\Typora\backups
+------------------
+[2026/4/27 22:47:09] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/sum
+------------------
+[2026/4/27 22:47:09] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
+------------------
+[2026/4/27 22:47:11] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.stat C:\Users\Admin\AppData\Roaming\Typora\backups
+------------------
+[2026/4/27 22:47:11] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/sum
+------------------
+[2026/4/27 22:47:11] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
+------------------
+[2026/4/27 22:47:13] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.stat C:\Users\Admin\AppData\Roaming\Typora\backups
+------------------
+[2026/4/27 22:47:13] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/sum
+------------------
+[2026/4/27 22:47:13] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
+------------------
+[2026/4/27 22:47:15] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.stat C:\Users\Admin\AppData\Roaming\Typora\backups
+------------------
+[2026/4/27 22:47:15] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/sum
+------------------
+[2026/4/27 22:47:15] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
+------------------
+[2026/4/27 22:47:17] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.stat C:\Users\Admin\AppData\Roaming\Typora\backups
+------------------
+[2026/4/27 22:47:17] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/sum
+------------------
+[2026/4/27 22:47:17] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
+------------------
+[2026/4/27 22:47:26] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.stat C:\Users\Admin\AppData\Roaming\Typora\backups
+------------------
+[2026/4/27 22:47:26] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/sum
+------------------
+[2026/4/27 22:47:26] [Log] [&#128737;&#65039; fsHook] 程序试图 fs.open C:\Users\Admin\AppData\Roaming\Typora/backups/1
+------------------

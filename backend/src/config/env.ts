@@ -7,8 +7,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
 
-  WECHAT_APP_ID: z.string().min(1),
-  WECHAT_APP_SECRET: z.string().min(1),
+  // 微信登录（开发模式可不填，PC端用虚拟code直接登录）
+  WECHAT_APP_ID: z.string().default(''),
+  WECHAT_APP_SECRET: z.string().default(''),
 
   // Server酱推送（可选，未配置时跳过）
   SERVERCHAN_TOKEN: z.string().default(''),
@@ -20,7 +21,7 @@ const envSchema = z.object({
   // 管理员微信号（展示给用户）
   ADMIN_WECHAT_ID: z.string().default('Jt--04'),
 
-  APP_BASE_URL: z.string().url(),
+  APP_BASE_URL: z.string().default('http://localhost:3000'),
 })
 
 const result = envSchema.safeParse(process.env)
