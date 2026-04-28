@@ -5,31 +5,15 @@ const router = createRouter({
   history: createWebHistory('/admin/'),
   routes: [
     { path: '/login', component: () => import('../pages/login/index.vue') },
-    {
-      path: '/',
-      component: () => import('../pages/dashboard/index.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/orders',
-      component: () => import('../pages/orders/index.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/orders/:id',
-      component: () => import('../pages/order-detail/index.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/order-types',
-      component: () => import('../pages/order-types/index.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/activities',
-      component: () => import('../pages/activities/index.vue'),
-      meta: { requiresAuth: true },
-    },
+    { path: '/', component: () => import('../pages/dashboard/index.vue'), meta: { requiresAuth: true } },
+    { path: '/orders', component: () => import('../pages/orders/index.vue'), meta: { requiresAuth: true } },
+    { path: '/orders/:id', component: () => import('../pages/order-detail/index.vue'), meta: { requiresAuth: true } },
+    { path: '/order-types', component: () => import('../pages/order-types/index.vue'), meta: { requiresAuth: true } },
+    { path: '/activities', component: () => import('../pages/activities/index.vue'), meta: { requiresAuth: true } },
+    { path: '/posts', component: () => import('../pages/posts/index.vue'), meta: { requiresAuth: true } },
+    { path: '/carousel', component: () => import('../pages/carousel/index.vue'), meta: { requiresAuth: true } },
+    { path: '/feedback', component: () => import('../pages/feedback/index.vue'), meta: { requiresAuth: true } },
+    { path: '/users', component: () => import('../pages/users/index.vue'), meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })

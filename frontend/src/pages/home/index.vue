@@ -28,6 +28,30 @@
       </div>
     </section>
 
+    <!-- 作品轮播 -->
+    <section v-if="carousel.length" class="carousel-section">
+      <div class="carousel-header">
+        <h2 class="carousel-title">历代作品展示</h2>
+        <p class="carousel-sub">真实完成案例，品质有目共睹</p>
+      </div>
+      <div class="carousel-track">
+        <div class="carousel-slide" v-for="item in carousel" :key="item.id">
+          <div class="carousel-img-wrap">
+            <img :src="item.imageUrl" :alt="item.courseName" class="carousel-img" />
+            <span class="carousel-type-tag">{{ item.orderType }}</span>
+          </div>
+          <div class="carousel-info">
+            <div class="carousel-course">{{ item.courseName }}</div>
+            <div v-if="item.review" class="carousel-review">"{{ item.review }}"</div>
+            <div class="carousel-meta">
+              <span v-if="item.orderNoMask">{{ item.orderNoMask }}</span>
+              <span>{{ fmtDate(item.completedAt) }}完成</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div class="page-body">
       <!-- 活动公告 -->
       <section class="section" v-if="!loadingActivities || activities.length">
@@ -112,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../../store/user'
 import { api } from '../../api'
@@ -121,14 +145,18 @@ const store = useUserStore()
 const router = useRouter()
 const activities = ref<any[]>([])
 const orderTypes = ref<any[]>([])
+const carousel = ref<any[]>([])
 const loadingActivities = ref(true)
 const loadingTypes = ref(true)
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
-const instance = getCurrentInstance()
+const fmtDate = (d: string) => {
+  const dt = new Date(d)
+  return `${dt.getFullYear()}年${dt.getMonth()+1}月`
+}
+
 function openLogin() {
-  const parent = instance?.parent?.exposed
-  if (parent?.openLogin) parent.openLogin()
+  router.push('/login')
 }
 
 function goSubmitWithType(typeId: string) {
@@ -141,9 +169,10 @@ function goSubmitWithType(typeId: string) {
 
 async function fetchData(silent = false) {
   try {
-    const [a, t]: any[] = await Promise.all([api.getActivities(), api.getOrderTypes()])
+    const [a, t, c]: any[] = await Promise.all([api.getActivities(), api.getOrderTypes(), api.getCarousel()])
     activities.value = a.data?.list ?? a.data ?? []
     orderTypes.value = t.data ?? []
+    carousel.value = c.data ?? []
   } finally {
     if (!silent) {
       loadingActivities.value = false
@@ -310,4 +339,40 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
   box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
 .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.25); }
+
+/* ── 作品轮播 ── */
+.carousel-section {
+  background: #f8fafc; padding: 48px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.carousel-header { text-align: center; margin-bottom: 28px; }
+.carousel-title { font-size: 22px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
+.carousel-sub { font-size: 14px; color: var(--text-3); }
+.carousel-track {
+  display: flex; gap: 16px; overflow-x: auto;
+  scroll-snap-type: x mandatory; padding-bottom: 12px;
+  scrollbar-width: thin; scrollbar-color: #c0d8ff transparent;
+  max-width: 1200px; margin: 0 auto;
+}
+.carousel-track::-webkit-scrollbar { height: 4px; }
+.carousel-track::-webkit-scrollbar-thumb { background: #c0d8ff; border-radius: 2px; }
+.carousel-slide {
+  scroll-snap-align: start; flex-shrink: 0;
+  width: 260px; background: var(--white); border-radius: 14px;
+  border: 1px solid var(--border); overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.carousel-slide:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+.carousel-img-wrap { position: relative; }
+.carousel-img { width: 100%; height: 160px; object-fit: cover; display: block; }
+.carousel-type-tag {
+  position: absolute; top: 8px; left: 8px;
+  background: rgba(22,119,255,0.85); color: #fff;
+  font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px;
+}
+.carousel-info { padding: 14px 16px; }
+.carousel-course { font-size: 14px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
+.carousel-review { font-size: 12px; color: var(--text-2); font-style: italic; margin-bottom: 8px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.carousel-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-3); }
 </style>

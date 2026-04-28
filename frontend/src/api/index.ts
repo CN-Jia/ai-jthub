@@ -23,14 +23,31 @@ http.interceptors.response.use(
 
 export const api = {
   // 认证
-  mpLogin: (code: string) => http.post('/auth/mp-login', { code }),
+  sendCode: (email: string) => http.post('/auth/send-code', { email }),
+  register: (data: any) => http.post('/auth/register', data),
+  login: (identifier: string, password: string) => http.post('/auth/login', { identifier, password }),
+  getMe: () => http.get('/auth/me'),
+  updateProfile: (data: any) => http.put('/auth/profile', data),
+  changePassword: (oldPassword: string, newPassword: string) => http.put('/auth/password', { oldPassword, newPassword }),
 
   // 公开数据
   getOrderTypes: () => http.get('/order-types'),
   getActivities: () => http.get('/activities'),
+  getCarousel: () => http.get('/carousel'),
 
   // 订单
   createOrder: (data: any) => http.post('/orders', data),
   getMyOrders: (params?: any) => http.get('/orders/my', { params }),
   getOrder: (id: string) => http.get(`/orders/${id}`),
+
+  // 论坛
+  getPosts: (params?: any) => http.get('/posts', { params }),
+  getPost: (id: string) => http.get(`/posts/${id}`),
+  createPost: (data: any) => http.post('/posts', data),
+  createComment: (postId: string, content: string) => http.post(`/posts/${postId}/comments`, { content }),
+
+  // 反馈
+  submitFeedback: (data: any) => http.post('/feedback', data),
+  getMyFeedbacks: (params?: any) => http.get('/feedback/my', { params }),
+  getFeedbackDetail: (id: string) => http.get(`/feedback/${id}`),
 }

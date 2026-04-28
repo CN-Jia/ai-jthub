@@ -33,15 +33,12 @@ export const api = {
   getStats: () => http.get('/admin/stats'),
 
   // 订单
-  getOrders: (params?: Record<string, any>) =>
-    http.get('/admin/orders', { params }),
+  getOrders: (params?: Record<string, any>) => http.get('/admin/orders', { params }),
   getOrder: (id: string) => http.get(`/admin/orders/${id}`),
   updateStatus: (id: string, status: string, remark?: string) =>
     http.patch(`/admin/orders/${id}/status`, { status, remark }),
-  addNote: (id: string, note: string) =>
-    http.post(`/admin/orders/${id}/note`, { note }),
-  setQuote: (id: string, price: string) =>
-    http.post(`/admin/orders/${id}/quote`, { price }),
+  addNote: (id: string, note: string) => http.post(`/admin/orders/${id}/note`, { note }),
+  setQuote: (id: string, price: string) => http.post(`/admin/orders/${id}/quote`, { price }),
 
   // 需求类型
   getOrderTypes: () => http.get('/admin/order-types'),
@@ -54,4 +51,32 @@ export const api = {
   createActivity: (data: any) => http.post('/admin/activities', data),
   updateActivity: (id: string, data: any) => http.put(`/admin/activities/${id}`, data),
   deleteActivity: (id: string) => http.delete(`/admin/activities/${id}`),
+
+  // 论坛帖子
+  getPosts: (params?: Record<string, any>) => http.get('/admin/posts', { params }),
+  createPost: (data: any) => http.post('/admin/posts', data),
+  updatePost: (id: string, data: any) => http.put(`/admin/posts/${id}`, data),
+  reviewPost: (id: string, status: 'APPROVED' | 'REJECTED') =>
+    http.patch(`/admin/posts/${id}/status`, { status }),
+  deletePost: (id: string) => http.delete(`/admin/posts/${id}`),
+  hideComment: (id: string, isHidden: boolean) =>
+    http.patch(`/admin/comments/${id}`, { isHidden }),
+  deleteComment: (id: string) => http.delete(`/admin/comments/${id}`),
+
+  // 作品轮播
+  getCarousel: () => http.get('/admin/carousel'),
+  createCarouselItem: (data: any) => http.post('/admin/carousel', data),
+  updateCarouselItem: (id: string, data: any) => http.put(`/admin/carousel/${id}`, data),
+  deleteCarouselItem: (id: string) => http.delete(`/admin/carousel/${id}`),
+
+  // 用户反馈
+  getFeedbacks: (params?: Record<string, any>) => http.get('/admin/feedback', { params }),
+  replyFeedback: (id: string, reply: string) =>
+    http.post(`/admin/feedback/${id}/reply`, { reply }),
+  updateFeedbackStatus: (id: string, status: string) =>
+    http.patch(`/admin/feedback/${id}/status`, { status }),
+
+  // 用户管理
+  getUsers: (params?: Record<string, any>) => http.get('/admin/users', { params }),
+  toggleUser: (id: string, isActive: boolean) => http.patch(`/admin/users/${id}`, { isActive }),
 }

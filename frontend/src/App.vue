@@ -1,254 +1,220 @@
 <template>
   <div class="app-layout">
-    <!-- 导航栏 -->
+    <!-- 顶部导航 -->
     <nav class="navbar" :class="{ scrolled: isScrolled }">
       <div class="nav-inner">
-        <router-link to="/" class="nav-logo">
-          <span class="logo-icon">◆</span>
+        <router-link to="/" class="nav-logo" @click="closeMobileMenu">
+          <span class="logo-icon">⚡</span>
           <span class="logo-text">JT-Hub</span>
         </router-link>
 
-        <div class="nav-center">
-          <router-link to="/" class="nav-link">首页</router-link>
-          <router-link to="/activity" class="nav-link">活动公告</router-link>
-          <router-link v-if="store.isLoggedIn" to="/submit" class="nav-link">提交需求</router-link>
-          <router-link v-if="store.isLoggedIn" to="/my-orders" class="nav-link">我的订单</router-link>
+        <!-- 桌面导航 -->
+        <div class="nav-center hide-sm">
+          <router-link to="/" class="nav-link" exact-active-class="active">首页</router-link>
+          <router-link to="/activity" class="nav-link" active-class="active">活动公告</router-link>
+          <router-link to="/forum" class="nav-link" active-class="active">论坛</router-link>
+          <template v-if="store.isLoggedIn">
+            <router-link to="/submit" class="nav-link" active-class="active">提交需求</router-link>
+            <router-link to="/my-orders" class="nav-link" active-class="active">我的订单</router-link>
+          </template>
         </div>
 
         <div class="nav-right">
           <template v-if="!store.isLoggedIn">
-            <button class="btn-login" @click="showLoginModal = true">登 录</button>
+            <router-link to="/login" class="btn-text hide-sm">登录</router-link>
+            <router-link to="/register" class="btn-primary-sm">注册</router-link>
           </template>
           <template v-else>
-            <router-link to="/my-orders" class="nav-user-btn">
-              <span class="user-dot"></span>已登录
+            <router-link to="/profile" class="nav-user hide-sm">
+              <span class="user-avatar">{{ avatarChar }}</span>
+              <span>{{ store.nickname }}</span>
             </router-link>
-            <button class="btn-logout" @click="handleLogout">退出</button>
+            <button class="btn-text hide-sm" @click="handleLogout">退出</button>
           </template>
+
+          <!-- 汉堡菜单 -->
+          <button class="hamburger show-sm-only" @click="mobileOpen = !mobileOpen" :class="{ open: mobileOpen }">
+            <span /><span /><span />
+          </button>
         </div>
       </div>
+
+      <!-- 移动端抽屉菜单 -->
+      <Transition name="slide-down">
+        <div v-if="mobileOpen" class="mobile-menu show-sm-only">
+          <router-link to="/" class="mobile-link" @click="closeMobileMenu">首页</router-link>
+          <router-link to="/activity" class="mobile-link" @click="closeMobileMenu">活动公告</router-link>
+          <router-link to="/forum" class="mobile-link" @click="closeMobileMenu">论坛</router-link>
+          <template v-if="store.isLoggedIn">
+            <router-link to="/submit" class="mobile-link" @click="closeMobileMenu">提交需求</router-link>
+            <router-link to="/my-orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
+            <router-link to="/feedback" class="mobile-link" @click="closeMobileMenu">意见反馈</router-link>
+            <router-link to="/profile" class="mobile-link" @click="closeMobileMenu">个人中心</router-link>
+            <button class="mobile-link mobile-logout" @click="handleLogout">退出登录</button>
+          </template>
+          <template v-else>
+            <router-link to="/login" class="mobile-link" @click="closeMobileMenu">登录</router-link>
+            <router-link to="/register" class="mobile-link mobile-register" @click="closeMobileMenu">注册账号</router-link>
+          </template>
+        </div>
+      </Transition>
     </nav>
 
     <main class="main-content">
       <router-view />
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
       <div class="footer-inner">
-        <span class="footer-logo">◆ JT-Hub</span>
-        <span class="footer-sep">·</span>
-        <span>管理员微信：<strong>Jt--04</strong></span>
+        <div class="footer-logo">⚡ JT-Hub</div>
+        <div class="footer-info">
+          <span>联系管理员微信：<strong>Jt--04</strong></span>
+          <span class="footer-sep">·</span>
+          <span>专业学业辅助平台</span>
+        </div>
+        <div class="footer-copy">© 2024 JT-Hub. All rights reserved.</div>
       </div>
     </footer>
-
-    <!-- 登录弹窗 -->
-    <Transition name="modal">
-      <div v-if="showLoginModal" class="modal-overlay" @click.self="showLoginModal = false">
-        <div class="modal-card">
-          <button class="modal-close" @click="showLoginModal = false">✕</button>
-          <div class="modal-logo">◆</div>
-          <h2 class="modal-title">登录 JT-Hub</h2>
-          <p class="modal-desc">输入您的微信号，提交需求后管理员会主动联系您</p>
-          <div class="modal-field">
-            <label>微信号</label>
-            <input
-              v-model="pcWechat"
-              class="modal-input"
-              placeholder="请输入您的微信号"
-              @keyup.enter="doLogin"
-              autofocus
-            />
-          </div>
-          <button class="modal-btn" @click="doLogin" :disabled="logging">
-            <span v-if="!logging">确认登录</span>
-            <span v-else class="btn-loading">登录中...</span>
-          </button>
-          <p class="modal-hint">仅用于提交需求时关联您的订单</p>
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from './store/user'
-import { api } from './api'
 
 const store = useUserStore()
 const router = useRouter()
-const showLoginModal = ref(false)
-const pcWechat = ref('')
-const logging = ref(false)
 const isScrolled = ref(false)
+const mobileOpen = ref(false)
+
+const avatarChar = computed(() => store.nickname ? store.nickname[0] : 'U')
 
 function onScroll() { isScrolled.value = window.scrollY > 10 }
+function closeMobileMenu() { mobileOpen.value = false }
 onMounted(() => window.addEventListener('scroll', onScroll))
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
-// 暴露给子页面调用
-defineExpose({ openLogin: () => { showLoginModal.value = true } })
-
-async function doLogin() {
-  if (!pcWechat.value.trim()) return
-  logging.value = true
-  try {
-    const res: any = await api.mpLogin(`pc_${pcWechat.value.trim()}`)
-    store.setAuth(res.data.token, res.data.userId)
-    showLoginModal.value = false
-    pcWechat.value = ''
-    const params = new URLSearchParams(window.location.search)
-    const redirect = params.get('redirect')
-    if (redirect) router.push(redirect)
-  } catch {
-    alert('登录失败，请稍后重试')
-  } finally {
-    logging.value = false
-  }
-}
-
 function handleLogout() {
   store.logout()
+  closeMobileMenu()
   router.push('/')
 }
 </script>
 
-<style>
-/* ─── 布局 ─── */
+<style scoped>
+/* ── 布局 ── */
 .app-layout { min-height: 100vh; display: flex; flex-direction: column; }
 .main-content { flex: 1; }
 
-/* ─── 导航栏 ─── */
+/* ── 导航 ── */
 .navbar {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(255,255,255,0.85);
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(255,255,255,0.9);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid transparent;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .navbar.scrolled {
-  border-bottom-color: #e8edf2;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  border-bottom-color: var(--border);
+  box-shadow: var(--shadow-sm);
 }
 .nav-inner {
   max-width: 1200px; margin: 0 auto;
-  padding: 0 32px; height: 64px;
+  padding: 0 20px; height: var(--nav-h);
   display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
 }
 .nav-logo {
   display: flex; align-items: center; gap: 8px;
   font-weight: 800; font-size: 18px; color: var(--primary);
-  text-decoration: none;
+  white-space: nowrap; flex-shrink: 0;
 }
-.logo-icon { font-size: 14px; }
-.logo-text { letter-spacing: 1px; }
-.nav-center { display: flex; align-items: center; gap: 8px; }
+.logo-icon { font-size: 16px; }
+
+.nav-center { display: flex; align-items: center; gap: 2px; flex: 1; }
 .nav-link {
-  padding: 6px 14px; border-radius: 8px;
+  padding: 6px 12px; border-radius: 8px;
   font-size: 14px; font-weight: 500; color: var(--text-2);
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s; white-space: nowrap;
 }
-.nav-link:hover { background: #f0f6ff; color: var(--primary); }
-.nav-link.router-link-active { color: var(--primary); background: var(--primary-light); }
-.nav-right { display: flex; align-items: center; gap: 10px; }
-.btn-login {
-  background: var(--primary); color: #fff;
-  border: none; border-radius: 8px;
-  padding: 8px 22px; font-size: 14px; font-weight: 600;
-  letter-spacing: 2px;
-  transition: background 0.15s, box-shadow 0.15s;
-}
-.btn-login:hover { background: var(--primary-dark); box-shadow: 0 4px 12px rgba(22,119,255,0.3); }
-.nav-user-btn {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 14px; color: var(--text-2);
-  background: var(--primary-light); border-radius: 8px;
-  padding: 6px 14px; font-weight: 500;
-}
-.user-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #52c41a;
-}
-.btn-logout {
-  background: transparent; color: #bbb; border: none;
-  font-size: 13px; padding: 6px 10px;
+.nav-link:hover, .nav-link.active { color: var(--primary); background: var(--primary-light); }
+
+.nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.btn-text {
+  background: none; border: none; padding: 6px 12px;
+  font-size: 14px; font-weight: 500; color: var(--text-2);
+  border-radius: 8px; cursor: pointer; white-space: nowrap;
   transition: color 0.15s;
 }
-.btn-logout:hover { color: var(--danger); }
+.btn-text:hover { color: var(--primary); }
 
-/* ─── Footer ─── */
+.btn-primary-sm {
+  background: var(--primary); color: #fff;
+  padding: 7px 18px; border-radius: 8px;
+  font-size: 14px; font-weight: 600; white-space: nowrap;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.btn-primary-sm:hover { background: var(--primary-dark); box-shadow: 0 4px 12px rgba(22,119,255,0.3); }
+
+.nav-user {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--primary-light); border-radius: 8px;
+  padding: 5px 12px; font-size: 14px; color: var(--primary); font-weight: 500;
+}
+.user-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── 汉堡 ── */
+.hamburger {
+  background: none; border: none; padding: 6px;
+  display: flex; flex-direction: column; gap: 5px; cursor: pointer;
+}
+.hamburger span {
+  display: block; width: 22px; height: 2px;
+  background: var(--text-2); border-radius: 2px;
+  transition: all 0.25s;
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+/* ── 移动端菜单 ── */
+.mobile-menu {
+  background: #fff; border-top: 1px solid var(--border);
+  padding: 8px 0;
+}
+.mobile-link {
+  display: block; padding: 13px 20px;
+  font-size: 15px; font-weight: 500; color: var(--text-2);
+  border: none; background: none; width: 100%; text-align: left;
+  cursor: pointer; border-bottom: 1px solid #f5f5f5;
+  transition: background 0.12s, color 0.12s;
+}
+.mobile-link:last-child { border-bottom: none; }
+.mobile-link:hover { background: var(--primary-light); color: var(--primary); }
+.mobile-logout { color: var(--danger); }
+.mobile-register { color: var(--primary); font-weight: 700; }
+
+.slide-down-enter-active, .slide-down-leave-active { transition: all 0.2s ease; }
+.slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-8px); }
+
+/* ── Footer ── */
 .footer {
-  border-top: 1px solid var(--border);
-  background: #fff;
-  padding: 20px 32px;
+  background: var(--white); border-top: 1px solid var(--border);
+  padding: 24px 20px;
 }
 .footer-inner {
   max-width: 1200px; margin: 0 auto;
-  display: flex; align-items: center; gap: 12px;
-  font-size: 13px; color: var(--text-3);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; text-align: center;
 }
-.footer-logo { font-weight: 700; color: var(--primary); font-size: 14px; }
+.footer-logo { font-size: 18px; font-weight: 800; color: var(--primary); }
+.footer-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-3); flex-wrap: wrap; justify-content: center; }
 .footer-sep { color: var(--border); }
-
-/* ─── 登录弹窗 ─── */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(13,17,23,0.6);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1000; padding: 24px;
-}
-.modal-card {
-  background: #fff; border-radius: 20px;
-  padding: 48px 40px 40px;
-  width: 100%; max-width: 400px;
-  position: relative;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.2);
-}
-.modal-close {
-  position: absolute; top: 18px; right: 20px;
-  background: none; border: none;
-  font-size: 16px; color: #ccc;
-  width: 32px; height: 32px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, color 0.15s;
-}
-.modal-close:hover { background: #f5f5f5; color: #666; }
-.modal-logo {
-  font-size: 28px; color: var(--primary);
-  font-weight: 900; margin-bottom: 16px;
-}
-.modal-title { font-size: 22px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
-.modal-desc { font-size: 14px; color: var(--text-3); margin-bottom: 28px; line-height: 1.6; }
-.modal-field { margin-bottom: 16px; }
-.modal-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
-.modal-input {
-  width: 100%; border: 1.5px solid var(--border);
-  border-radius: 10px; padding: 12px 16px;
-  font-size: 15px; outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.modal-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(22,119,255,0.12);
-}
-.modal-btn {
-  width: 100%; background: linear-gradient(135deg, var(--primary), #4096ff);
-  color: #fff; border: none; border-radius: 10px;
-  padding: 14px; font-size: 16px; font-weight: 700;
-  box-shadow: 0 6px 20px rgba(22,119,255,0.3);
-  transition: opacity 0.15s, box-shadow 0.15s;
-  margin-bottom: 14px;
-}
-.modal-btn:hover:not(:disabled) { box-shadow: 0 8px 28px rgba(22,119,255,0.4); }
-.modal-btn:disabled { opacity: 0.6; box-shadow: none; }
-.modal-hint { text-align: center; font-size: 12px; color: #ccc; }
-
-/* ─── 弹窗过渡动画 ─── */
-.modal-enter-active, .modal-leave-active { transition: opacity 0.2s; }
-.modal-enter-active .modal-card, .modal-leave-active .modal-card { transition: transform 0.2s, opacity 0.2s; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
-.modal-enter-from .modal-card, .modal-leave-to .modal-card { transform: scale(0.95) translateY(10px); opacity: 0; }
+.footer-copy { font-size: 12px; color: #d1d5db; }
 </style>
