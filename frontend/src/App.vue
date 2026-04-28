@@ -16,6 +16,7 @@
           <template v-if="store.isLoggedIn">
             <router-link to="/submit" class="nav-link" active-class="active">提交需求</router-link>
             <router-link to="/my-orders" class="nav-link" active-class="active">我的订单</router-link>
+            <router-link to="/feedback" class="nav-link" active-class="active">意见反馈</router-link>
           </template>
         </div>
 
