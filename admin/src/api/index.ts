@@ -79,4 +79,24 @@ export const api = {
   // 用户管理
   getUsers: (params?: Record<string, any>) => http.get('/admin/users', { params }),
   toggleUser: (id: string, isActive: boolean) => http.patch(`/admin/users/${id}`, { isActive }),
+
+  // 积分规则
+  getPointRules: () => http.get('/admin/points/rules'),
+  updatePointRule: (eventType: string, data: any) => http.put(`/admin/points/rules/${eventType}`, data),
+
+  // 用户积分
+  getPointUsers: (params?: Record<string, any>) => http.get('/admin/points/users', { params }),
+  adjustPoints: (userId: string, delta: number, remark?: string) =>
+    http.post('/admin/points/adjust', { userId, delta, remark }),
+
+  // 商城商品
+  getAdminShopItems: (params?: Record<string, any>) => http.get('/admin/shop/items', { params }),
+  createShopItem: (data: any) => http.post('/admin/shop/items', data),
+  updateShopItem: (id: string, data: any) => http.put(`/admin/shop/items/${id}`, data),
+  deleteShopItem: (id: string) => http.delete(`/admin/shop/items/${id}`),
+
+  // 兑换订单
+  getRedeemOrders: (params?: Record<string, any>) => http.get('/admin/redeem/orders', { params }),
+  approveRedeem: (id: string, note?: string) => http.post(`/admin/redeem/orders/${id}/approve`, { note }),
+  rejectRedeem: (id: string, note: string) => http.post(`/admin/redeem/orders/${id}/reject`, { note }),
 }

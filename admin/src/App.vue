@@ -27,7 +27,13 @@
         </router-link>
 
         <div class="nav-group-label" v-if="!collapsed">系统</div>
-        <router-link v-for="item in menuItems.slice(7)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
+        <router-link v-for="item in menuItems.slice(7,8)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span v-if="!collapsed">{{ item.label }}</span>
+        </router-link>
+
+        <div class="nav-group-label" v-if="!collapsed">积分系统</div>
+        <router-link v-for="item in menuItems.slice(8)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
           <el-icon><component :is="item.icon" /></el-icon>
           <span v-if="!collapsed">{{ item.label }}</span>
         </router-link>
@@ -82,6 +88,9 @@ const menuItems = [
   { path: '/carousel', label: '作品轮播', icon: 'Picture' },
   { path: '/feedback', label: '用户反馈', icon: 'Comment' },
   { path: '/users', label: '用户管理', icon: 'User' },
+  { path: '/points', label: '积分规则', icon: 'Coin' },
+  { path: '/points/shop', label: '积分商城', icon: 'ShoppingCart' },
+  { path: '/points/redeem', label: '兑换审核', icon: 'Tickets' },
 ]
 
 const titleMap: Record<string, string> = {
@@ -93,6 +102,9 @@ const titleMap: Record<string, string> = {
   '/carousel': '作品轮播',
   '/feedback': '用户反馈',
   '/users': '用户管理',
+  '/points': '积分管理',
+  '/points/shop': '积分商城商品',
+  '/points/redeem': '兑换订单审核',
 }
 
 const pageTitle = computed(() => {

@@ -50,4 +50,16 @@ export const api = {
   submitFeedback: (data: any) => http.post('/feedback', data),
   getMyFeedbacks: (params?: any) => http.get('/feedback/my', { params }),
   getFeedbackDetail: (id: string) => http.get(`/feedback/${id}`),
+
+  // 积分/邀请
+  getInviteInfo: () => http.get('/points/invite'),
+  getInvitees: () => http.get('/points/invitees'),
+  getPointBalance: () => http.get('/points/balance'),
+  getPointLogs: (params?: any) => http.get('/points/logs', { params }),
+  getMyCoupons: () => http.get('/coupons/my'),
+
+  // 积分商城
+  getShopItems: (params?: any) => http.get('/shop/items', { params }),
+  submitRedeem: (shopItemId: string) => http.post('/shop/redeem', { shopItemId }),
+  getMyRedeems: () => http.get('/shop/redeem/my'),
 }

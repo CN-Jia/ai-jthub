@@ -22,6 +22,12 @@ model User {
   loginAttempts Int       @default(0)
   lockUntil     DateTime?
 
+  // 邀请系统
+  inviteCode  String? @unique
+  invitedById String?
+  invitedBy   User?   @relation("Invitations", fields: [invitedById], references: [id])
+  invitees    User[]  @relation("Invitations")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -30,9 +36,14 @@ model User {
   feedbacks     Feedback[]
   posts         Post[]
   notifications Notification[]
+  pointBalance  PointBalance?
+  pointLogs     PointLog[]
+  redeemOrders  RedeemOrder[]
+  coupons       Coupon[]
 
   @@index([email])
   @@index([username])
+  @@index([inviteCode])
   @@map("users")
 }
 
@@ -247,6 +258,136 @@ model Carousel {
   updatedAt DateTime @updatedAt
 
   @@map("carousels")
+}
+
+// ==================== 积分余额 ====================
+model PointBalance {
+  id             String @id @default(cuid())
+  userId         String @unique
+  user           User   @relation(fields: [userId], references: [id])
+  totalPoints    Int    @default(0)
+  frozenPoints   Int    @default(0)
+  lifetimeEarned Int    @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("point_balances")
+}
+
+// ==================== 积分明细 ====================
+model PointLog {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  eventType PointEventType
+  delta     Int
+  balance   Int
+  remark    String?
+  refId     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("point_logs")
+}
+
+enum PointEventType {
+  INVITE_REGISTER
+  INVITE_FIRST_ORDER
+  NEW_USER_FIRST_ORDER
+  ADMIN_ADJUST
+  REDEEM_FREEZE
+  REDEEM_DEDUCT
+  REDEEM_UNFREEZE
+}
+
+// ==================== 积分规则 ====================
+model PointRule {
+  id        String         @id @default(cuid())
+  eventType PointEventType @unique
+  points    Int
+  enabled   Boolean        @default(true)
+  remark    String?
+
+  updatedAt DateTime @updatedAt
+
+  @@map("point_rules")
+}
+
+// ==================== 积分商城商品 ====================
+model ShopItem {
+  id          String       @id @default(cuid())
+  name        String
+  description String?      @db.Text
+  coverUrl    String?
+  type        ShopItemType
+  pointsCost  Int
+  stock       Int          @default(-1)
+  discountAmt Decimal?     @db.Decimal(10, 2)
+  isActive    Boolean      @default(true)
+  sortOrder   Int          @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  redeemOrders RedeemOrder[]
+
+  @@map("shop_items")
+}
+
+enum ShopItemType {
+  SERVICE
+  COUPON
+}
+
+// ==================== 兑换订单 ====================
+model RedeemOrder {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id])
+  shopItemId String
+  shopItem   ShopItem     @relation(fields: [shopItemId], references: [id])
+  pointsCost Int
+  status     RedeemStatus @default(PENDING)
+  adminNote  String?
+
+  coupon Coupon?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("redeem_orders")
+}
+
+enum RedeemStatus {
+  PENDING
+  COMPLETED
+  REJECTED
+}
+
+// ==================== 优惠券 ====================
+model Coupon {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  redeemOrderId String       @unique
+  redeemOrder   RedeemOrder  @relation(fields: [redeemOrderId], references: [id])
+  discountAmt   Decimal      @db.Decimal(10, 2)
+  status        CouponStatus @default(UNUSED)
+  expiresAt     DateTime
+  usedAt        DateTime?
+
+  @@index([userId])
+  @@map("coupons")
+}
+
+enum CouponStatus {
+  UNUSED
+  USED
+  EXPIRED
 }
 
 // ==================== 通知日志 ====================

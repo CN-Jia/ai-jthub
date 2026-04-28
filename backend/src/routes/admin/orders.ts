@@ -8,6 +8,7 @@ import { notifyAdminStatusChange } from '../../services/notify.service.js'
 import { prisma } from '../../lib/prisma.js'
 import { successResponse, errorResponse, ERROR_CODES } from '../../utils/response.js'
 import { OrderStatus } from '@prisma/client'
+import { awardPoints, isFirstCompletedOrder } from '../../services/points.service.js'
 
 export async function adminOrderRoutes(fastify: FastifyInstance) {
   // 统计数据
@@ -44,11 +45,28 @@ export async function adminOrderRoutes(fastify: FastifyInstance) {
       const order = await updateOrderStatus(id, status, remark)
       const orderWithType = await prisma.order.findUnique({
         where: { id },
-        include: { orderType: true },
+        include: { orderType: true, user: { select: { id: true, nickname: true, invitedById: true } } },
       })
       if (orderWithType) {
         notifyAdminStatusChange(orderWithType, status).catch(() => {})
       }
+
+      // 订单完成时触发拉新首购积分
+      if (status === 'COMPLETED' && orderWithType?.userId) {
+        const userId = orderWithType.userId
+        const isFirst = await isFirstCompletedOrder(userId)
+        if (isFirst) {
+          // 新用户自己获得首购积分
+          awardPoints(userId, 'NEW_USER_FIRST_ORDER', id, '首笔订单完成奖励').catch(() => {})
+          // 邀请者获得拉新首购积分
+          const invitedById = orderWithType.user?.invitedById
+          if (invitedById) {
+            const inviterNickname = orderWithType.user?.nickname ?? '用户'
+            awardPoints(invitedById, 'INVITE_FIRST_ORDER', id, `被邀请用户「${inviterNickname}」完成首单`).catch(() => {})
+          }
+        }
+      }
+
       return reply.send(successResponse({ orderNo: order.orderNo, status: order.status }))
     } catch (err: any) {
       if (err.code === ERROR_CODES.INVALID_STATUS_TRANSITION) {

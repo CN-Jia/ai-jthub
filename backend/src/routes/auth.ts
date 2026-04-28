@@ -7,6 +7,7 @@ import { sendVerifyCode } from '../services/email.service.js'
 import { successResponse, errorResponse, ERROR_CODES } from '../utils/response.js'
 import { verifyJWT } from '../middlewares/auth.middleware.js'
 import { env } from '../config/env.js'
+import { generateInviteCode, awardPoints } from '../services/points.service.js'
 
 const GRADE_MAP: Record<string, 'FRESHMAN' | 'SOPHOMORE' | 'JUNIOR'> = {
   FRESHMAN: 'FRESHMAN', SOPHOMORE: 'SOPHOMORE', JUNIOR: 'JUNIOR',
@@ -56,6 +57,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       wechatId: z.string().min(1),
       grade: z.enum(['FRESHMAN', 'SOPHOMORE', 'JUNIOR']),
       code: z.string().length(6),
+      ref: z.string().optional(),  // 邀请码
     })
 
     const parse = schema.safeParse(request.body)
@@ -64,7 +66,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, msg))
     }
 
-    const { username, nickname, email, password, phone, wechatId, grade, code } = parse.data
+    const { username, nickname, email, password, phone, wechatId, grade, code, ref } = parse.data
 
     // 验证码校验
     const verification = await prisma.emailVerification.findFirst({
@@ -84,13 +86,33 @@ export async function authRoutes(fastify: FastifyInstance) {
     if (existEmail) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '邮箱已被注册'))
 
     const passwordHash = await bcrypt.hash(password, 10)
+    const inviteCode = await generateInviteCode()
+
+    // 查找邀请者（防止自邀请）
+    let invitedById: string | undefined
+    if (ref) {
+      const inviter = await prisma.user.findUnique({ where: { inviteCode: ref } })
+      if (inviter && inviter.username !== username) {
+        invitedById = inviter.id
+      }
+    }
 
     const user = await prisma.user.create({
-      data: { username, nickname, email, emailVerified: true, passwordHash, phone, wechatId, grade },
+      data: {
+        username, nickname, email, emailVerified: true,
+        passwordHash, phone, wechatId, grade,
+        inviteCode,
+        ...(invitedById ? { invitedById } : {}),
+      },
     })
 
     // 标记验证码已使用
     await prisma.emailVerification.update({ where: { id: verification.id }, data: { usedAt: new Date() } })
+
+    // 发放邀请注册积分给邀请者
+    if (invitedById) {
+      awardPoints(invitedById, 'INVITE_REGISTER', user.id, `邀请用户「${user.nickname}」注册`).catch(() => {})
+    }
 
     const token = fastify.jwt.sign({ userId: user.id, role: 'user' }, { expiresIn: env.JWT_EXPIRES_IN })
     return reply.send(successResponse({ token, userId: user.id, nickname: user.nickname }))

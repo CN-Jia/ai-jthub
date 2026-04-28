@@ -17,6 +17,8 @@
             <router-link to="/submit" class="nav-link" active-class="active">提交需求</router-link>
             <router-link to="/my-orders" class="nav-link" active-class="active">我的订单</router-link>
             <router-link to="/feedback" class="nav-link" active-class="active">意见反馈</router-link>
+            <router-link to="/points" class="nav-link" active-class="active">我的积分</router-link>
+            <router-link to="/invite" class="nav-link" active-class="active">邀请好友</router-link>
           </template>
         </div>
 
@@ -50,6 +52,8 @@
             <router-link to="/submit" class="mobile-link" @click="closeMobileMenu">提交需求</router-link>
             <router-link to="/my-orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
             <router-link to="/feedback" class="mobile-link" @click="closeMobileMenu">意见反馈</router-link>
+            <router-link to="/points" class="mobile-link" @click="closeMobileMenu">我的积分</router-link>
+            <router-link to="/invite" class="mobile-link" @click="closeMobileMenu">邀请好友</router-link>
             <router-link to="/profile" class="mobile-link" @click="closeMobileMenu">个人中心</router-link>
             <button class="mobile-link mobile-logout" @click="handleLogout">退出登录</button>
           </template>

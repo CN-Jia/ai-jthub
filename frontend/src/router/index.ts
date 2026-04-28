@@ -17,6 +17,9 @@ const router = createRouter({
     { path: '/orders/:id', component: () => import('../pages/order-detail/index.vue'), meta: { requiresAuth: true } },
     { path: '/feedback', component: () => import('../pages/feedback/index.vue'), meta: { requiresAuth: true } },
     { path: '/profile', component: () => import('../pages/profile/index.vue'), meta: { requiresAuth: true } },
+    { path: '/points', component: () => import('../pages/points/index.vue'), meta: { requiresAuth: true } },
+    { path: '/points/shop', component: () => import('../pages/points/shop.vue'), meta: { requiresAuth: true } },
+    { path: '/invite', component: () => import('../pages/invite/index.vue'), meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
