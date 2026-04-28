@@ -4,7 +4,7 @@
     <nav class="navbar" :class="{ scrolled: isScrolled }">
       <div class="nav-inner">
         <router-link to="/" class="nav-logo" @click="closeMobileMenu">
-          <span class="logo-icon">⚡</span>
+          <JtLogo :size="30" />
           <span class="logo-text">JT-Hub</span>
         </router-link>
 
@@ -71,7 +71,7 @@
 
     <footer class="footer">
       <div class="footer-inner">
-        <div class="footer-logo">⚡ JT-Hub</div>
+        <div class="footer-logo"><JtLogo :size="22" style="display:inline-block;vertical-align:middle;margin-right:6px"/> JT-Hub</div>
         <div class="footer-info">
           <span>联系管理员微信：<strong>Jt--04</strong></span>
           <span class="footer-sep">·</span>
@@ -87,6 +87,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from './store/user'
+import JtLogo from './components/JtLogo.vue'
 
 const store = useUserStore()
 const router = useRouter()
