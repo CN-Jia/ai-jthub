@@ -12,7 +12,7 @@ export async function feedbackRoutes(fastify: FastifyInstance) {
     const schema = z.object({
       type: z.enum(['BUG', 'SUGGESTION', 'OTHER']),
       title: z.string().min(2).max(100),
-      description: z.string().min(10),
+      description: z.string().min(10, '详细描述至少需要10个字符'),
     })
     const parse = schema.safeParse(request.body)
     if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, parse.error.errors[0]?.message ?? '参数错误'))
