@@ -10,9 +10,16 @@ import corsPlugin from './plugins/cors.js'
 // 路由
 import { authRoutes } from './routes/auth.js'
 import { orderRoutes } from './routes/orders.js'
+import { postRoutes } from './routes/posts.js'
+import { feedbackRoutes } from './routes/feedback.js'
+import { carouselRoutes } from './routes/carousel.js'
 import { adminOrderRoutes } from './routes/admin/orders.js'
 import { adminOrderTypeRoutes } from './routes/admin/order-types.js'
 import { adminActivityRoutes } from './routes/admin/activities.js'
+import { adminPostRoutes } from './routes/admin/posts.js'
+import { adminFeedbackRoutes } from './routes/admin/feedback.js'
+import { adminCarouselRoutes } from './routes/admin/carousel.js'
+import { adminUserRoutes } from './routes/admin/users.js'
 import { rateLimitQuery } from './middlewares/ratelimit.middleware.js'
 
 export async function buildApp() {
@@ -22,34 +29,35 @@ export async function buildApp() {
       : true,
   })
 
-  // 插件注册
   await app.register(corsPlugin)
   await app.register(jwtPlugin)
 
-  // 健康检查
   app.get('/health', async () => ({ ok: true, timestamp: new Date().toISOString() }))
 
-  // 公开创单接口添加限流保护
+  // 限流：提交订单
   app.addHook('preHandler', async (request, reply) => {
     if (request.method === 'POST' && request.url === '/api/orders') {
       await rateLimitQuery(request, reply)
     }
   })
 
-  // 路由注册（统一 /api 前缀）
+  // 路由注册
   app.register(authRoutes, { prefix: '/api' })
   app.register(orderRoutes, { prefix: '/api' })
+  app.register(postRoutes, { prefix: '/api' })
+  app.register(feedbackRoutes, { prefix: '/api' })
+  app.register(carouselRoutes, { prefix: '/api' })
   app.register(adminOrderRoutes, { prefix: '/api' })
   app.register(adminOrderTypeRoutes, { prefix: '/api' })
   app.register(adminActivityRoutes, { prefix: '/api' })
+  app.register(adminPostRoutes, { prefix: '/api' })
+  app.register(adminFeedbackRoutes, { prefix: '/api' })
+  app.register(adminCarouselRoutes, { prefix: '/api' })
+  app.register(adminUserRoutes, { prefix: '/api' })
 
-  // 全局错误处理
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error)
-    reply.code(500).send({
-      success: false,
-      error: { code: 'INTERNAL_ERROR', message: '服务器内部错误' },
-    })
+    reply.code(500).send({ success: false, error: { code: 'INTERNAL_ERROR', message: '服务器内部错误' } })
   })
 
   return app

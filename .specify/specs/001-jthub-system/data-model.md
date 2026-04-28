@@ -1,14 +1,12 @@
-# Data Model: JT-Hub 数据库设计 v2
+# Data Model: JT-Hub 数据库设计 v4
 
-**Branch**: `001-jthub-system` | **Updated**: 2026-04-23 v3（移除微信小程序端）
+**Branch**: `001-jthub-system` | **Updated**: 2026-04-28 v4（新增完整注册登录、论坛、轮播模型）
 
 ---
 
 ## Prisma Schema
 
 ```prisma
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,26 +18,52 @@ datasource db {
 
 // ==================== 用户 ====================
 model User {
-  id        String   @id @default(cuid())
-  openid    String   @unique          // 用户标识（PC端为 pc_${wechatId} 虚拟ID）
-  nickname  String?                   // 昵称（可选）
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  username      String    @unique          // 登录用户名（字母数字下划线，4-20位）
+  nickname      String                     // 显示昵称
+  email         String    @unique          // 登录邮箱（已验证）
+  emailVerified Boolean   @default(false)  // 邮箱是否已验证
+  passwordHash  String                     // bcrypt 密码哈希
+  phone         String?                    // 手机号
+  wechatId      String?                    // 微信号（提交订单默认带入）
+  grade         Grade?                     // 年级
+  isActive      Boolean   @default(true)   // 是否被禁用
+  loginAttempts Int       @default(0)      // 连续登录失败次数
+  lockUntil     DateTime?                  // 账户锁定截止时间
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   orders        Order[]
+  comments      Comment[]
+  feedbacks     Feedback[]
   notifications Notification[]
 
   @@map("users")
 }
 
-// ==================== 需求类型（管理员维护）====================
+// ==================== 邮箱验证码 ====================
+model EmailVerification {
+  id        String   @id @default(cuid())
+  email     String
+  code      String                       // 6位数字验证码
+  expiresAt DateTime                     // 过期时间（5分钟）
+  usedAt    DateTime?                    // 使用时间（null=未使用）
+
+  createdAt DateTime @default(now())
+
+  @@index([email, code])
+  @@map("email_verifications")
+}
+
+// ==================== 需求类型 ====================
 model OrderType {
   id          String   @id @default(cuid())
-  name        String   @unique          // 如：期中内作业、期末作业、毕业设计
-  description String?                   // 类型说明（可选）
-  price       String                    // 参考价格，如 "200-500元"
-  sortOrder   Int      @default(0)      // 排序权重，越小越靠前
-  isActive    Boolean  @default(true)   // 是否在前端展示
+  name        String   @unique
+  description String?
+  price       String
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -49,15 +73,15 @@ model OrderType {
   @@map("order_types")
 }
 
-// ==================== 活动/公告（管理员维护）====================
+// ==================== 活动/公告 ====================
 model Activity {
   id        String       @id @default(cuid())
-  title     String                        // 活动标题
-  content   String       @db.Text         // 活动内容（富文本/纯文本）
-  type      ActivityType                  // 类型：折扣活动 or 公告通知
-  startAt   DateTime                      // 活动开始时间
-  endAt     DateTime?                     // 活动结束时间（null = 永久）
-  isActive  Boolean      @default(true)   // 是否启用
+  title     String
+  content   String       @db.Text
+  type      ActivityType
+  startAt   DateTime
+  endAt     DateTime?
+  isActive  Boolean      @default(true)
 
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
@@ -67,34 +91,31 @@ model Activity {
 }
 
 enum ActivityType {
-  PROMO    // 折扣活动
-  NOTICE   // 公告通知
+  PROMO
+  NOTICE
 }
 
 // ==================== 订单 ====================
 model Order {
   id             String      @id @default(cuid())
-  orderNo        String      @unique          // 格式：JT-YYYYMMDD-XXXX
-  courseName     String                       // 课程名称（用户填写）
-  grade          Grade                        // 年级
+  orderNo        String      @unique
+  courseName     String
+  grade          Grade
 
-  // 需求类型关联（管理员维护的类型）
   orderTypeId    String
   orderType      OrderType   @relation(fields: [orderTypeId], references: [id])
 
-  deadline       DateTime                     // 作业截止时间
-  contactWechat  String                       // 联系微信号
+  deadline       DateTime
+  contactWechat  String
 
   status         OrderStatus @default(PENDING)
-  source         OrderSource                  // 来源：MINIPROGRAM / PC
+  source         OrderSource @default(PC)
 
-  // 用户关联（登录用户有 userId）
   userId         String?
   user           User?       @relation(fields: [userId], references: [id])
 
-  // 管理员操作字段
-  adminNote      String?     @db.Text         // 内部备注（不对用户展示）
-  quotedPrice    String?                      // 管理员最终报价（覆盖类型参考价）
+  adminNote      String?     @db.Text
+  quotedPrice    String?
 
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
@@ -105,7 +126,6 @@ model Order {
   @@index([status])
   @@index([createdAt])
   @@index([userId])
-  @@index([contactWechat])
   @@map("orders")
 }
 
@@ -116,31 +136,128 @@ enum Grade {
 }
 
 enum OrderStatus {
-  PENDING      // 待确认
-  ACCEPTED     // 已接单
-  IN_PROGRESS  // 进行中
-  COMPLETED    // 已完成
-  CLOSED       // 已关闭（终态）
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CLOSED
 }
 
 enum OrderSource {
-  MINIPROGRAM  // 历史数据保留，新订单不再使用
-  PC           // PC 网页端
+  MINIPROGRAM  // 历史兼容
+  PC
 }
 
-// ==================== 状态变更历史 ====================
+// ==================== 状态历史 ====================
 model StatusHistory {
   id         String      @id @default(cuid())
   orderId    String
   order      Order       @relation(fields: [orderId], references: [id])
   fromStatus OrderStatus?
   toStatus   OrderStatus
-  operator   String                      // "admin" 或 "system"
-  remark     String?                     // 变更备注
+  operator   String
+  remark     String?
   createdAt  DateTime    @default(now())
 
   @@index([orderId])
   @@map("order_status_history")
+}
+
+// ==================== 论坛帖子 ====================
+model Post {
+  id          String      @id @default(cuid())
+  title       String
+  summary     String?                      // 摘要（列表页展示）
+  content     String      @db.Text         // 正文（Markdown）
+  cover       String?                      // 封面图 URL
+  type        PostType    @default(DISCUSSION)
+  status      PostStatus  @default(PENDING) // 用户帖需审核
+  authorId    String?                      // null = 管理员发布
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  comments    Comment[]
+
+  @@index([status, createdAt])
+  @@map("posts")
+}
+
+enum PostType {
+  ANNOUNCEMENT  // 管理员公告（直接发布）
+  DISCUSSION    // 用户讨论（需审核）
+}
+
+enum PostStatus {
+  PENDING    // 待审核
+  APPROVED   // 已发布
+  REJECTED   // 已拒绝
+}
+
+// ==================== 用户反馈 ====================
+model Feedback {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  type        FeedbackType
+  title       String
+  description String         @db.Text
+  status      FeedbackStatus @default(PENDING)
+  adminReply  String?        @db.Text       // 管理员回复内容
+  repliedAt   DateTime?                     // 回复时间
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("feedbacks")
+}
+
+enum FeedbackType {
+  BUG         // 问题反馈
+  SUGGESTION  // 改进建议
+  OTHER       // 其他
+}
+
+enum FeedbackStatus {
+  PENDING    // 待处理
+  REPLIED    // 已回复
+  RESOLVED   // 已解决
+}
+
+// ==================== 评论 ====================
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String   @db.Text
+  isHidden  Boolean  @default(false)     // 管理员可隐藏
+
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@map("comments")
+}
+
+// ==================== 历代作品轮播 ====================
+model Carousel {
+  id          String   @id @default(cuid())
+  imageUrl    String                     // 图片外链 URL
+  courseName  String                     // 课程名称
+  orderType   String                     // 需求类型文字（冗余存储）
+  completedAt DateTime                   // 完成时间
+  review      String?                    // 好评语
+  orderNoMask String?                    // 脱敏订单号，如 JT-****-A3F2
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("carousels")
 }
 
 // ==================== 通知日志 ====================
@@ -150,26 +267,25 @@ model Notification {
   order     Order         @relation(fields: [orderId], references: [id])
   userId    String?
   user      User?         @relation(fields: [userId], references: [id])
+  channel   NotifyChannel
+  type      NotifyType
+  status    NotifyStatus
+  error     String?
 
-  channel   NotifyChannel  // 通知渠道
-  type      NotifyType     // 通知类型
-  status    NotifyStatus   // 发送状态
-  error     String?        // 失败原因
-
-  createdAt DateTime       @default(now())
+  createdAt DateTime      @default(now())
 
   @@index([orderId])
   @@map("notifications")
 }
 
 enum NotifyChannel {
-  SERVERCHAN   // Server酱（推给管理员）
-  WECOM        // 企业微信 Webhook（备用）
+  SERVERCHAN
+  WECOM
 }
 
 enum NotifyType {
-  NEW_ORDER      // 新订单（发给管理员）
-  STATUS_CHANGE  // 状态变更（记录日志）
+  NEW_ORDER
+  STATUS_CHANGE
 }
 
 enum NotifyStatus {
@@ -184,38 +300,36 @@ enum NotifyStatus {
 ## 实体关系图（ERD）
 
 ```
-order_types ──┐
-              │ 1:N
-              ▼
-users ───────► orders ────── order_status_history (1:N)
-                  │
-                  └────── notifications (1:N)
+users ─────────────────► orders ──── order_status_history (1:N)
+  │                         │
+  │                         └────── notifications (1:N)
+  │
+  ├──► comments ──► posts (N:1)
+  │
+  └──► feedbacks（私密，用户只见自己的）
 
-activities（独立，无外键关联）
+order_types ──► orders (1:N)
+activities（独立）
+carousels（独立）
+email_verifications（独立）
 ```
 
 ---
 
-## 变更说明（v1 → v3）
+## 变更说明（v3 → v4）
 
 | 变更 | 说明 |
 |---|---|
-| **新增** `OrderType` 表 | 管理员动态维护需求类型和参考定价 |
-| **新增** `Activity` 表 | 管理员发布活动公告 |
-| **删除** `File` 表 | 移除文件上传功能，改用微信私发 |
-| `title` → `courseName` | 语义更清晰（课程名称） |
-| `type` (string) → `orderTypeId` (FK) | 改为关联需求类型表 |
-| **新增** `grade` 字段 | 年级枚举（大一/大二/大三） |
-| `contactEmail` → `contactWechat` | 改为联系微信号 |
-| **删除** `estimatedPrice` | 用户无需估价，由管理员定价 |
-| **删除** `description` | 课程名+类型已足够描述需求 |
-| `source.MINIPROGRAM` 保留为历史兼容 | 移除小程序端，新订单均为 `PC` |
-| `NotifyChannel` 删除 `EMAIL`, `WX_SUBSCRIBE` | 移除邮件和订阅消息通知 |
-| **移除微信小程序** | 改为纯 PC 网页端，降低维护复杂度 |
+| **重构** `User` | 新增 username/passwordHash/nickname/phone/wechatId/grade/emailVerified/loginAttempts/lockUntil |
+| **新增** `EmailVerification` | 注册邮箱验证码记录 |
+| **新增** `Post` | 论坛文章（管理员发布） |
+| **新增** `Comment` | 用户对文章的评论 |
+| **新增** `Carousel` | 历代完成作品轮播条目 |
+| 移除微信 openid 直接登录 | 改为 username/email + password |
 
 ---
 
-## 状态机约束（后端强制校验）
+## 状态机约束
 
 ```typescript
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -223,7 +337,7 @@ const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   ACCEPTED:    ['IN_PROGRESS', 'CLOSED'],
   IN_PROGRESS: ['COMPLETED', 'CLOSED'],
   COMPLETED:   ['CLOSED'],
-  CLOSED:      [],   // 终态，不可流转
+  CLOSED:      [],
 }
 ```
 
@@ -243,36 +357,9 @@ const GRADE_LABEL: Record<Grade, string> = {
 
 ## 索引策略
 
-- `orders.status` — 管理后台按状态筛选
-- `orders.createdAt` — 按时间排序
-- `orders.userId` — 用户查询自己的订单
-- `orders.contactWechat` — 管理员搜索
-- `order_status_history.orderId` — 查询订单完整操作日志
-- `activities.isActive + startAt` — 前端查询有效活动列表
-
----
-
-## 数据库迁移要点
-
-```bash
-# 生成迁移文件
-npx prisma migrate dev --name v2_refactor
-
-# 需要手动处理的数据：
-# 1. 插入默认 OrderType（期中内作业/期末作业/毕业设计）
-# 2. 原 orders.type 字符串无法自动迁移到 orderTypeId FK
-#    → 开发环境可直接清空重建，生产环境需数据迁移脚本
-```
-
----
-
-## 初始种子数据
-
-```typescript
-// prisma/seed.ts
-const defaultOrderTypes = [
-  { name: '期中内作业', description: '期中考试前的平时作业', price: '100-300元', sortOrder: 1 },
-  { name: '期末作业',   description: '期末考核作业、大作业', price: '200-500元', sortOrder: 2 },
-  { name: '毕业设计',   description: '毕业论文、毕业设计项目', price: '500-2000元', sortOrder: 3 },
-]
-```
+- `users.username` / `users.email` — 登录查询
+- `orders.status` / `orders.createdAt` / `orders.userId` — 订单筛选
+- `posts.isPublished + createdAt` — 论坛列表
+- `comments.postId + createdAt` — 评论列表
+- `email_verifications.email + code` — 验证码查找
+- `carousels.isActive + sortOrder` — 轮播排序

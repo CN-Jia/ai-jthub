@@ -7,11 +7,11 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
 
-  // 微信登录（开发模式可不填，PC端用虚拟code直接登录）
-  WECHAT_APP_ID: z.string().default(''),
-  WECHAT_APP_SECRET: z.string().default(''),
+  // 邮件（Resend）
+  RESEND_API_KEY: z.string().default(''),
+  MAIL_FROM: z.string().default('noreply@dzhub.ccwu.cc'),
 
-  // Server酱推送（可选，未配置时跳过）
+  // Server酱推送（可选）
   SERVERCHAN_TOKEN: z.string().default(''),
 
   // 管理员账号
