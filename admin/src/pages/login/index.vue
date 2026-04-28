@@ -101,12 +101,13 @@ async function handleLogin() {
 <style scoped>
 .lp {
   min-height: 100vh;
-  background: #030711;
+  background: var(--bg-deep);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
+  transition: background 0.25s;
 }
 
 /* dot-grid background */
@@ -140,12 +141,13 @@ async function handleLogin() {
   position: relative;
   z-index: 1;
   width: 420px;
-  background: #080f1e;
-  border: 1px solid rgba(0,212,255,0.18);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 40px 36px 32px;
-  box-shadow: 0 0 60px rgba(0,212,255,0.06), 0 30px 60px rgba(0,0,0,0.7);
+  box-shadow: var(--el-box-shadow);
   overflow: hidden;
+  transition: background 0.25s, border-color 0.25s;
 }
 
 .card-scanline {
@@ -164,8 +166,8 @@ async function handleLogin() {
   margin-bottom: 28px;
 }
 .lp-brand { display: flex; flex-direction: column; }
-.brand-name { font-size: 22px; font-weight: 900; color: #e8f0fe; letter-spacing: 0.04em; }
-.brand-sub  { font-size: 10px; font-weight: 700; letter-spacing: 0.25em; color: #00d4ff; opacity: 0.8; margin-top: 2px; }
+.brand-name { font-size: 22px; font-weight: 900; color: var(--text-hi); letter-spacing: 0.04em; }
+.brand-sub  { font-size: 10px; font-weight: 700; letter-spacing: 0.25em; color: var(--accent); opacity: 0.8; margin-top: 2px; }
 
 /* Divider */
 .lp-divider {
@@ -206,10 +208,10 @@ async function handleLogin() {
   margin-top: 8px;
   width: 100%;
   height: 46px;
-  background: rgba(0,212,255,0.1);
-  border: 1px solid rgba(0,212,255,0.4);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
   border-radius: 10px;
-  color: #00d4ff;
+  color: var(--accent);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -219,10 +221,8 @@ async function handleLogin() {
   letter-spacing: 0.04em;
 }
 .login-btn:hover:not(:disabled) {
-  background: rgba(0,212,255,0.18);
-  border-color: #00d4ff;
+  background: var(--accent);
   color: #fff;
-  box-shadow: 0 0 20px rgba(0,212,255,0.2);
 }
 .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 

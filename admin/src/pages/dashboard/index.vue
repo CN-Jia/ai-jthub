@@ -204,12 +204,13 @@ onMounted(async () => {
 .metric-card {
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-top: 2px solid var(--clr);
+  border-top: 3px solid var(--clr);
   border-radius: var(--radius);
   padding: 18px 20px 16px;
   position: relative;
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition: all 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .metric-card::before {
   content: '';
@@ -278,6 +279,7 @@ onMounted(async () => {
   text-align: center;
   position: relative;
   transition: border-color 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 .status-card:hover { border-color: var(--sc); }
 .sc-num {
@@ -307,6 +309,7 @@ onMounted(async () => {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .panel-hd {
   display: flex; align-items: center; gap: 8px;
@@ -329,7 +332,7 @@ onMounted(async () => {
 }
 .qa-btn {
   display: flex; align-items: center; gap: 8px;
-  background: var(--bg-hover);
+  background: var(--bg-deep);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text-md);
@@ -339,7 +342,7 @@ onMounted(async () => {
   transition: all 0.18s;
 }
 .qa-btn .el-icon { font-size: 14px; color: var(--qc); }
-.qa-btn:hover { background: rgba(0,212,255,0.06); border-color: var(--qc); color: var(--text-hi); }
+.qa-btn:hover { background: var(--bg-hover); border-color: var(--qc); color: var(--text-hi); }
 
 /* Orders table */
 .orders-table { padding: 0 18px 14px; }
@@ -353,7 +356,7 @@ onMounted(async () => {
 .ot-row {
   display: flex;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(0,212,255,0.05);
+  border-bottom: 1px solid var(--border);
   font-size: 13px; color: var(--text-md);
   cursor: pointer;
   transition: color 0.15s;

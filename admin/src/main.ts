@@ -9,8 +9,8 @@ import './assets/theme.css'
 import App from './App.vue'
 import router from './router'
 
-// 全局启用深色模式
-document.documentElement.classList.add('dark')
+// 主题由 useTheme composable 管理，不在此强制设置
+// document.documentElement.classList.add('dark')
 
 const app = createApp(App)
 
