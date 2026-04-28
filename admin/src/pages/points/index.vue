@@ -1,24 +1,18 @@
 <template>
-  <div class="admin-page">
-    <div class="page-header">
-      <h2>积分管理</h2>
-    </div>
-
+  <div class="sf-page">
     <!-- 积分规则 -->
-    <el-card class="section-card">
-      <template #header>
-        <span>积分规则配置</span>
-      </template>
-      <el-table :data="rules" v-loading="rulesLoading">
-        <el-table-column prop="eventType" label="事件类型" width="200">
+    <div class="sf-panel">
+      <div class="sf-panel-hd">积分规则配置</div>
+      <el-table :data="rules" v-loading="rulesLoading" style="width:100%">
+        <el-table-column label="触发事件" min-width="220">
           <template #default="{ row }">{{ eventLabel(row.eventType) }}</template>
         </el-table-column>
-        <el-table-column prop="points" label="奖励积分" width="120">
+        <el-table-column label="奖励积分" width="140">
           <template #default="{ row }">
-            <el-input-number v-model="row.points" :min="1" :max="9999" size="small" style="width:100px" />
+            <el-input-number v-model="row.points" :min="1" :max="9999" size="small" style="width:110px" />
           </template>
         </el-table-column>
-        <el-table-column prop="enabled" label="启用" width="80">
+        <el-table-column label="启用" width="90">
           <template #default="{ row }">
             <el-switch v-model="row.enabled" />
           </template>
@@ -29,53 +23,61 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </div>
 
     <!-- 用户积分汇总 -->
-    <el-card class="section-card">
-      <template #header>
-        <div class="card-header-row">
-          <span>用户积分汇总</span>
-          <el-input v-model="keyword" placeholder="搜索昵称/用户名" clearable style="width:200px" @change="loadUsers" />
+    <div class="sf-panel">
+      <div class="sf-panel-hd">
+        <div class="sf-toolbar-left">
+          用户积分汇总
         </div>
-      </template>
-      <el-table :data="users" v-loading="usersLoading">
-        <el-table-column prop="nickname" label="昵称" />
-        <el-table-column prop="username" label="用户名" />
-        <el-table-column prop="totalPoints" label="可用积分" />
-        <el-table-column prop="frozenPoints" label="冻结积分" />
-        <el-table-column prop="lifetimeEarned" label="累计获得" />
-        <el-table-column label="操作" width="100">
+        <el-input v-model="keyword" placeholder="搜索昵称/用户名" clearable style="width:200px" @change="loadUsers" />
+      </div>
+      <el-table :data="users" v-loading="usersLoading" style="width:100%">
+        <el-table-column prop="nickname" label="昵称" width="130" />
+        <el-table-column prop="username" label="用户名" width="130" />
+        <el-table-column label="可用积分" width="110">
+          <template #default="{ row }">
+            <span class="pts-val cyan">{{ row.totalPoints }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="冻结积分" width="100">
+          <template #default="{ row }">
+            <span class="pts-val orange">{{ row.frozenPoints }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="累计获得" width="100">
+          <template #default="{ row }">
+            <span class="pts-val purple">{{ row.lifetimeEarned }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="90">
           <template #default="{ row }">
             <el-button size="small" @click="openAdjust(row)">调整</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination
-        v-if="usersTotal > pageSize"
-        class="pagination"
-        :total="usersTotal"
-        :page-size="pageSize"
-        v-model:current-page="currentPage"
-        @current-change="loadUsers"
-        layout="prev, pager, next"
-      />
-    </el-card>
-
-    <!-- 手动调整积分弹窗 -->
-    <el-dialog v-model="adjustDialog" title="手动调整积分" width="360px">
-      <div class="adjust-form">
-        <p>用户：<strong>{{ adjustTarget?.nickname }}</strong>（{{ adjustTarget?.username }}）</p>
-        <p>当前积分：{{ adjustTarget?.totalPoints }}</p>
-        <el-form label-position="top">
-          <el-form-item label="调整量（正数加，负数减）">
-            <el-input-number v-model="adjustDelta" :min="-99999" :max="99999" style="width:100%" />
-          </el-form-item>
-          <el-form-item label="备注（可选）">
-            <el-input v-model="adjustRemark" placeholder="如：活动奖励" />
-          </el-form-item>
-        </el-form>
+      <div v-if="usersTotal > pageSize" class="sf-pagination">
+        <el-pagination background layout="prev, pager, next"
+          :total="usersTotal" :page-size="pageSize" v-model:current-page="currentPage" @current-change="loadUsers" />
       </div>
+    </div>
+
+    <!-- 手动调整积分 -->
+    <el-dialog v-model="adjustDialog" title="手动调整积分" width="380px">
+      <div class="adj-info">
+        <span class="adj-name">{{ adjustTarget?.nickname }}</span>
+        <span class="adj-sub">{{ adjustTarget?.username }}</span>
+        <span class="adj-pts">当前可用：<strong class="cyan">{{ adjustTarget?.totalPoints }}</strong> 积分</span>
+      </div>
+      <el-form label-position="top" style="margin-top:16px">
+        <el-form-item label="调整量（正数加积分，负数扣积分）">
+          <el-input-number v-model="adjustDelta" :min="-99999" :max="99999" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="备注（可选）">
+          <el-input v-model="adjustRemark" placeholder="如：活动奖励" />
+        </el-form-item>
+      </el-form>
       <template #footer>
         <el-button @click="adjustDialog = false">取消</el-button>
         <el-button type="primary" :loading="adjusting" @click="submitAdjust">确认调整</el-button>
@@ -95,7 +97,7 @@ const EVENT_LABELS: Record<string, string> = {
   NEW_USER_FIRST_ORDER: '新用户首购奖励',
   ADMIN_ADJUST: '管理员手动调整',
 }
-function eventLabel(t: string) { return EVENT_LABELS[t] ?? t }
+const eventLabel = (t: string) => EVENT_LABELS[t] ?? t
 
 const rules = ref<any[]>([])
 const rulesLoading = ref(false)
@@ -117,7 +119,6 @@ async function loadRules() {
   try {
     const res: any = await api.getPointRules()
     rules.value = res.data.rules
-    // 补全缺失的规则
     const existing = new Set(rules.value.map((r: any) => r.eventType))
     const defaults = [
       { eventType: 'INVITE_REGISTER', points: 50, enabled: true },
@@ -125,18 +126,14 @@ async function loadRules() {
       { eventType: 'NEW_USER_FIRST_ORDER', points: 30, enabled: true },
     ]
     defaults.forEach(d => { if (!existing.has(d.eventType)) rules.value.push(d) })
-  } finally {
-    rulesLoading.value = false
-  }
+  } finally { rulesLoading.value = false }
 }
 
 async function saveRule(row: any) {
   try {
     await api.updatePointRule(row.eventType, { points: row.points, enabled: row.enabled })
     ElMessage.success('规则已保存')
-  } catch {
-    ElMessage.error('保存失败')
-  }
+  } catch { ElMessage.error('保存失败') }
 }
 
 async function loadUsers() {
@@ -145,16 +142,11 @@ async function loadUsers() {
     const res: any = await api.getPointUsers({ page: currentPage.value, pageSize, keyword: keyword.value || undefined })
     users.value = res.data.list
     usersTotal.value = res.data.total
-  } finally {
-    usersLoading.value = false
-  }
+  } finally { usersLoading.value = false }
 }
 
 function openAdjust(row: any) {
-  adjustTarget.value = row
-  adjustDelta.value = 0
-  adjustRemark.value = ''
-  adjustDialog.value = true
+  adjustTarget.value = row; adjustDelta.value = 0; adjustRemark.value = ''; adjustDialog.value = true
 }
 
 async function submitAdjust() {
@@ -167,23 +159,21 @@ async function submitAdjust() {
     loadUsers()
   } catch (err: any) {
     ElMessage.error(err?.message ?? '调整失败')
-  } finally {
-    adjusting.value = false
-  }
+  } finally { adjusting.value = false }
 }
 
-onMounted(() => {
-  loadRules()
-  loadUsers()
-})
+onMounted(() => { loadRules(); loadUsers() })
 </script>
 
 <style scoped>
-.admin-page { padding: 24px; }
-.page-header { margin-bottom: 20px; }
-.page-header h2 { font-size: 1.4rem; font-weight: 700; }
-.section-card { margin-bottom: 24px; }
-.card-header-row { display: flex; justify-content: space-between; align-items: center; }
-.pagination { margin-top: 16px; justify-content: flex-end; }
-.adjust-form { display: flex; flex-direction: column; gap: 8px; }
+.pts-val { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 14px; }
+.pts-val.cyan   { color: #00d4ff; }
+.pts-val.orange { color: #f59e0b; }
+.pts-val.purple { color: #a855f7; }
+
+.adj-info { display: flex; flex-direction: column; gap: 4px; background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.1); border-radius: 8px; padding: 14px 16px; }
+.adj-name { font-size: 15px; font-weight: 600; color: #e8f0fe; }
+.adj-sub  { font-size: 12px; color: #4d6a82; }
+.adj-pts  { font-size: 13px; color: #7fa5c0; margin-top: 4px; }
+.cyan { color: #00d4ff; }
 </style>

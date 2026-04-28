@@ -1,68 +1,77 @@
 <template>
-  <div class="page-box">
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <el-select v-model="filterStatus" placeholder="状态" clearable style="width:110px" @change="load">
-          <el-option label="待处理" value="PENDING" />
-          <el-option label="已回复" value="REPLIED" />
-          <el-option label="已解决" value="RESOLVED" />
-        </el-select>
-        <el-select v-model="filterType" placeholder="类型" clearable style="width:110px;margin-left:8px" @change="load">
-          <el-option label="Bug反馈" value="BUG" />
-          <el-option label="功能建议" value="SUGGESTION" />
-          <el-option label="其他" value="OTHER" />
-        </el-select>
+  <div class="sf-page">
+    <div class="sf-panel">
+      <div class="sf-panel-hd">
+        <div class="sf-toolbar-left">
+          <el-select v-model="filterStatus" placeholder="状态" clearable style="width:110px" @change="load">
+            <el-option label="待处理" value="PENDING" />
+            <el-option label="已回复" value="REPLIED" />
+            <el-option label="已解决" value="RESOLVED" />
+          </el-select>
+          <el-select v-model="filterType" placeholder="类型" clearable style="width:110px" @change="load">
+            <el-option label="Bug反馈" value="BUG" />
+            <el-option label="功能建议" value="SUGGESTION" />
+            <el-option label="其他" value="OTHER" />
+          </el-select>
+        </div>
+      </div>
+
+      <el-table :data="list" v-loading="loading" style="width:100%;cursor:pointer" @row-click="openDetail">
+        <el-table-column label="类型" width="100">
+          <template #default="{ row }">
+            <el-tag :type="typeTagType(row.type)" size="small">{{ typeLabel(row.type) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="标题" prop="title" min-width="200" show-overflow-tooltip />
+        <el-table-column label="用户" width="120">
+          <template #default="{ row }">{{ row.user?.nickname ?? '—' }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="提交时间" width="130">
+          <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" plain @click.stop="openDetail(row)">查看回复</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div v-if="total > pageSize" class="sf-pagination">
+        <el-pagination background layout="prev, pager, next"
+          :total="total" :page-size="pageSize" :current-page="page"
+          @current-change="p => { page = p; load() }" />
       </div>
     </div>
 
-    <el-table :data="list" v-loading="loading" class="dark-table" @row-click="openDetail">
-      <el-table-column label="类型" width="100">
-        <template #default="{ row }">
-          <el-tag :type="typeTagType(row.type)" size="small">{{ typeLabel(row.type) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="标题" prop="title" min-width="200" show-overflow-tooltip />
-      <el-table-column label="用户" width="120">
-        <template #default="{ row }">{{ row.user?.nickname ?? '-' }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="90">
-        <template #default="{ row }">
-          <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="提交时间" width="150">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="100" fixed="right">
-        <template #default="{ row }">
-          <el-button type="primary" size="small" plain @click.stop="openDetail(row)">查看/回复</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <el-pagination v-if="total > pageSize" class="pagination" background layout="prev, pager, next"
-      :total="total" :page-size="pageSize" :current-page="page" @current-change="p => { page = p; load() }" />
-
-    <!-- 详情 & 回复 -->
-    <el-dialog v-model="detailVisible" title="反馈详情" width="640px">
+    <!-- 详情弹窗 -->
+    <el-dialog v-model="detailVisible" title="反馈详情 & 回复" width="640px">
       <template v-if="current">
         <div class="fb-meta">
           <el-tag :type="typeTagType(current.type)" size="small">{{ typeLabel(current.type) }}</el-tag>
           <el-tag :type="statusTagType(current.status)" size="small">{{ statusLabel(current.status) }}</el-tag>
           <span class="fb-time">{{ fmt(current.createdAt) }}</span>
         </div>
-        <h3 style="margin:12px 0 8px">{{ current.title }}</h3>
+        <div class="fb-title">{{ current.title }}</div>
         <div class="fb-content">{{ current.description }}</div>
 
-        <el-divider>管理员回复</el-divider>
-        <div v-if="current.adminReply" class="admin-reply">{{ current.adminReply }}</div>
-        <el-input v-model="replyText" type="textarea" :rows="4" placeholder="输入回复内容..." />
-        <div class="reply-status-row">
-          <span style="color:#64748b;font-size:13px">更新状态：</span>
-          <el-select v-model="replyStatus" style="width:120px">
-            <el-option label="已回复" value="REPLIED" />
-            <el-option label="已解决" value="RESOLVED" />
-          </el-select>
+        <div class="reply-section">
+          <div v-if="current.adminReply" class="admin-reply">
+            <span class="reply-label">已回复</span>
+            {{ current.adminReply }}
+          </div>
+          <el-input v-model="replyText" type="textarea" :rows="4" placeholder="输入回复内容..." style="margin-top:12px" />
+          <div class="reply-status-row">
+            <span class="tip">更新状态：</span>
+            <el-select v-model="replyStatus" style="width:120px">
+              <el-option label="已回复" value="REPLIED" />
+              <el-option label="已解决" value="RESOLVED" />
+            </el-select>
+          </div>
         </div>
       </template>
       <template #footer>
@@ -92,10 +101,10 @@ const replyText = ref('')
 const replyStatus = ref('REPLIED')
 const submitting = ref(false)
 
-const typeLabel = (t: string) => ({ BUG: 'Bug反馈', SUGGESTION: '功能建议', OTHER: '其他' }[t] ?? t)
-const typeTagType = (t: string) => ({ BUG: 'danger', SUGGESTION: 'primary', OTHER: '' }[t] ?? '')
-const statusLabel = (s: string) => ({ PENDING: '待处理', REPLIED: '已回复', RESOLVED: '已解决' }[s] ?? s)
-const statusTagType = (s: string) => ({ PENDING: 'warning', REPLIED: 'primary', RESOLVED: 'success' }[s] ?? '')
+const typeLabel = (t: string) => ({ BUG: 'Bug反馈', SUGGESTION: '功能建议', OTHER: '其他' } as any)[t] ?? t
+const typeTagType = (t: string) => ({ BUG: 'danger', SUGGESTION: 'primary', OTHER: '' } as any)[t] ?? ''
+const statusLabel = (s: string) => ({ PENDING: '待处理', REPLIED: '已回复', RESOLVED: '已解决' } as any)[s] ?? s
+const statusTagType = (s: string) => ({ PENDING: 'warning', REPLIED: 'primary', RESOLVED: 'success' } as any)[s] ?? ''
 const fmt = (d: string) => format(new Date(d), 'MM-dd HH:mm')
 
 async function load() {
@@ -130,12 +139,38 @@ onMounted(load)
 </script>
 
 <style scoped>
-.page-box { display: flex; flex-direction: column; gap: 16px; }
-.toolbar { display: flex; justify-content: space-between; align-items: center; }
-.pagination { margin-top: 8px; justify-content: flex-end; }
-.fb-meta { display: flex; align-items: center; gap: 8px; }
-.fb-time { color: #64748b; font-size: 13px; }
-.fb-content { background: #1e293b; border-radius: 8px; padding: 12px; color: #94a3b8; line-height: 1.7; white-space: pre-wrap; margin-bottom: 4px; }
-.admin-reply { background: #1e3a5f; border-radius: 8px; padding: 10px 14px; color: #93c5fd; margin-bottom: 12px; border-left: 3px solid #3b82f6; }
+.fb-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.fb-time { color: #4d6a82; font-size: 12px; margin-left: auto; }
+.fb-title { font-size: 16px; font-weight: 600; color: #e8f0fe; margin-bottom: 10px; }
+.fb-content {
+  background: rgba(0,212,255,0.04);
+  border: 1px solid rgba(0,212,255,0.1);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #7fa5c0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  font-size: 13px;
+}
+.reply-section { margin-top: 16px; }
+.admin-reply {
+  background: rgba(0,212,255,0.08);
+  border: 1px solid rgba(0,212,255,0.2);
+  border-left: 3px solid #00d4ff;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #7fa5c0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.reply-label {
+  display: block;
+  font-size: 10px;
+  color: #00d4ff;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
 .reply-status-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.tip { color: #4d6a82; font-size: 13px; }
 </style>

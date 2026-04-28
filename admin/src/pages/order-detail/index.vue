@@ -1,86 +1,120 @@
 <template>
-  <div v-if="order">
-    <el-row :gutter="20">
-      <!-- 左侧订单信息 -->
-      <el-col :span="16">
-        <el-card style="margin-bottom:16px">
-          <template #header>
-            <div style="display:flex;align-items:center;gap:12px">
-              <span style="font-weight:bold">{{ order.orderNo }}</span>
-              <el-tag :type="statusType(order.status)">{{ statusLabel(order.status) }}</el-tag>
+  <div v-if="order" class="sf-page">
+    <div class="detail-grid">
+      <!-- 左：订单信息 + 历史 -->
+      <div class="col-left">
+        <!-- 订单头 -->
+        <div class="sf-panel" style="margin-bottom:14px">
+          <div class="sf-panel-hd">
+            <div class="sf-panel-hd-left">
+              <span class="order-no">{{ order.orderNo }}</span>
+              <el-tag :type="statusTag(order.status)">{{ statusLabel(order.status) }}</el-tag>
             </div>
-          </template>
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="课程名称">{{ order.courseName }}</el-descriptions-item>
-            <el-descriptions-item label="需求类型">{{ order.orderType?.name }}</el-descriptions-item>
-            <el-descriptions-item label="参考价格">{{ order.orderType?.price }}</el-descriptions-item>
-            <el-descriptions-item label="年级">{{ gradeLabel(order.grade) }}</el-descriptions-item>
-            <el-descriptions-item label="截止日期">{{ fmtDate(order.deadline) }}</el-descriptions-item>
-            <el-descriptions-item label="联系微信">{{ order.contactWechat }}</el-descriptions-item>
-            <el-descriptions-item label="来源">{{ order.source === 'MINIPROGRAM' ? '小程序' : 'PC' }}</el-descriptions-item>
-            <el-descriptions-item label="创建时间">{{ fmtDateTime(order.createdAt) }}</el-descriptions-item>
-            <el-descriptions-item label="管理员报价" v-if="order.quotedPrice">
-              <span style="color:#1677ff;font-weight:bold">{{ order.quotedPrice }}</span>
-            </el-descriptions-item>
-          </el-descriptions>
-        </el-card>
+          </div>
+          <div class="sf-panel-body">
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-key">课程名称</span>
+                <span class="info-val">{{ order.courseName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-key">需求类型</span>
+                <span class="info-val">{{ order.orderType?.name ?? '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-key">参考价格</span>
+                <span class="info-val">{{ order.orderType?.price ?? '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-key">年级</span>
+                <span class="info-val">{{ gradeLabel(order.grade) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-key">截止日期</span>
+                <span class="info-val">{{ fmtDate(order.deadline) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-key">联系微信</span>
+                <span class="info-val accent">{{ order.contactWechat }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-key">创建时间</span>
+                <span class="info-val">{{ fmtDateTime(order.createdAt) }}</span>
+              </div>
+              <div v-if="order.quotedPrice" class="info-item">
+                <span class="info-key">管理员报价</span>
+                <span class="info-val accent">{{ order.quotedPrice }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- 状态历史 -->
-        <el-card>
-          <template #header>状态变更历史</template>
-          <el-timeline>
-            <el-timeline-item
-              v-for="h in order.statusHistory"
-              :key="h.id"
-              :timestamp="fmtDateTime(h.createdAt)"
-              placement="top"
-            >
-              <div>
-                <el-tag size="small" :type="statusType(h.toStatus)">{{ statusLabel(h.toStatus) }}</el-tag>
-                <span v-if="h.remark" style="margin-left:8px;color:#888;font-size:13px">{{ h.remark }}</span>
-              </div>
-            </el-timeline-item>
-          </el-timeline>
-        </el-card>
-      </el-col>
+        <div class="sf-panel">
+          <div class="sf-panel-hd">状态变更历史</div>
+          <div class="sf-panel-body">
+            <el-timeline>
+              <el-timeline-item
+                v-for="h in order.statusHistory"
+                :key="h.id"
+                :timestamp="fmtDateTime(h.createdAt)"
+                placement="top"
+              >
+                <div class="history-item">
+                  <el-tag :type="statusTag(h.toStatus)" size="small">{{ statusLabel(h.toStatus) }}</el-tag>
+                  <span v-if="h.remark" class="history-remark">{{ h.remark }}</span>
+                </div>
+              </el-timeline-item>
+            </el-timeline>
+          </div>
+        </div>
+      </div>
 
-      <!-- 右侧操作 -->
-      <el-col :span="8">
+      <!-- 右：操作面板 -->
+      <div class="col-right">
         <!-- 更新状态 -->
-        <el-card style="margin-bottom:16px">
-          <template #header>更新状态</template>
-          <el-select v-model="newStatus" placeholder="选择新状态" style="width:100%;margin-bottom:12px">
-            <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
-          </el-select>
-          <el-input v-model="remark" placeholder="备注（可选）" style="margin-bottom:12px" />
-          <el-button type="primary" style="width:100%" @click="doUpdateStatus" :loading="statusLoading">
-            确认更新
-          </el-button>
-        </el-card>
+        <div class="sf-panel action-panel">
+          <div class="sf-panel-hd">更新状态</div>
+          <div class="sf-panel-body">
+            <el-select v-model="newStatus" placeholder="选择新状态" style="width:100%;margin-bottom:10px">
+              <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
+            </el-select>
+            <el-input v-model="remark" placeholder="备注（可选）" style="margin-bottom:10px" />
+            <el-button type="primary" style="width:100%" @click="doUpdateStatus" :loading="statusLoading">
+              确认更新
+            </el-button>
+          </div>
+        </div>
 
         <!-- 设置报价 -->
-        <el-card style="margin-bottom:16px">
-          <template #header>设置报价</template>
-          <el-input v-model="quotedPrice" placeholder="如：500元" style="margin-bottom:12px" />
-          <el-button type="primary" style="width:100%" @click="doSetQuote" :loading="quoteLoading">
-            确认报价
-          </el-button>
-        </el-card>
+        <div class="sf-panel action-panel">
+          <div class="sf-panel-hd">设置报价</div>
+          <div class="sf-panel-body">
+            <el-input v-model="quotedPrice" placeholder="如：500元" style="margin-bottom:10px" />
+            <el-button type="primary" style="width:100%" @click="doSetQuote" :loading="quoteLoading">
+              确认报价
+            </el-button>
+          </div>
+        </div>
 
         <!-- 内部备注 -->
-        <el-card>
-          <template #header>内部备注</template>
-          <el-input v-model="adminNote" type="textarea" :rows="4" placeholder="添加内部备注（用户不可见）" style="margin-bottom:12px" />
-          <el-button style="width:100%" @click="doAddNote" :loading="noteLoading">保存备注</el-button>
-          <div v-if="order.adminNote" style="margin-top:12px;padding:8px;background:#f5f5f5;border-radius:4px;font-size:13px;color:#555">
-            当前备注：{{ order.adminNote }}
+        <div class="sf-panel action-panel">
+          <div class="sf-panel-hd">内部备注</div>
+          <div class="sf-panel-body">
+            <el-input v-model="adminNote" type="textarea" :rows="4" placeholder="添加内部备注（用户不可见）" style="margin-bottom:10px" />
+            <el-button style="width:100%" @click="doAddNote" :loading="noteLoading">保存备注</el-button>
+            <div v-if="order.adminNote" class="current-note">
+              <span class="note-label">当前备注</span>
+              {{ order.adminNote }}
+            </div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+      </div>
+    </div>
   </div>
-  <div v-else-if="loading" style="text-align:center;padding:60px">
-    <el-text>加载中...</el-text>
+  <div v-else-if="loading" class="loading-wrap">
+    <el-icon class="loading-icon"><Loading /></el-icon>
+    <span>加载中...</span>
   </div>
 </template>
 
@@ -102,20 +136,20 @@ const noteLoading = ref(false)
 const quoteLoading = ref(false)
 
 const statusOptions = [
-  { value: 'ACCEPTED', label: '已接单' },
+  { value: 'ACCEPTED',    label: '已接单' },
   { value: 'IN_PROGRESS', label: '进行中' },
-  { value: 'COMPLETED', label: '已完成' },
-  { value: 'CLOSED', label: '已关闭' },
+  { value: 'COMPLETED',   label: '已完成' },
+  { value: 'CLOSED',      label: '已关闭' },
 ]
 const statusLabel = (s: string) => (
-  ({ PENDING: '待确认', ACCEPTED: '已接单', IN_PROGRESS: '进行中', COMPLETED: '已完成', CLOSED: '已关闭' } as any)[s] ?? s
-)
-const statusType = (s: string) => (
-  ({ PENDING: 'warning', ACCEPTED: 'primary', IN_PROGRESS: '', COMPLETED: 'success', CLOSED: 'info' } as any)[s] ?? ''
-)
-const gradeLabel = (g: string) => ({ FRESHMAN: '大一', SOPHOMORE: '大二', JUNIOR: '大三' }[g as any] ?? g)
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('zh-CN')
-const fmtDateTime = (d: string) => new Date(d).toLocaleString('zh-CN')
+  { PENDING: '待确认', ACCEPTED: '已接单', IN_PROGRESS: '进行中', COMPLETED: '已完成', CLOSED: '已关闭' } as any
+)[s] ?? s
+const statusTag = (s: string) => (
+  { PENDING: 'warning', ACCEPTED: 'primary', IN_PROGRESS: '', COMPLETED: 'success', CLOSED: 'info' } as any
+)[s] ?? ''
+const gradeLabel = (g: string) => ({ FRESHMAN: '大一', SOPHOMORE: '大二', JUNIOR: '大三' } as any)[g] ?? g
+const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('zh-CN') : '—'
+const fmtDateTime = (d: string) => d ? new Date(d).toLocaleString('zh-CN') : '—'
 
 async function loadOrder() {
   loading.value = true
@@ -165,3 +199,59 @@ async function doSetQuote() {
 
 onMounted(loadOrder)
 </script>
+
+<style scoped>
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
+
+.col-left, .col-right { display: flex; flex-direction: column; gap: 14px; }
+
+.order-no { font-weight: 700; font-size: 15px; color: #e8f0fe; font-family: monospace; }
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
+}
+.info-item { display: flex; flex-direction: column; gap: 4px; }
+.info-key  { font-size: 11px; color: #4d6a82; letter-spacing: 0.06em; text-transform: uppercase; }
+.info-val  { font-size: 13.5px; color: #e8f0fe; }
+.info-val.accent { color: #00d4ff; font-weight: 600; }
+
+.history-item { display: flex; align-items: center; gap: 8px; }
+.history-remark { font-size: 12px; color: #4d6a82; }
+
+.action-panel { margin-bottom: 0; }
+
+.current-note {
+  margin-top: 12px;
+  background: rgba(0,212,255,0.06);
+  border: 1px solid rgba(0,212,255,0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #7fa5c0;
+  line-height: 1.6;
+}
+.note-label {
+  display: block;
+  font-size: 10px;
+  color: #4d6a82;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.loading-wrap {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; height: 200px;
+  color: #4d6a82; font-size: 14px;
+}
+.loading-icon { font-size: 20px; color: #00d4ff; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>

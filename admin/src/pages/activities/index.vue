@@ -1,55 +1,60 @@
 <template>
-  <el-card>
-    <template #header>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span>活动/公告管理</span>
-        <el-button type="primary" @click="openCreate">发布公告</el-button>
+  <div class="sf-page">
+    <div class="sf-panel">
+      <div class="sf-panel-hd">
+        活动 / 公告管理
+        <el-button type="primary" @click="openCreate">
+          <el-icon><Plus /></el-icon> 发布公告
+        </el-button>
       </div>
-    </template>
 
-    <el-table :data="activities" stripe v-loading="loading">
-      <el-table-column label="类型" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.type === 'PROMO' ? 'warning' : 'info'">{{ row.type === 'PROMO' ? '优惠活动' : '系统公告' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />
-      <el-table-column label="开始时间" width="130">
-        <template #default="{ row }">{{ fmtDate(row.startAt) }}</template>
-      </el-table-column>
-      <el-table-column label="结束时间" width="130">
-        <template #default="{ row }">{{ row.endAt ? fmtDate(row.endAt) : '长期有效' }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="90">
-        <template #default="{ row }">
-          <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '显示' : '隐藏' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="160">
-        <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="doDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table :data="activities" v-loading="loading" style="width:100%">
+        <el-table-column label="类型" width="110">
+          <template #default="{ row }">
+            <el-tag :type="row.type === 'PROMO' ? 'warning' : 'primary'" size="small">
+              {{ row.type === 'PROMO' ? '优惠活动' : '系统公告' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />
+        <el-table-column label="开始时间" width="130">
+          <template #default="{ row }">{{ fmtDate(row.startAt) }}</template>
+        </el-table-column>
+        <el-table-column label="结束时间" width="130">
+          <template #default="{ row }">{{ row.endAt ? fmtDate(row.endAt) : '长期有效' }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.isActive ? 'success' : 'info'" size="small">
+              {{ row.isActive ? '显示' : '隐藏' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="140">
+          <template #default="{ row }">
+            <el-button size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button size="small" type="danger" @click="doDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
-    <!-- 弹窗 -->
     <el-dialog v-model="dialogVisible" :title="editId ? '编辑公告' : '发布公告'" width="600px">
-      <el-form :model="form" label-width="100px">
-        <el-form-item label="类型" required>
+      <el-form :model="form" label-width="90px">
+        <el-form-item label="类型">
           <el-radio-group v-model="form.type">
             <el-radio value="NOTICE">📢 系统公告</el-radio>
             <el-radio value="PROMO">🎁 优惠活动</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="标题" required>
+        <el-form-item label="标题">
           <el-input v-model="form.title" placeholder="公告/活动标题" />
         </el-form-item>
-        <el-form-item label="内容" required>
+        <el-form-item label="内容">
           <el-input v-model="form.content" type="textarea" :rows="5" placeholder="详细内容" />
         </el-form-item>
-        <el-form-item label="开始时间" required>
+        <el-form-item label="开始时间">
           <el-date-picker v-model="form.startAt" type="datetime" placeholder="选择开始时间" style="width:100%" />
         </el-form-item>
         <el-form-item label="结束时间">
@@ -64,7 +69,7 @@
         <el-button type="primary" @click="doSave" :loading="saving">发布</el-button>
       </template>
     </el-dialog>
-  </el-card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -79,8 +84,7 @@ const editId = ref('')
 const saving = ref(false)
 const form = reactive({
   type: 'NOTICE' as 'NOTICE' | 'PROMO',
-  title: '',
-  content: '',
+  title: '', content: '',
   startAt: new Date(),
   endAt: null as Date | null,
   isActive: true,
@@ -104,14 +108,7 @@ function openCreate() {
 
 function openEdit(row: any) {
   editId.value = row.id
-  Object.assign(form, {
-    type: row.type,
-    title: row.title,
-    content: row.content,
-    startAt: new Date(row.startAt),
-    endAt: row.endAt ? new Date(row.endAt) : null,
-    isActive: row.isActive,
-  })
+  Object.assign(form, { type: row.type, title: row.title, content: row.content, startAt: new Date(row.startAt), endAt: row.endAt ? new Date(row.endAt) : null, isActive: row.isActive })
   dialogVisible.value = true
 }
 
@@ -124,13 +121,8 @@ async function doSave() {
       startAt: (form.startAt instanceof Date ? form.startAt : new Date(form.startAt)).toISOString(),
       endAt: form.endAt ? (form.endAt instanceof Date ? form.endAt : new Date(form.endAt)).toISOString() : null,
     }
-    if (editId.value) {
-      await api.updateActivity(editId.value, payload)
-      ElMessage.success('已更新')
-    } else {
-      await api.createActivity(payload)
-      ElMessage.success('已发布')
-    }
+    editId.value ? await api.updateActivity(editId.value, payload) : await api.createActivity(payload)
+    ElMessage.success(editId.value ? '已更新' : '已发布')
     dialogVisible.value = false
     await loadActivities()
   } catch (e: any) {

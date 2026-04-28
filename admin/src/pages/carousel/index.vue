@@ -1,35 +1,39 @@
 <template>
-  <div class="page-box">
-    <div class="toolbar">
-      <span class="tip">展示在首页的历代作品轮播图</span>
-      <el-button type="primary" @click="openCreate"><el-icon><Plus /></el-icon> 添加作品</el-button>
-    </div>
+  <div class="sf-page">
+    <div class="sf-panel">
+      <div class="sf-panel-hd">
+        <span>作品轮播管理 <span class="hd-sub">· 展示在首页的历代作品</span></span>
+        <el-button type="primary" @click="openCreate">
+          <el-icon><Plus /></el-icon> 添加作品
+        </el-button>
+      </div>
 
-    <el-table :data="list" v-loading="loading" class="dark-table">
-      <el-table-column label="预览" width="90">
-        <template #default="{ row }">
-          <el-image :src="row.imageUrl" style="width:60px;height:40px;border-radius:4px;object-fit:cover" fit="cover" />
-        </template>
-      </el-table-column>
-      <el-table-column label="课程名" prop="courseName" min-width="160" />
-      <el-table-column label="类型" prop="orderType" width="100" />
-      <el-table-column label="完成时间" width="120">
-        <template #default="{ row }">{{ fmt(row.completedAt) }}</template>
-      </el-table-column>
-      <el-table-column label="评价" prop="review" show-overflow-tooltip />
-      <el-table-column label="排序" prop="sortOrder" width="70" />
-      <el-table-column label="状态" width="80">
-        <template #default="{ row }">
-          <el-tag :type="row.isActive ? 'success' : 'info'" size="small">{{ row.isActive ? '显示' : '隐藏' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
-        <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button type="danger" size="small" plain @click="del(row.id)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table :data="list" v-loading="loading" style="width:100%">
+        <el-table-column label="预览" width="90">
+          <template #default="{ row }">
+            <el-image :src="row.imageUrl" style="width:64px;height:42px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,212,255,0.15)" fit="cover" />
+          </template>
+        </el-table-column>
+        <el-table-column label="课程名" prop="courseName" min-width="160" />
+        <el-table-column label="类型" prop="orderType" width="100" />
+        <el-table-column label="完成时间" width="120">
+          <template #default="{ row }">{{ fmt(row.completedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="评价" prop="review" show-overflow-tooltip />
+        <el-table-column label="排序" prop="sortOrder" width="70" />
+        <el-table-column label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.isActive ? 'success' : 'info'" size="small">{{ row.isActive ? '显示' : '隐藏' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="140" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button type="danger" size="small" plain @click="del(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editId ? '编辑作品' : '添加作品'" width="600px">
       <el-form :model="form" label-width="90px">
@@ -66,7 +70,6 @@ const editId = ref('')
 
 const defaultForm = () => ({ imageUrl: '', courseName: '', orderType: '', completedAt: null as any, review: '', orderNoMask: '', sortOrder: 0, isActive: true })
 const form = ref(defaultForm())
-
 const fmt = (d: string) => format(new Date(d), 'yyyy-MM-dd')
 
 async function load() {
@@ -89,8 +92,7 @@ async function submit() {
   submitting.value = true
   const data = { ...form.value, completedAt: new Date(form.value.completedAt).toISOString() }
   try {
-    if (editId.value) await api.updateCarouselItem(editId.value, data)
-    else await api.createCarouselItem(data)
+    editId.value ? await api.updateCarouselItem(editId.value, data) : await api.createCarouselItem(data)
     ElMessage.success('保存成功')
     dialogVisible.value = false
     load()
@@ -108,7 +110,5 @@ onMounted(load)
 </script>
 
 <style scoped>
-.page-box { display: flex; flex-direction: column; gap: 16px; }
-.toolbar { display: flex; justify-content: space-between; align-items: center; }
-.tip { color: #64748b; font-size: 14px; }
+.hd-sub { font-size: 12px; color: #4d6a82; font-weight: 400; }
 </style>

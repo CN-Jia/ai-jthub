@@ -1,61 +1,65 @@
 <template>
-  <div class="page-box">
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <el-select v-model="filterStatus" placeholder="状态" clearable style="width:110px" @change="load">
-          <el-option label="待审核" value="PENDING" />
-          <el-option label="已发布" value="APPROVED" />
-          <el-option label="已拒绝" value="REJECTED" />
-        </el-select>
-        <el-select v-model="filterType" placeholder="类型" clearable style="width:110px;margin-left:8px" @change="load">
-          <el-option label="公告" value="ANNOUNCEMENT" />
-          <el-option label="讨论" value="DISCUSSION" />
-        </el-select>
+  <div class="sf-page">
+    <div class="sf-panel">
+      <div class="sf-panel-hd">
+        <div class="sf-toolbar-left">
+          <el-select v-model="filterStatus" placeholder="状态" clearable style="width:110px" @change="load">
+            <el-option label="待审核" value="PENDING" />
+            <el-option label="已发布" value="APPROVED" />
+            <el-option label="已拒绝" value="REJECTED" />
+          </el-select>
+          <el-select v-model="filterType" placeholder="类型" clearable style="width:110px" @change="load">
+            <el-option label="公告" value="ANNOUNCEMENT" />
+            <el-option label="讨论" value="DISCUSSION" />
+          </el-select>
+        </div>
+        <el-button type="primary" @click="openCreate">
+          <el-icon><Plus /></el-icon> 发布公告
+        </el-button>
       </div>
-      <el-button type="primary" @click="openCreate">
-        <el-icon><Plus /></el-icon> 发布公告
-      </el-button>
+
+      <el-table :data="posts" v-loading="loading" style="width:100%">
+        <el-table-column label="标题" prop="title" min-width="220" show-overflow-tooltip />
+        <el-table-column label="类型" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.type === 'ANNOUNCEMENT' ? 'primary' : ''" size="small">
+              {{ row.type === 'ANNOUNCEMENT' ? '公告' : '讨论' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="作者" width="110">
+          <template #default="{ row }">{{ row.author?.nickname ?? '管理员' }}</template>
+        </el-table-column>
+        <el-table-column label="评论" width="70" prop="_count.comments" />
+        <el-table-column label="发布时间" width="130">
+          <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="210" fixed="right">
+          <template #default="{ row }">
+            <template v-if="row.status === 'PENDING'">
+              <el-button type="success" size="small" @click="review(row.id, 'APPROVED')">通过</el-button>
+              <el-button type="danger" size="small" @click="review(row.id, 'REJECTED')">拒绝</el-button>
+            </template>
+            <el-button v-if="row.type === 'ANNOUNCEMENT'" size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button type="danger" size="small" plain @click="del(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div v-if="total > pageSize" class="sf-pagination">
+        <el-pagination background layout="prev, pager, next"
+          :total="total" :page-size="pageSize" :current-page="page"
+          @current-change="p => { page = p; load() }" />
+      </div>
     </div>
 
-    <el-table :data="posts" v-loading="loading" class="dark-table" row-class-name="dark-row">
-      <el-table-column label="标题" prop="title" min-width="220" show-overflow-tooltip />
-      <el-table-column label="类型" width="90">
-        <template #default="{ row }">
-          <el-tag :type="row.type === 'ANNOUNCEMENT' ? 'primary' : ''" size="small">
-            {{ row.type === 'ANNOUNCEMENT' ? '公告' : '讨论' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" width="90">
-        <template #default="{ row }">
-          <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="作者" width="110">
-        <template #default="{ row }">{{ row.author?.nickname ?? '管理员' }}</template>
-      </el-table-column>
-      <el-table-column label="评论" width="70" prop="_count.comments" />
-      <el-table-column label="发布时间" width="160">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
-        <template #default="{ row }">
-          <template v-if="row.status === 'PENDING'">
-            <el-button type="success" size="small" @click="review(row.id, 'APPROVED')">通过</el-button>
-            <el-button type="danger" size="small" @click="review(row.id, 'REJECTED')">拒绝</el-button>
-          </template>
-          <el-button v-if="row.type === 'ANNOUNCEMENT'" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button type="danger" size="small" plain @click="del(row.id)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <el-pagination v-if="total > pageSize" class="pagination" background layout="prev, pager, next"
-      :total="total" :page-size="pageSize" :current-page="page" @current-change="p => { page = p; load() }" />
-
-    <!-- 发布/编辑公告 -->
     <el-dialog v-model="dialogVisible" :title="editId ? '编辑公告' : '发布公告'" width="700px">
-      <el-form :model="form" label-width="70px">
+      <el-form :model="form" label-width="60px">
         <el-form-item label="标题">
           <el-input v-model="form.title" placeholder="公告标题" />
         </el-form-item>
@@ -93,8 +97,8 @@ const submitting = ref(false)
 const editId = ref('')
 const form = ref({ title: '', summary: '', content: '' })
 
-const statusLabel = (s: string) => ({ PENDING: '待审核', APPROVED: '已发布', REJECTED: '已拒绝' }[s] ?? s)
-const statusType = (s: string) => ({ PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger' }[s] ?? '')
+const statusLabel = (s: string) => ({ PENDING: '待审核', APPROVED: '已发布', REJECTED: '已拒绝' } as any)[s] ?? s
+const statusType  = (s: string) => ({ PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger' } as any)[s] ?? ''
 const fmt = (d: string) => format(new Date(d), 'MM-dd HH:mm')
 
 async function load() {
@@ -113,8 +117,7 @@ async function submit() {
   if (!form.value.title || !form.value.content) return ElMessage.warning('请填写标题和内容')
   submitting.value = true
   try {
-    if (editId.value) await api.updatePost(editId.value, form.value)
-    else await api.createPost(form.value)
+    editId.value ? await api.updatePost(editId.value, form.value) : await api.createPost(form.value)
     ElMessage.success('操作成功')
     dialogVisible.value = false
     load()
@@ -136,9 +139,3 @@ async function del(id: string) {
 
 onMounted(load)
 </script>
-
-<style scoped>
-.page-box { display: flex; flex-direction: column; gap: 16px; }
-.toolbar { display: flex; justify-content: space-between; align-items: center; }
-.pagination { margin-top: 8px; justify-content: flex-end; }
-</style>

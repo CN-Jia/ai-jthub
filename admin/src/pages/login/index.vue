@@ -1,32 +1,69 @@
 <template>
-  <div class="login-page">
-    <div class="login-card">
-      <div class="login-header">
-        <span class="login-logo">⚡</span>
-        <h1 class="login-title">JT-Hub 管理中心</h1>
-        <p class="login-sub">Admin Console</p>
+  <div class="lp">
+    <!-- 背景网格 -->
+    <div class="lp-grid" />
+    <!-- 光晕 -->
+    <div class="glow glow-1" />
+    <div class="glow glow-2" />
+
+    <div class="lp-card">
+      <!-- 顶部扫描线 -->
+      <div class="card-scanline" />
+
+      <div class="lp-header">
+        <JtLogo :size="52" />
+        <div class="lp-brand">
+          <span class="brand-name">JT-Hub</span>
+          <span class="brand-sub">ADMIN CONSOLE</span>
+        </div>
       </div>
 
-      <el-form :model="form" @submit.prevent="handleLogin" class="login-form">
-        <el-form-item>
-          <el-input v-model="form.username" placeholder="管理员账号" size="large" :prefix-icon="User" />
-        </el-form-item>
-        <el-form-item>
-          <el-input v-model="form.password" type="password" placeholder="登录密码" size="large" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
-        </el-form-item>
-        <el-form-item style="margin-bottom:0">
-          <el-button type="primary" size="large" style="width:100%" :loading="loading" @click="handleLogin">
-            登录
-          </el-button>
-        </el-form-item>
+      <div class="lp-divider">
+        <span class="div-line" />
+        <span class="div-text">AUTHORIZED ACCESS ONLY</span>
+        <span class="div-line" />
+      </div>
+
+      <el-form :model="form" @submit.prevent="handleLogin" class="lp-form">
+        <div class="field-wrap">
+          <el-icon class="field-icon"><User /></el-icon>
+          <el-input
+            v-model="form.username"
+            placeholder="管理员账号"
+            size="large"
+            class="sf-input"
+          />
+        </div>
+        <div class="field-wrap">
+          <el-icon class="field-icon"><Lock /></el-icon>
+          <el-input
+            v-model="form.password"
+            type="password"
+            placeholder="登录密码"
+            size="large"
+            show-password
+            class="sf-input"
+            @keyup.enter="handleLogin"
+          />
+        </div>
+        <button class="login-btn" :class="{ loading }" @click.prevent="handleLogin" :disabled="loading">
+          <span v-if="!loading" class="btn-text">
+            <el-icon><Unlock /></el-icon>
+            进入管理后台
+          </span>
+          <span v-else class="btn-text">
+            <span class="spinner" />
+            验证中...
+          </span>
+          <span class="btn-glow" />
+        </button>
       </el-form>
 
-      <p class="login-footer">仅限授权管理员访问</p>
+      <p class="lp-footer">
+        <span class="footer-dot" />
+        系统已加密，仅限授权管理员访问
+      </p>
     </div>
-
-    <!-- 背景装饰 -->
-    <div class="bg-glow" />
-    <div class="bg-glow-2" />
   </div>
 </template>
 
@@ -34,9 +71,10 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Unlock } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
 import { api } from '../../api'
+import JtLogo from '../../components/JtLogo.vue'
 
 const router = useRouter()
 const store = useAdminStore()
@@ -61,9 +99,9 @@ async function handleLogin() {
 </script>
 
 <style scoped>
-.login-page {
+.lp {
   min-height: 100vh;
-  background: #0f172a;
+  background: #030711;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,42 +109,160 @@ async function handleLogin() {
   overflow: hidden;
 }
 
-.bg-glow {
+/* dot-grid background */
+.lp-grid {
   position: absolute;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
-  top: -100px;
-  right: -100px;
-  pointer-events: none;
-}
-.bg-glow-2 {
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
-  bottom: -80px;
-  left: -80px;
+  inset: 0;
+  background-image: radial-gradient(circle at 1.5px 1.5px, rgba(0,212,255,0.06) 1.5px, transparent 0);
+  background-size: 28px 28px;
   pointer-events: none;
 }
 
-.login-card {
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+.glow-1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
+  top: -120px; right: -120px;
+}
+.glow-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(168,85,247,0.07) 0%, transparent 70%);
+  bottom: -80px; left: -80px;
+}
+
+/* Card */
+.lp-card {
   position: relative;
   z-index: 1;
-  width: 400px;
-  background: #1e293b;
-  border: 1px solid #2d3748;
+  width: 420px;
+  background: #080f1e;
+  border: 1px solid rgba(0,212,255,0.18);
   border-radius: 16px;
-  padding: 40px 36px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  padding: 40px 36px 32px;
+  box-shadow: 0 0 60px rgba(0,212,255,0.06), 0 30px 60px rgba(0,0,0,0.7);
+  overflow: hidden;
 }
 
-.login-header { text-align: center; margin-bottom: 32px; }
-.login-logo { font-size: 40px; }
-.login-title { font-size: 22px; font-weight: 700; color: #f1f5f9; margin: 12px 0 4px; }
-.login-sub { font-size: 13px; color: #64748b; letter-spacing: 0.05em; }
+.card-scanline {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+  opacity: 0.7;
+}
 
-.login-form { display: flex; flex-direction: column; gap: 0; }
+/* Header */
+.lp-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.lp-brand { display: flex; flex-direction: column; }
+.brand-name { font-size: 22px; font-weight: 900; color: #e8f0fe; letter-spacing: 0.04em; }
+.brand-sub  { font-size: 10px; font-weight: 700; letter-spacing: 0.25em; color: #00d4ff; opacity: 0.8; margin-top: 2px; }
 
-.login-footer { text-align: center; margin-top: 20px; font-size: 12px; color: #475569; }
+/* Divider */
+.lp-divider {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 24px;
+}
+.div-line { flex: 1; height: 1px; background: rgba(0,212,255,0.12); }
+.div-text  { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; color: #3d5a70; white-space: nowrap; }
+
+/* Form */
+.lp-form { display: flex; flex-direction: column; gap: 12px; }
+.field-wrap { position: relative; }
+.field-icon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: #3d5a70;
+  z-index: 2;
+  pointer-events: none;
+}
+.sf-input :deep(.el-input__wrapper) {
+  padding-left: 36px !important;
+  background: rgba(0,212,255,0.04) !important;
+  box-shadow: 0 0 0 1px rgba(0,212,255,0.14) inset !important;
+  border-radius: 9px !important;
+}
+.sf-input :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px rgba(0,212,255,0.3) inset !important;
+}
+.sf-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #00d4ff inset, 0 0 12px rgba(0,212,255,0.12) !important;
+}
+.sf-input :deep(.el-input__inner) { color: #e8f0fe; }
+
+/* Login button */
+.login-btn {
+  margin-top: 8px;
+  width: 100%;
+  height: 46px;
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.4);
+  border-radius: 10px;
+  color: #00d4ff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+  letter-spacing: 0.04em;
+}
+.login-btn:hover:not(:disabled) {
+  background: rgba(0,212,255,0.18);
+  border-color: #00d4ff;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0,212,255,0.2);
+}
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-text {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; position: relative; z-index: 1;
+}
+.btn-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(0,212,255,0.3);
+  border-top-color: #00d4ff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Footer */
+.lp-footer {
+  display: flex; align-items: center; gap: 6px;
+  justify-content: center;
+  margin-top: 20px;
+  font-size: 11px;
+  color: #3d5a70;
+  letter-spacing: 0.04em;
+}
+.footer-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #10d98a;
+  box-shadow: 0 0 6px #10d98a;
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 </style>
