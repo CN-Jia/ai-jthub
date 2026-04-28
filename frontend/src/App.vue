@@ -35,35 +35,38 @@
             <button class="btn-text hide-sm" @click="handleLogout">退出</button>
           </template>
 
-          <!-- 汉堡菜单 -->
+          <!-- 汉堡菜单按钮 -->
           <button class="hamburger show-sm-only" @click="mobileOpen = !mobileOpen" :class="{ open: mobileOpen }">
             <span /><span /><span />
           </button>
         </div>
       </div>
-
-      <!-- 移动端抽屉菜单 -->
-      <Transition name="slide-down">
-        <div v-if="mobileOpen" class="mobile-menu show-sm-only">
-          <router-link to="/" class="mobile-link" @click="closeMobileMenu">首页</router-link>
-          <router-link to="/activity" class="mobile-link" @click="closeMobileMenu">活动公告</router-link>
-          <router-link to="/forum" class="mobile-link" @click="closeMobileMenu">论坛</router-link>
-          <template v-if="store.isLoggedIn">
-            <router-link to="/submit" class="mobile-link" @click="closeMobileMenu">提交需求</router-link>
-            <router-link to="/my-orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
-            <router-link to="/feedback" class="mobile-link" @click="closeMobileMenu">意见反馈</router-link>
-            <router-link to="/points" class="mobile-link" @click="closeMobileMenu">我的积分</router-link>
-            <router-link to="/invite" class="mobile-link" @click="closeMobileMenu">邀请好友</router-link>
-            <router-link to="/profile" class="mobile-link" @click="closeMobileMenu">个人中心</router-link>
-            <button class="mobile-link mobile-logout" @click="handleLogout">退出登录</button>
-          </template>
-          <template v-else>
-            <router-link to="/login" class="mobile-link" @click="closeMobileMenu">登录</router-link>
-            <router-link to="/register" class="mobile-link mobile-register" @click="closeMobileMenu">注册账号</router-link>
-          </template>
-        </div>
-      </Transition>
     </nav>
+
+    <!-- 移动端菜单遮罩（position:fixed，脱离 nav stacking context） -->
+    <Transition name="fade">
+      <div v-if="mobileOpen" class="mobile-backdrop show-sm-only" @click="closeMobileMenu" />
+    </Transition>
+    <Transition name="slide-down">
+      <div v-if="mobileOpen" class="mobile-drawer show-sm-only">
+        <router-link to="/" class="mobile-link" @click="closeMobileMenu">首页</router-link>
+        <router-link to="/activity" class="mobile-link" @click="closeMobileMenu">活动公告</router-link>
+        <router-link to="/forum" class="mobile-link" @click="closeMobileMenu">论坛</router-link>
+        <template v-if="store.isLoggedIn">
+          <router-link to="/submit" class="mobile-link" @click="closeMobileMenu">提交需求</router-link>
+          <router-link to="/my-orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
+          <router-link to="/feedback" class="mobile-link" @click="closeMobileMenu">意见反馈</router-link>
+          <router-link to="/points" class="mobile-link" @click="closeMobileMenu">我的积分</router-link>
+          <router-link to="/invite" class="mobile-link" @click="closeMobileMenu">邀请好友</router-link>
+          <router-link to="/profile" class="mobile-link" @click="closeMobileMenu">个人中心</router-link>
+          <button class="mobile-link mobile-logout" @click="handleLogout">退出登录</button>
+        </template>
+        <template v-else>
+          <router-link to="/login" class="mobile-link" @click="closeMobileMenu">登录</router-link>
+          <router-link to="/register" class="mobile-link mobile-register" @click="closeMobileMenu">注册账号</router-link>
+        </template>
+      </div>
+    </Transition>
 
     <main class="main-content">
       <router-view />
@@ -189,10 +192,18 @@ function handleLogout() {
 .hamburger.open span:nth-child(2) { opacity: 0; }
 .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
-/* ── 移动端菜单 ── */
-.mobile-menu {
-  background: #fff; border-top: 1px solid var(--border);
+/* ── 移动端菜单（fixed，脱离 nav stacking context） ── */
+.mobile-backdrop {
+  position: fixed; inset: 0; top: var(--nav-h);
+  background: rgba(0,0,0,0.25);
+  z-index: 998;
+}
+.mobile-drawer {
+  position: fixed; top: var(--nav-h); left: 0; right: 0;
+  background: #fff; border-bottom: 1px solid var(--border);
   padding: 8px 0;
+  z-index: 999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
 .mobile-link {
   display: block; padding: 13px 20px;
@@ -202,12 +213,14 @@ function handleLogout() {
   transition: background 0.12s, color 0.12s;
 }
 .mobile-link:last-child { border-bottom: none; }
-.mobile-link:hover { background: var(--primary-light); color: var(--primary); }
+.mobile-link:hover, .mobile-link:active { background: var(--primary-light); color: var(--primary); }
 .mobile-logout { color: var(--danger); }
 .mobile-register { color: var(--primary); font-weight: 700; }
 
 .slide-down-enter-active, .slide-down-leave-active { transition: all 0.2s ease; }
 .slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-8px); }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* ── Footer ── */
 .footer {
