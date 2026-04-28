@@ -9,31 +9,31 @@
 
       <nav class="sidebar-nav">
         <div class="nav-group-label" v-if="!collapsed">概览</div>
-        <router-link v-for="item in menuItems.slice(0,1)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
+        <router-link v-for="item in menuItems.slice(0,2)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
           <el-icon><component :is="item.icon" /></el-icon>
           <span v-if="!collapsed">{{ item.label }}</span>
         </router-link>
 
         <div class="nav-group-label" v-if="!collapsed">业务管理</div>
-        <router-link v-for="item in menuItems.slice(1,4)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
+        <router-link v-for="item in menuItems.slice(2,5)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
           <el-icon><component :is="item.icon" /></el-icon>
           <span v-if="!collapsed">{{ item.label }}</span>
         </router-link>
 
         <div class="nav-group-label" v-if="!collapsed">内容管理</div>
-        <router-link v-for="item in menuItems.slice(4,7)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
+        <router-link v-for="item in menuItems.slice(5,8)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
           <el-icon><component :is="item.icon" /></el-icon>
           <span v-if="!collapsed">{{ item.label }}</span>
         </router-link>
 
         <div class="nav-group-label" v-if="!collapsed">系统</div>
-        <router-link v-for="item in menuItems.slice(7,8)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
+        <router-link v-for="item in menuItems.slice(8,9)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
           <el-icon><component :is="item.icon" /></el-icon>
           <span v-if="!collapsed">{{ item.label }}</span>
         </router-link>
 
         <div class="nav-group-label" v-if="!collapsed">积分系统</div>
-        <router-link v-for="item in menuItems.slice(8)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
+        <router-link v-for="item in menuItems.slice(9)" :key="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item.path) }">
           <el-icon><component :is="item.icon" /></el-icon>
           <span v-if="!collapsed">{{ item.label }}</span>
         </router-link>
@@ -81,6 +81,7 @@ const collapsed = ref(false)
 
 const menuItems = [
   { path: '/', label: '数据概览', icon: 'Odometer' },
+  { path: '/monitor', label: '系统监控', icon: 'Monitor' },
   { path: '/orders', label: '订单管理', icon: 'List' },
   { path: '/order-types', label: '需求类型', icon: 'Grid' },
   { path: '/activities', label: '活动公告', icon: 'Bell' },
@@ -95,6 +96,7 @@ const menuItems = [
 
 const titleMap: Record<string, string> = {
   '/': '数据概览',
+  '/monitor': '系统监控',
   '/orders': '订单管理',
   '/order-types': '需求类型管理',
   '/activities': '活动公告',

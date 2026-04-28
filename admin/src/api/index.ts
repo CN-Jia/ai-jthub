@@ -80,6 +80,10 @@ export const api = {
   getUsers: (params?: Record<string, any>) => http.get('/admin/users', { params }),
   toggleUser: (id: string, isActive: boolean) => http.patch(`/admin/users/${id}`, { isActive }),
 
+  // 系统监控
+  getSystemStatus: () => http.get('/admin/system/status'),
+  getSystemChart: (minutes?: number) => http.get('/admin/system/chart', { params: { minutes } }),
+
   // 积分规则
   getPointRules: () => http.get('/admin/points/rules'),
   updatePointRule: (eventType: string, data: any) => http.put(`/admin/points/rules/${eventType}`, data),

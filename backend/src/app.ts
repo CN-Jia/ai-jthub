@@ -22,6 +22,7 @@ import { adminCarouselRoutes } from './routes/admin/carousel.js'
 import { adminUserRoutes } from './routes/admin/users.js'
 import { pointsRoutes } from './routes/points.js'
 import { adminPointsRoutes } from './routes/admin/points.js'
+import { adminSystemRoutes } from './routes/admin/system.js'
 import { rateLimitQuery } from './middlewares/ratelimit.middleware.js'
 
 export async function buildApp() {
@@ -58,6 +59,7 @@ export async function buildApp() {
   app.register(adminUserRoutes, { prefix: '/api' })
   app.register(pointsRoutes, { prefix: '/api' })
   app.register(adminPointsRoutes, { prefix: '/api' })
+  app.register(adminSystemRoutes, { prefix: '/api' })
 
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error)

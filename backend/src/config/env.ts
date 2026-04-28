@@ -22,6 +22,9 @@ const envSchema = z.object({
   ADMIN_WECHAT_ID: z.string().default('Jt--04'),
 
   APP_BASE_URL: z.string().default('http://localhost:3000'),
+
+  // Prometheus（可选，监控面板用）
+  PROMETHEUS_URL: z.string().default('http://localhost:9090'),
 })
 
 const result = envSchema.safeParse(process.env)
