@@ -151,7 +151,8 @@
     </div>
 
     <!-- 图表区 -->
-    <div class="charts-grid" v-if="chartReady">
+    <div v-if="chartLoading" class="chart-loading">图表加载中…</div>
+    <div class="charts-grid" v-if="chartReady && !chartLoading">
       <div class="chart-card" v-if="status?.promAvailable">
         <div class="chart-title">CPU 使用率趋势 (%)</div>
         <div ref="cpuChartRef" class="chart-canvas" />
@@ -215,6 +216,7 @@ const loading = ref(false)
 const lastUpdate = ref('')
 const timeRange = ref(60)
 const chartReady = ref(false)
+const chartLoading = ref(false)
 
 const cpuChartRef = ref<HTMLElement>()
 const memChartRef = ref<HTMLElement>()
@@ -293,7 +295,16 @@ function buildLineOption(
     xAxis: {
       type: 'time',
       axisLine: { lineStyle: { color: CHART_THEME.grid } },
-      axisLabel: { color: CHART_THEME.text, fontSize: 11 },
+      axisLabel: {
+        color: CHART_THEME.text,
+        fontSize: 11,
+        formatter: (val: number) => {
+          const d = new Date(val)
+          return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+        },
+        maxTicksLimit: 6,
+        hideOverlap: true,
+      },
       splitLine: { show: false },
     },
     yAxis: {
@@ -330,13 +341,17 @@ async function loadStatus() {
 
 async function fetchChartData() {
   if (!status.value) return
+  chartLoading.value = true
   try {
     const res: any = await api.getSystemChart(timeRange.value)
     chartData.value = res.data
     chartReady.value = true
     await nextTick()
     renderCharts()
-  } catch {}
+  } catch {
+  } finally {
+    chartLoading.value = false
+  }
 }
 
 function renderCharts() {
@@ -490,6 +505,8 @@ function onResize() {
 .chart-canvas { height: 180px; }
 
 .info-card { margin-bottom: 16px; }
+.chart-loading { text-align: center; padding: 32px; color: #64748b; font-size: 0.9rem; background: #0f172a; border-radius: 12px; margin-bottom: 20px; }
+
 .install-code {
   background: #0f172a;
   border-radius: 8px;

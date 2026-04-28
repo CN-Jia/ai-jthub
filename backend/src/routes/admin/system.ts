@@ -11,7 +11,7 @@ const PROM = env.PROMETHEUS_URL
 async function promQuery(query: string): Promise<number | null> {
   try {
     const url = `${PROM}/api/v1/query?query=${encodeURIComponent(query)}`
-    const res = await fetch(url, { signal: AbortSignal.timeout(3000) })
+    const res = await fetch(url, { signal: AbortSignal.timeout(2000) })
     if (!res.ok) return null
     const json: any = await res.json()
     const val = json?.data?.result?.[0]?.value?.[1]
@@ -31,9 +31,10 @@ async function promRange(
     const end = Math.floor(Date.now() / 1000)
     const start = end - minutes * 60
     const url = `${PROM}/api/v1/query_range?query=${encodeURIComponent(query)}&start=${start}&end=${end}&step=${step}`
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
+    const res = await fetch(url, { signal: AbortSignal.timeout(3000) })
     if (!res.ok) return []
     const json: any = await res.json()
+    // 取第一个结果（avg 聚合后只有一条）
     const values: Array<[number, string]> = json?.data?.result?.[0]?.values ?? []
     return values.map(([ts, v]) => [ts * 1000, parseFloat(v)])
   } catch {
@@ -93,7 +94,7 @@ export async function adminSystemRoutes(fastify: FastifyInstance) {
       openFiles,
       tcpConns,
     ] = await Promise.all([
-      promQuery('100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)'),
+      promQuery('(1 - avg(rate(node_cpu_seconds_total{mode="idle"}[2m]))) * 100'),
       promQuery('node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes'),
       promQuery('node_memory_MemTotal_bytes'),
       promQuery('node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}'),
@@ -169,7 +170,7 @@ export async function adminSystemRoutes(fastify: FastifyInstance) {
     const step = minutes <= 60 ? 60 : minutes <= 360 ? 300 : 600
 
     const [cpuSeries, memSeries, netRxSeries, netTxSeries] = await Promise.all([
-      promRange('100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)', minutes, step),
+      promRange('(1 - avg(rate(node_cpu_seconds_total{mode="idle"}[2m]))) * 100', minutes, step),
       promRange('(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100', minutes, step),
       promRange('sum(rate(node_network_receive_bytes_total{device!="lo"}[2m]))', minutes, step),
       promRange('sum(rate(node_network_transmit_bytes_total{device!="lo"}[2m]))', minutes, step),
