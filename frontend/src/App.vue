@@ -1,5 +1,8 @@
 <template>
   <div class="app-layout">
+    <!-- 鼠标粒子特效 canvas -->
+    <canvas ref="cursorCvs" class="cursor-canvas" />
+
     <!-- 顶部导航 -->
     <nav class="navbar" :class="{ scrolled: isScrolled, transparent: navTransparent }">
       <div class="nav-inner">
@@ -152,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from './store/user'
 import { api } from './api'
@@ -164,6 +167,7 @@ const route = useRoute()
 const scrollY = ref(0)
 const mobileOpen = ref(false)
 const uptimeStr = ref('')
+const cursorCvs = ref<HTMLCanvasElement | null>(null)
 
 /* ── 主题管理 ── */
 const isDark = ref(false)
@@ -218,15 +222,119 @@ const avatarChar = computed(() => store.nickname ? store.nickname[0].toUpperCase
 function onScroll() { scrollY.value = window.scrollY }
 function closeMobileMenu() { mobileOpen.value = false }
 
+/* ── 鼠标粒子特效 ── */
+interface CursorParticle {
+  x: number; y: number
+  vx: number; vy: number
+  life: number; maxLife: number
+  r: number; hue: number
+}
+
+function initCursorParticles() {
+  const el = cursorCvs.value
+  if (!el) return
+
+  const ctx = el.getContext('2d')!
+  const particles: CursorParticle[] = []
+  let mouse = { x: -999, y: -999 }
+  let rafId = 0
+  let isTouch = false
+
+  function resize() {
+    el.width = window.innerWidth
+    el.height = window.innerHeight
+  }
+  resize()
+  window.addEventListener('resize', resize)
+
+  function onMouseMove(e: MouseEvent) {
+    isTouch = false
+    mouse.x = e.clientX
+    mouse.y = e.clientY
+    // 每次移动喷出 2-3 个粒子
+    const count = Math.random() < 0.5 ? 2 : 3
+    for (let i = 0; i < count; i++) spawnParticle(mouse.x, mouse.y)
+  }
+
+  function spawnParticle(x: number, y: number) {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const angle = Math.random() * Math.PI * 2
+    const speed = Math.random() * 1.5 + 0.5
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed * 0.6,
+      vy: Math.sin(angle) * speed * 0.6 - 0.8,
+      life: 1,
+      maxLife: 1,
+      r: Math.random() * 3 + 1.5,
+      // 亮色模式用蓝紫色，暗色模式用青蓝色
+      hue: dark
+        ? 190 + Math.random() * 60   // 青到蓝 190~250
+        : 210 + Math.random() * 50,  // 蓝到紫 210~260
+    })
+    // 控制粒子总数
+    if (particles.length > 120) particles.splice(0, particles.length - 120)
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, el.width, el.height)
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i]
+      p.life -= 0.035
+      if (p.life <= 0) { particles.splice(i, 1); continue }
+
+      p.x += p.vx
+      p.y += p.vy
+      p.vy += 0.04  // 轻微重力
+      p.vx *= 0.97  // 阻尼
+
+      const alpha = p.life * (dark ? 0.85 : 0.6)
+      const sat = dark ? '90%' : '80%'
+      const lgt = dark ? '70%' : '55%'
+
+      // 外发光
+      const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3)
+      glow.addColorStop(0, `hsla(${p.hue},${sat},${lgt},${alpha})`)
+      glow.addColorStop(1, `hsla(${p.hue},${sat},${lgt},0)`)
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2)
+      ctx.fillStyle = glow
+      ctx.fill()
+
+      // 核心亮点
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2)
+      ctx.fillStyle = `hsla(${p.hue},${sat},${dark ? '92%' : '75%'},${alpha})`
+      ctx.fill()
+    }
+    rafId = requestAnimationFrame(draw)
+  }
+
+  window.addEventListener('mousemove', onMouseMove)
+  draw()
+
+  return () => {
+    window.removeEventListener('mousemove', onMouseMove)
+    window.removeEventListener('resize', resize)
+    cancelAnimationFrame(rafId)
+  }
+}
+
+let cleanupCursor: (() => void) | undefined
+
 onMounted(() => {
   initTheme()
   window.addEventListener('scroll', onScroll, { passive: true })
   fetchUptime()
   uptimeTimer = setInterval(fetchUptime, 60_000)
+  cleanupCursor = initCursorParticles()
 })
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   if (uptimeTimer) clearInterval(uptimeTimer)
+  cleanupCursor?.()
 })
 
 function handleLogout() {
@@ -242,6 +350,14 @@ function handleSubmit() {
 </script>
 
 <style scoped>
+/* ── 鼠标粒子 canvas ── */
+.cursor-canvas {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
 /* ── 布局 ── */
 .app-layout { min-height: 100vh; display: flex; flex-direction: column; }
 .main-content { flex: 1; }
