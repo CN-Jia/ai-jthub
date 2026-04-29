@@ -348,6 +348,9 @@ onUnmounted(() => {
 .hero {
   position: relative;
   min-height: 100vh;
+  /* 向上延伸到导航栏后面，让透明导航生效 */
+  margin-top: calc(-1 * var(--nav-h));
+  padding-top: var(--nav-h);
   background: linear-gradient(135deg, #060d24 0%, #0b1d52 35%, #1354c5 70%, #2563eb 100%);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
