@@ -1,4 +1,4 @@
-﻿import { FastifyInstance } from 'fastify'
+import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { verifyAdmin } from '../../middlewares/auth.middleware.js'
 import { prisma } from '../../lib/prisma.js'
@@ -14,7 +14,6 @@ const productSchema = z.object({
 })
 
 export async function adminProductRoutes(fastify: FastifyInstance) {
-  // ???????????
   fastify.get('/admin/products', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const q = request.query as Record<string, string>
     const page = Number(q.page ?? 1)
@@ -30,7 +29,6 @@ export async function adminProductRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({ list, total }))
   })
 
-  // ????
   fastify.post('/admin/products', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const parse = productSchema.safeParse(request.body)
     if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, parse.error.errors[0].message))
@@ -48,7 +46,6 @@ export async function adminProductRoutes(fastify: FastifyInstance) {
     return reply.code(201).send(successResponse(product))
   })
 
-  // ????
   fastify.put('/admin/products/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const parse = productSchema.partial().safeParse(request.body)
@@ -72,12 +69,11 @@ export async function adminProductRoutes(fastify: FastifyInstance) {
     }
   })
 
-  // ??????????????
   fastify.delete('/admin/products/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const orderCount = await prisma.productOrder.count({ where: { productId: id } })
     if (orderCount > 0) {
-      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, `Has ${orderCount} related orders, please deactivate instead`))
+      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, `???? ${orderCount} ??????????????`))
     }
     try {
       await prisma.product.delete({ where: { id } })
@@ -87,7 +83,6 @@ export async function adminProductRoutes(fastify: FastifyInstance) {
     }
   })
 
-  // ?????
   fastify.patch('/admin/products/:id/toggle', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const existing = await prisma.product.findUnique({ where: { id } })

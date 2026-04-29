@@ -55,6 +55,7 @@ export const api = {
   getPost: (id: string) => http.get(`/posts/${id}`),
   createPost: (data: any) => http.post('/posts', data),
   createComment: (postId: string, content: string) => http.post(`/posts/${postId}/comments`, { content }),
+  deleteMyComment: (postId: string, commentId: string) => http.delete(`/posts/${postId}/comments/${commentId}`),
 
   // 商品与新版订单
   getProducts: () => http.get('/products'),

@@ -40,7 +40,10 @@ export async function postRoutes(fastify: FastifyInstance) {
         comments: {
           where: { isHidden: false },
           orderBy: { createdAt: 'asc' },
-          include: { user: { select: { nickname: true, grade: true } } },
+          select: {
+            id: true, content: true, createdAt: true, userId: true,
+            user: { select: { nickname: true, grade: true } },
+          },
         },
       },
     })
@@ -91,5 +94,18 @@ export async function postRoutes(fastify: FastifyInstance) {
       include: { user: { select: { nickname: true } } },
     })
     return reply.code(201).send(successResponse(comment))
+  })
+
+  // 用户删除自己的评论
+  fastify.delete('/posts/:postId/comments/:commentId', { preHandler: [verifyJWT] }, async (request, reply) => {
+    const { userId } = request.user as { userId: string }
+    const { commentId } = request.params as { postId: string; commentId: string }
+
+    const comment = await prisma.comment.findUnique({ where: { id: commentId } })
+    if (!comment) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '评论不存在'))
+    if (comment.userId !== userId) return reply.code(403).send(errorResponse(ERROR_CODES.FORBIDDEN, '无权删除他人评论'))
+
+    await prisma.comment.delete({ where: { id: commentId } })
+    return reply.send(successResponse({ deleted: true }))
   })
 }

@@ -28,6 +28,12 @@
               <span class="comment-user">{{ c.user?.nickname }}</span>
               <span class="comment-grade">{{ gradeLabel(c.user?.grade) }}</span>
               <span class="comment-time">{{ fmt(c.createdAt) }}</span>
+              <button
+                v-if="store.isLoggedIn && c.userId === store.userInfo?.id"
+                class="comment-del-btn"
+                @click="deleteComment(c.id)"
+                title="删除评论"
+              >删除</button>
             </div>
             <p class="comment-content">{{ c.content }}</p>
           </div>
@@ -68,6 +74,7 @@ const loading = ref(false)
 const commentText = ref('')
 const submitting = ref(false)
 
+
 const gradeLabel = (g?: string) => ({ FRESHMAN: '大一', SOPHOMORE: '大二', JUNIOR: '大三' }[g ?? ''] ?? '')
 
 const fmt = (d: string) => {
@@ -103,6 +110,16 @@ async function submitComment() {
   } catch (err: any) {
     alert(err?.message ?? '评论失败')
   } finally { submitting.value = false }
+}
+
+async function deleteComment(commentId: string) {
+  if (!confirm('确认删除这条评论？')) return
+  try {
+    await api.deleteMyComment(post.value.id, commentId)
+    post.value.comments = post.value.comments.filter((c: any) => c.id !== commentId)
+  } catch (err: any) {
+    alert(err?.message ?? '删除失败')
+  }
 }
 
 onMounted(load)
@@ -146,6 +163,8 @@ onMounted(load)
 .comment-user { font-size: 13px; font-weight: 600; color: var(--text-1); }
 .comment-grade { font-size: 11px; color: var(--primary); background: var(--primary-light); padding: 1px 6px; border-radius: 10px; }
 .comment-time { font-size: 11px; color: var(--text-3); margin-left: auto; }
+.comment-del-btn { font-size: 11px; color: #f56c6c; background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; }
+.comment-del-btn:hover { background: rgba(245,108,108,0.1); }
 .comment-content { font-size: 14px; color: var(--text-2); line-height: 1.6; }
 
 .comment-form { display: flex; flex-direction: column; gap: 10px; }
