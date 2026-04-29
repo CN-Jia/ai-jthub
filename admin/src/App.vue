@@ -72,6 +72,8 @@
           <span class="tb-title">{{ pageTitle }}</span>
         </div>
         <div class="tb-right">
+          <!-- 通知铃铛 -->
+          <NotificationBell />
           <!-- 主题切换按钮 -->
           <button class="theme-btn" @click="toggle" :title="isDark ? '切换到亮色' : '切换到暗色'">
             <el-icon v-if="isDark"><Sunny /></el-icon>
@@ -103,6 +105,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAdminStore } from './store/admin'
 import { useTheme } from './composables/useTheme'
 import JtLogo from './components/JtLogo.vue'
+import NotificationBell from './components/NotificationBell.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -121,10 +124,18 @@ const navGroups = [
     ],
   },
   {
+    label: '商品与订单',
+    items: [
+      { path: '/products',        label: '商品管理',  icon: 'Goods' },
+      { path: '/product-orders',  label: '订单管理',  icon: 'List' },
+      { path: '/promo-coupons',   label: '优惠码',    icon: 'Ticket' },
+      { path: '/payment-config',  label: '收款码配置', icon: 'CreditCard' },
+    ],
+  },
+  {
     label: '业务管理',
     items: [
-      { path: '/orders',      label: '订单管理',  icon: 'List' },
-      { path: '/order-types', label: '需求类型',  icon: 'Grid' },
+      { path: '/orders',      label: '旧版订单',  icon: 'Document' },
       { path: '/activities',  label: '活动公告',  icon: 'Bell' },
     ],
   },
@@ -155,8 +166,11 @@ const navGroups = [
 const titleMap: Record<string, string> = {
   '/': '数据概览',
   '/monitor': '系统监控',
-  '/orders': '订单管理',
-  '/order-types': '需求类型管理',
+  '/products': '商品管理',
+  '/product-orders': '订单管理',
+  '/promo-coupons': '优惠码管理',
+  '/payment-config': '收款码配置',
+  '/orders': '旧版订单管理',
   '/activities': '活动公告',
   '/posts': '论坛管理',
   '/carousel': '作品轮播',

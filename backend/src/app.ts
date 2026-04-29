@@ -24,6 +24,14 @@ import { adminUserRoutes } from './routes/admin/users.js'
 import { pointsRoutes } from './routes/points.js'
 import { adminPointsRoutes } from './routes/admin/points.js'
 import { adminSystemRoutes } from './routes/admin/system.js'
+import { productRoutes } from './routes/products.js'
+import { productOrderRoutes } from './routes/productOrders.js'
+import { promoCouponRoutes } from './routes/promoCoupons.js'
+import { adminNotificationRoutes } from './routes/adminNotifications.js'
+import { adminProductRoutes } from './routes/admin/products.js'
+import { adminProductOrderRoutes } from './routes/admin/productOrders.js'
+import { adminPromoCouponRoutes } from './routes/admin/promoCoupons.js'
+import { adminPaymentConfigRoutes } from './routes/admin/paymentConfig.js'
 import { rateLimitQuery } from './middlewares/ratelimit.middleware.js'
 
 export async function buildApp() {
@@ -65,6 +73,14 @@ export async function buildApp() {
   app.register(pointsRoutes, { prefix: '/api' })
   app.register(adminPointsRoutes, { prefix: '/api' })
   app.register(adminSystemRoutes, { prefix: '/api' })
+  app.register(productRoutes, { prefix: '/api' })
+  app.register(productOrderRoutes, { prefix: '/api' })
+  app.register(promoCouponRoutes, { prefix: '/api' })
+  app.register(adminNotificationRoutes, { prefix: '/api' })
+  app.register(adminProductRoutes, { prefix: '/api' })
+  app.register(adminProductOrderRoutes, { prefix: '/api' })
+  app.register(adminPromoCouponRoutes, { prefix: '/api' })
+  app.register(adminPaymentConfigRoutes, { prefix: '/api' })
 
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error)

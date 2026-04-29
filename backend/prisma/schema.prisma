@@ -40,6 +40,7 @@ model User {
   pointLogs     PointLog[]
   redeemOrders  RedeemOrder[]
   coupons       Coupon[]
+  productOrders ProductOrder[]
 
   @@index([email])
   @@index([username])
@@ -421,4 +422,110 @@ enum NotifyStatus {
   SUCCESS
   FAILED
   SKIPPED
+}
+
+// ==================== 商品 ====================
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  imageUrl    String?
+  price       Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  productOrders ProductOrder[]
+
+  @@map("products")
+}
+
+// ==================== 商品订单 ====================
+enum ProductOrderStatus {
+  CREATED
+  PAID
+  COMPLETED
+  CANCELLED
+}
+
+model ProductOrder {
+  id             String             @id @default(cuid())
+  orderNo        String             @unique
+  userId         String
+  user           User               @relation(fields: [userId], references: [id])
+  productId      String
+  product        Product            @relation(fields: [productId], references: [id])
+  couponId       String?
+  coupon         PromoCoupon?       @relation(fields: [couponId], references: [id])
+  originalPrice  Decimal            @db.Decimal(10, 2)
+  discountAmount Decimal            @db.Decimal(10, 2) @default(0)
+  paidPrice      Decimal            @db.Decimal(10, 2)
+  status         ProductOrderStatus @default(CREATED)
+  cancelReason   String?
+  userNote       String?            @db.Text
+  paidAt         DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  adminNotifications AdminNotification[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("product_orders")
+}
+
+// ==================== 促销优惠码 ====================
+enum DiscountType {
+  FIXED
+  PERCENTAGE
+}
+
+model PromoCoupon {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Decimal      @db.Decimal(10, 2)
+  validFrom     DateTime
+  validTo       DateTime
+  maxUses       Int          @default(1)
+  usedCount     Int          @default(0)
+  version       Int          @default(0)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+
+  productOrders ProductOrder[]
+
+  @@map("promo_coupons")
+}
+
+// ==================== 收款码配置 ====================
+model PaymentConfig {
+  id        String   @id @default("singleton")
+  wechatUrl String?
+  alipayUrl String?
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_config")
+}
+
+// ==================== 管理员站内通知 ====================
+enum AdminNotifyType {
+  ORDER_PAID
+  ORDER_CANCELLED
+}
+
+model AdminNotification {
+  id        String          @id @default(cuid())
+  type      AdminNotifyType
+  summary   String
+  orderId   String?
+  order     ProductOrder?   @relation(fields: [orderId], references: [id])
+  isRead    Boolean         @default(false)
+  createdAt DateTime        @default(now())
+
+  @@index([isRead, createdAt])
+  @@map("admin_notifications")
 }

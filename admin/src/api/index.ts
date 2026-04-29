@@ -103,4 +103,34 @@ export const api = {
   getRedeemOrders: (params?: Record<string, any>) => http.get('/admin/redeem/orders', { params }),
   approveRedeem: (id: string, note?: string) => http.post(`/admin/redeem/orders/${id}/approve`, { note }),
   rejectRedeem: (id: string, note: string) => http.post(`/admin/redeem/orders/${id}/reject`, { note }),
+
+  // 商品管理
+  getProducts: (params?: Record<string, any>) => http.get('/admin/products', { params }),
+  createProduct: (data: any) => http.post('/admin/products', data),
+  updateProduct: (id: string, data: any) => http.put(`/admin/products/${id}`, data),
+  deleteProduct: (id: string) => http.delete(`/admin/products/${id}`),
+  toggleProduct: (id: string) => http.patch(`/admin/products/${id}/toggle`),
+
+  // 商品订单管理
+  getProductOrders: (params?: Record<string, any>) => http.get('/admin/product-orders', { params }),
+  getProductOrderStats: () => http.get('/admin/product-orders/stats'),
+  getProductOrder: (id: string) => http.get(`/admin/product-orders/${id}`),
+  completeProductOrder: (id: string) => http.put(`/admin/product-orders/${id}/complete`),
+  cancelProductOrder: (id: string, reason?: string) => http.put(`/admin/product-orders/${id}/cancel`, { reason }),
+
+  // 优惠码管理
+  getPromoCoupons: (params?: Record<string, any>) => http.get('/admin/promo-coupons', { params }),
+  createPromoCoupon: (data: any) => http.post('/admin/promo-coupons', data),
+  deletePromoCoupon: (id: string) => http.delete(`/admin/promo-coupons/${id}`),
+  deactivatePromoCoupon: (id: string) => http.patch(`/admin/promo-coupons/${id}/deactivate`),
+  activatePromoCoupon: (id: string) => http.patch(`/admin/promo-coupons/${id}/activate`),
+
+  // 收款码配置
+  getPaymentConfig: () => http.get('/admin/payment-config'),
+  updatePaymentConfig: (data: any) => http.put('/admin/payment-config', data),
+
+  // 站内通知
+  getNotifications: (params?: Record<string, any>) => http.get('/admin/notifications', { params }),
+  markNotificationRead: (id: string) => http.put(`/admin/notifications/${id}/read`),
+  markAllNotificationsRead: () => http.put('/admin/notifications/read-all'),
 }

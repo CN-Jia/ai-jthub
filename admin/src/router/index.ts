@@ -6,6 +6,10 @@ const router = createRouter({
   routes: [
     { path: '/login', component: () => import('../pages/login/index.vue') },
     { path: '/', component: () => import('../pages/dashboard/index.vue'), meta: { requiresAuth: true } },
+    { path: '/products', component: () => import('../pages/products/index.vue'), meta: { requiresAuth: true } },
+    { path: '/product-orders', component: () => import('../pages/product-orders/index.vue'), meta: { requiresAuth: true } },
+    { path: '/promo-coupons', component: () => import('../pages/promo-coupons/index.vue'), meta: { requiresAuth: true } },
+    { path: '/payment-config', component: () => import('../pages/payment-config/index.vue'), meta: { requiresAuth: true } },
     { path: '/orders', component: () => import('../pages/orders/index.vue'), meta: { requiresAuth: true } },
     { path: '/orders/:id', component: () => import('../pages/order-detail/index.vue'), meta: { requiresAuth: true } },
     { path: '/order-types', component: () => import('../pages/order-types/index.vue'), meta: { requiresAuth: true } },

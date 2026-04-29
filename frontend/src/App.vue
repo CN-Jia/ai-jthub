@@ -14,9 +14,8 @@
           <router-link to="/activity" class="nav-link" active-class="active">活动公告</router-link>
           <router-link to="/forum" class="nav-link" active-class="active">论坛</router-link>
           <template v-if="store.isLoggedIn">
-            <router-link to="/submit" class="nav-link" active-class="active">提交需求</router-link>
-            <router-link to="/my-orders" class="nav-link" active-class="active">我的订单</router-link>
-            <router-link to="/feedback" class="nav-link" active-class="active">意见反馈</router-link>
+            <router-link to="/products" class="nav-link" active-class="active">立即选购</router-link>
+            <router-link to="/orders" class="nav-link" active-class="active">我的订单</router-link>
             <router-link to="/points" class="nav-link" active-class="active">我的积分</router-link>
             <router-link to="/invite" class="nav-link" active-class="active">邀请好友</router-link>
           </template>
@@ -59,9 +58,8 @@
         <router-link to="/activity" class="mobile-link" @click="closeMobileMenu">活动公告</router-link>
         <router-link to="/forum" class="mobile-link" @click="closeMobileMenu">论坛</router-link>
         <template v-if="store.isLoggedIn">
-          <router-link to="/submit" class="mobile-link" @click="closeMobileMenu">提交需求</router-link>
-          <router-link to="/my-orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
-          <router-link to="/feedback" class="mobile-link" @click="closeMobileMenu">意见反馈</router-link>
+          <router-link to="/products" class="mobile-link" @click="closeMobileMenu">立即选购</router-link>
+          <router-link to="/orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
           <router-link to="/points" class="mobile-link" @click="closeMobileMenu">我的积分</router-link>
           <router-link to="/invite" class="mobile-link" @click="closeMobileMenu">邀请好友</router-link>
           <router-link to="/profile" class="mobile-link" @click="closeMobileMenu">个人中心</router-link>
@@ -98,7 +96,7 @@
       </div>
 
       <template v-if="store.isLoggedIn">
-        <router-link to="/my-orders" class="bn-item" active-class="bn-active">
+        <router-link to="/orders" class="bn-item" active-class="bn-active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           <span>订单</span>
         </router-link>
@@ -191,7 +189,7 @@ function handleLogout() {
 
 function handleSubmit() {
   closeMobileMenu()
-  store.isLoggedIn ? router.push('/submit') : router.push('/login')
+  store.isLoggedIn ? router.push('/products') : router.push('/login')
 }
 </script>
 

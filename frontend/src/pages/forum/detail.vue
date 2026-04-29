@@ -58,6 +58,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '../../store/user'
 import { api } from '../../api'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 const route = useRoute()
 const store = useUserStore()
@@ -77,14 +79,10 @@ const fmtFull = (d: string) => {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`
 }
 
-// 简单 markdown 渲染（换行 + 粗体 + 代码块）
 const renderedContent = computed(() => {
   if (!post.value?.content) return ''
-  return post.value.content
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br/>')
+  const raw = marked.parse(post.value.content, { async: false }) as string
+  return DOMPurify.sanitize(raw)
 })
 
 async function load() {
@@ -120,7 +118,23 @@ onMounted(load)
 .post-title { font-size: 22px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; line-height: 1.4; }
 .post-author { font-size: 13px; color: var(--text-3); }
 .post-content { font-size: 15px; line-height: 1.8; color: var(--text-2); }
-.post-content code { background: #f5f7fa; padding: 2px 6px; border-radius: 4px; font-family: monospace; color: var(--primary); }
+.post-content :deep(h1), .post-content :deep(h2), .post-content :deep(h3) { font-weight: 700; color: var(--text-1); margin: 16px 0 8px; }
+.post-content :deep(h1) { font-size: 22px; }
+.post-content :deep(h2) { font-size: 18px; }
+.post-content :deep(h3) { font-size: 16px; }
+.post-content :deep(p) { margin: 8px 0; }
+.post-content :deep(code) { background: #f5f7fa; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: var(--primary); }
+.post-content :deep(pre) { background: #1e1e2e; padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+.post-content :deep(pre code) { background: none; color: #cdd6f4; font-size: 13px; }
+.post-content :deep(blockquote) { border-left: 3px solid var(--primary); padding: 4px 12px; margin: 8px 0; color: var(--text-3); background: var(--bg); border-radius: 0 6px 6px 0; }
+.post-content :deep(ul), .post-content :deep(ol) { padding-left: 22px; margin: 6px 0; }
+.post-content :deep(li) { margin: 3px 0; }
+.post-content :deep(img) { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+.post-content :deep(a) { color: var(--primary); text-decoration: underline; }
+.post-content :deep(hr) { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.post-content :deep(table) { border-collapse: collapse; width: 100%; margin: 8px 0; }
+.post-content :deep(th), .post-content :deep(td) { border: 1px solid var(--border); padding: 6px 12px; font-size: 13px; }
+.post-content :deep(th) { background: var(--bg); font-weight: 600; }
 
 .comments-section { display: flex; flex-direction: column; gap: 16px; }
 .comments-title { font-size: 16px; font-weight: 700; color: var(--text-1); display: flex; align-items: center; gap: 8px; }

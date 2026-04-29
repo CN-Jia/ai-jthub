@@ -39,6 +39,14 @@
       </router-link>
     </div>
 
+    <!-- 广告板块（预留） -->
+    <div class="ad-banner">
+      <div class="ad-inner">
+        <span class="ad-label">广告</span>
+        <span class="ad-text">广告位招租 · 欢迎合作</span>
+      </div>
+    </div>
+
     <!-- 分页 -->
     <div v-if="total > pageSize" class="pagination">
       <button class="page-btn" :disabled="page <= 1" @click="changePage(page - 1)">上一页</button>
@@ -132,4 +140,19 @@ onMounted(load)
 .page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .page-info { font-size: 14px; color: var(--text-3); }
+
+.ad-banner {
+  margin: 20px 0 4px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: 14px 20px;
+}
+.ad-inner { display: flex; align-items: center; gap: 10px; }
+.ad-label {
+  font-size: 11px; font-weight: 700; color: var(--text-3);
+  border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
+  letter-spacing: 1px;
+}
+.ad-text { font-size: 13px; color: var(--text-3); }
 </style>

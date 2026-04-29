@@ -10,6 +10,14 @@ http.interceptors.request.use((config) => {
   return config
 })
 
+const FRIENDLY_ERRORS: Record<string, string> = {
+  COUPON_INVALID: '优惠码无效',
+  COUPON_EXPIRED: '优惠码已过期',
+  COUPON_USED_UP: '优惠码已使用完毕',
+  ORDER_STATUS_INVALID: '订单状态不允许此操作',
+  PRODUCT_NOT_FOUND: '商品不存在或已下架',
+}
+
 http.interceptors.response.use(
   (res) => res.data,
   (err) => {
@@ -17,7 +25,11 @@ http.interceptors.response.use(
       useUserStore().logout()
       router.push('/login')
     }
-    return Promise.reject(err.response?.data?.error ?? err)
+    const apiError = err.response?.data?.error
+    if (apiError?.code && FRIENDLY_ERRORS[apiError.code]) {
+      return Promise.reject({ ...apiError, message: FRIENDLY_ERRORS[apiError.code] })
+    }
+    return Promise.reject(apiError ?? err)
   }
 )
 
@@ -38,21 +50,22 @@ export const api = {
   getActivities: () => http.get('/activities'),
   getCarousel: () => http.get('/carousel'),
 
-  // 订单
-  createOrder: (data: any) => http.post('/orders', data),
-  getMyOrders: (params?: any) => http.get('/orders/my', { params }),
-  getOrder: (id: string) => http.get(`/orders/${id}`),
-
   // 论坛
   getPosts: (params?: any) => http.get('/posts', { params }),
   getPost: (id: string) => http.get(`/posts/${id}`),
   createPost: (data: any) => http.post('/posts', data),
   createComment: (postId: string, content: string) => http.post(`/posts/${postId}/comments`, { content }),
 
-  // 反馈
-  submitFeedback: (data: any) => http.post('/feedback', data),
-  getMyFeedbacks: (params?: any) => http.get('/feedback/my', { params }),
-  getFeedbackDetail: (id: string) => http.get(`/feedback/${id}`),
+  // 商品与新版订单
+  getProducts: () => http.get('/products'),
+  getProduct: (id: string) => http.get(`/products/${id}`),
+  getPaymentConfig: () => http.get('/payment-config'),
+  createProductOrder: (data: any) => http.post('/product-orders', data),
+  getMyProductOrders: (params?: any) => http.get('/product-orders/my', { params }),
+  getProductOrder: (id: string) => http.get(`/product-orders/${id}`),
+  payProductOrder: (id: string) => http.post(`/product-orders/${id}/pay`),
+  cancelProductOrder: (id: string) => http.post(`/product-orders/${id}/cancel`),
+  validateCoupon: (code: string, productId: string) => http.post('/promo-coupons/validate', { code, productId }),
 
   // 积分/邀请
   getInviteInfo: () => http.get('/points/invite'),
