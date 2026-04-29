@@ -97,8 +97,8 @@
       </div>
     </section>
 
-    <!-- ══════════ 主体内容 ══════════ -->
-    <div class="page-body">
+    <!-- ══════════ 主体内容（PC only） ══════════ -->
+    <div class="page-body hide-on-mobile">
       <!-- 最新动态 -->
       <section class="section reveal" v-if="activities.length || loadingActivities">
         <div class="section-head">
@@ -239,7 +239,8 @@ function initCanvas() {
   }
 
   resize()
-  for (let i = 0; i < 90; i++) particles.push(spawn())
+  const count = W < 640 ? 40 : 90
+  for (let i = 0; i < count; i++) particles.push(spawn())
   window.addEventListener('resize', resize)
 
   function draw() {
@@ -650,12 +651,46 @@ onUnmounted(() => {
 }
 .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.28); }
 
-/* Responsive */
+/* ═══ PC only 区块 ═══ */
 @media (max-width: 640px) {
-  .hero-title { font-size: 40px; }
-  .hero-stats { gap: 16px; }
-  .stat-num { font-size: 24px; }
-  .stat-line { height: 28px; }
-  .page-body { padding: 40px 16px 60px; }
+  .hide-on-mobile { display: none !important; }
+}
+
+/* ═══ H5 响应式 ═══ */
+@media (max-width: 640px) {
+  /* Hero */
+  .hero-inner { padding: 40px 20px 80px; }
+  .hero-title { font-size: 42px; letter-spacing: -0.5px; }
+  .hero-sub { font-size: 15px; margin-bottom: 32px; }
+  .hero-actions { gap: 10px; margin-bottom: 44px; }
+  .btn-hero-primary { padding: 13px 28px; font-size: 15px; }
+  .btn-hero-ghost { padding: 12px 22px; font-size: 14px; }
+  .hero-stats { gap: 12px; }
+  .stat-num { font-size: 26px; }
+  .stat-num em { font-size: 13px; }
+  .stat-label { font-size: 11px; }
+  .stat-line { height: 30px; }
+  .scroll-hint { display: none; }
+
+  /* Features */
+  .features-section { padding: 56px 0; }
+  .features-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .feat-card { padding: 20px 16px; }
+  .feat-icon { font-size: 28px; }
+  .feat-title { font-size: 14px; }
+  .feat-desc { font-size: 12px; }
+  .sec-title { font-size: 20px; }
+
+  /* Showcase */
+  .showcase-section { padding: 48px 0; }
+  .carousel-slide { width: 220px; }
+  .slide-img { height: 130px; }
+}
+
+@media (max-width: 400px) {
+  .hero-title { font-size: 34px; }
+  .hero-stats { gap: 8px; }
+  .stat-line { height: 24px; }
+  .features-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
 }
 </style>
