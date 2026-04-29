@@ -1,3 +1,6 @@
+/* ═══════════════════════════════════
+   Light Theme (默认)
+   ═══════════════════════════════════ */
 :root {
   --primary: #1677ff;
   --primary-dark: #0958d9;
@@ -17,6 +20,36 @@
   --shadow: 0 4px 12px rgba(0,0,0,0.08);
   --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
   --nav-h: 64px;
+  /* Navbar specific */
+  --navbar-bg: rgba(255,255,255,0.92);
+  --navbar-border: rgba(229,231,235,0.8);
+  --navbar-shadow: 0 1px 20px rgba(0,0,0,0.06);
+}
+
+/* ═══════════════════════════════════
+   Dark Theme
+   ═══════════════════════════════════ */
+[data-theme="dark"] {
+  --primary: #3b9eff;
+  --primary-dark: #1677ff;
+  --primary-light: rgba(59,158,255,0.12);
+  --success: #52c41a;
+  --warning: #fa8c16;
+  --danger: #ff6b6b;
+  --text-1: #e6edf3;
+  --text-2: #8b949e;
+  --text-3: #6e7681;
+  --border: #30363d;
+  --bg: #0d1117;
+  --white: #161b22;
+  --card-bg: #161b22;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.6);
+  /* Navbar specific */
+  --navbar-bg: rgba(22,27,34,0.92);
+  --navbar-border: rgba(48,54,61,0.9);
+  --navbar-shadow: 0 1px 20px rgba(0,0,0,0.3);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -30,6 +63,17 @@ body {
   color: var(--text-1);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.25s, color 0.25s;
+}
+
+/* 暗色模式全局点阵背景 —— 制造与首页粒子一致的星空氛围 */
+[data-theme="dark"] body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(rgba(59,158,255,0.06) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px, 80px 80px;
+  background-position: 0 0, 20px 20px;
 }
 
 button { cursor: pointer; font-family: inherit; }
@@ -44,6 +88,7 @@ input, textarea, select { font-family: inherit; }
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   padding: 20px;
+  transition: background 0.25s, border-color 0.25s;
 }
 
 /* ── 按钮 ── */
@@ -64,6 +109,7 @@ input, textarea, select { font-family: inherit; }
 }
 .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
 .btn-danger { background: var(--danger); color: #fff; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── 表单控件 ── */
 .form-group { display: flex; flex-direction: column; gap: 6px; }
@@ -72,8 +118,9 @@ input, textarea, select { font-family: inherit; }
   width: 100%; padding: 11px 14px;
   border: 1.5px solid var(--border); border-radius: 8px;
   font-size: 15px; outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.25s;
   background: var(--white);
+  color: var(--text-1);
 }
 .form-input:focus {
   border-color: var(--primary);
@@ -96,6 +143,12 @@ input, textarea, select { font-family: inherit; }
 .badge-gray { background: #f5f5f5; color: #999; }
 .badge-red { background: #fff1f0; color: #ff4d4f; }
 
+[data-theme="dark"] .badge-blue { background: rgba(22,119,255,0.15); color: #3b9eff; }
+[data-theme="dark"] .badge-green { background: rgba(82,196,26,0.15); color: #73d13d; }
+[data-theme="dark"] .badge-orange { background: rgba(250,140,22,0.15); color: #ffa940; }
+[data-theme="dark"] .badge-gray { background: rgba(255,255,255,0.08); color: #8b949e; }
+[data-theme="dark"] .badge-red { background: rgba(255,77,79,0.15); color: #ff7875; }
+
 /* ── 状态标签 ── */
 .status-tag {
   display: inline-flex; align-items: center; gap: 4px;
@@ -107,6 +160,18 @@ input, textarea, select { font-family: inherit; }
 .status-IN_PROGRESS { background: #e6fffb; color: #13c2c2; }
 .status-COMPLETED { background: #f6ffed; color: #52c41a; }
 .status-CLOSED { background: #f5f5f5; color: #999; }
+.status-CREATED { background: #e6f4ff; color: #1677ff; }
+.status-PAID { background: #fff7e6; color: #fa8c16; }
+.status-CANCELLED { background: #fff1f0; color: #ff4d4f; }
+
+[data-theme="dark"] .status-PENDING { background: rgba(250,140,22,0.15); color: #ffa940; }
+[data-theme="dark"] .status-ACCEPTED { background: rgba(22,119,255,0.15); color: #3b9eff; }
+[data-theme="dark"] .status-IN_PROGRESS { background: rgba(19,194,194,0.15); color: #36cfc9; }
+[data-theme="dark"] .status-COMPLETED { background: rgba(82,196,26,0.15); color: #73d13d; }
+[data-theme="dark"] .status-CLOSED { background: rgba(255,255,255,0.08); color: #8b949e; }
+[data-theme="dark"] .status-CREATED { background: rgba(22,119,255,0.15); color: #3b9eff; }
+[data-theme="dark"] .status-PAID { background: rgba(250,140,22,0.15); color: #ffa940; }
+[data-theme="dark"] .status-CANCELLED { background: rgba(255,77,79,0.15); color: #ff7875; }
 
 /* ── 分割线 ── */
 .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
