@@ -22,6 +22,12 @@
           </template>
         </div>
 
+        <!-- 运行时长 -->
+        <div class="nav-uptime hide-sm" v-if="uptimeStr">
+          <span class="uptime-dot" />
+          <span>运行 {{ uptimeStr }}</span>
+        </div>
+
         <div class="nav-right">
           <template v-if="!store.isLoggedIn">
             <router-link to="/login" class="nav-login hide-sm">登录</router-link>
@@ -129,6 +135,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from './store/user'
+import { api } from './api'
 import JtLogo from './components/JtLogo.vue'
 
 const store = useUserStore()
@@ -136,6 +143,26 @@ const router = useRouter()
 const route = useRoute()
 const scrollY = ref(0)
 const mobileOpen = ref(false)
+const uptimeStr = ref('')
+
+function formatUptime(seconds: number): string {
+  const d = Math.floor(seconds / 86400)
+  const h = Math.floor((seconds % 86400) / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (d > 0) return `${d}天${h}时`
+  if (h > 0) return `${h}时${m}分`
+  return `${m}分`
+}
+
+async function fetchUptime() {
+  try {
+    const res: any = await api.getHealth()
+    const secs = res?.uptime ?? res?.data?.uptime
+    if (secs != null) uptimeStr.value = formatUptime(secs)
+  } catch {}
+}
+
+let uptimeTimer: ReturnType<typeof setInterval> | null = null
 
 const isScrolled = computed(() => scrollY.value > 20)
 const isAtTop = computed(() => scrollY.value < 10)
@@ -146,8 +173,15 @@ const avatarChar = computed(() => store.nickname ? store.nickname[0].toUpperCase
 
 function onScroll() { scrollY.value = window.scrollY }
 function closeMobileMenu() { mobileOpen.value = false }
-onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
-onUnmounted(() => window.removeEventListener('scroll', onScroll))
+onMounted(() => {
+  window.addEventListener('scroll', onScroll, { passive: true })
+  fetchUptime()
+  uptimeTimer = setInterval(fetchUptime, 60_000)
+})
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+  if (uptimeTimer) clearInterval(uptimeTimer)
+})
 
 function handleLogout() {
   store.logout()
@@ -229,6 +263,31 @@ function handleSubmit() {
 .navbar.transparent .nav-link:hover { color: #fff; }
 .navbar.transparent .nav-link.active { color: #fff; }
 .navbar.transparent .nav-link::after { background: #fff; }
+
+.nav-uptime {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--text-3); white-space: nowrap;
+  padding: 4px 10px; border-radius: 100px;
+  background: #f0f9f0; border: 1px solid #d1fae5;
+  transition: opacity 0.3s;
+}
+.navbar.transparent .nav-uptime {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.75);
+}
+.uptime-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16,185,129,0.25);
+  animation: uptimePulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.navbar.transparent .uptime-dot { background: #34d399; box-shadow: 0 0 0 2px rgba(52,211,153,0.25); }
+@keyframes uptimePulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(16,185,129,0.25); }
+  50% { box-shadow: 0 0 0 4px rgba(16,185,129,0.1); }
+}
 
 .nav-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 

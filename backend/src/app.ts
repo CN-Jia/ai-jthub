@@ -35,7 +35,11 @@ export async function buildApp() {
   await app.register(corsPlugin)
   await app.register(jwtPlugin)
 
-  app.get('/health', async () => ({ ok: true, timestamp: new Date().toISOString() }))
+  app.get('/health', async () => ({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+  }))
 
   // 限流：提交订单
   app.addHook('preHandler', async (request, reply) => {

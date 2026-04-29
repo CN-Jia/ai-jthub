@@ -30,6 +30,9 @@ export const api = {
   updateProfile: (data: any) => http.put('/auth/profile', data),
   changePassword: (oldPassword: string, newPassword: string) => http.put('/auth/password', { oldPassword, newPassword }),
 
+  // 健康/运行时长
+  getHealth: () => http.get('/health', { baseURL: '' }),
+
   // 公开数据
   getOrderTypes: () => http.get('/order-types'),
   getActivities: () => http.get('/activities'),
