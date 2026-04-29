@@ -117,11 +117,9 @@
       <div class="footer-inner">
         <div class="footer-logo"><JtLogo :size="22" style="display:inline-block;vertical-align:middle;margin-right:6px"/> JT-Hub</div>
         <div class="footer-info">
-          <span>联系管理员微信：<strong>Jt--04</strong></span>
-          <span class="footer-sep">·</span>
-          <span>专业学业辅助平台</span>
+          <span>商务合作微信：<strong>Jt--04</strong>（备注来意）</span>
         </div>
-        <div class="footer-copy">© 2024 JT-Hub. All rights reserved.</div>
+        <div class="footer-copy">© 2026 JT-Hub. All rights reserved.</div>
       </div>
     </footer>
   </div>
