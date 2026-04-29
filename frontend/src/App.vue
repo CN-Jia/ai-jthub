@@ -1,10 +1,10 @@
 <template>
   <div class="app-layout">
     <!-- 顶部导航 -->
-    <nav class="navbar" :class="{ scrolled: isScrolled }">
+    <nav class="navbar" :class="{ scrolled: isScrolled, transparent: navTransparent }">
       <div class="nav-inner">
         <router-link to="/" class="nav-logo" @click="closeMobileMenu">
-          <JtLogo :size="30" />
+          <JtLogo :size="28" />
           <span class="logo-text">JT-Hub</span>
         </router-link>
 
@@ -24,15 +24,15 @@
 
         <div class="nav-right">
           <template v-if="!store.isLoggedIn">
-            <router-link to="/login" class="btn-text hide-sm">登录</router-link>
-            <router-link to="/register" class="btn-primary-sm">注册</router-link>
+            <router-link to="/login" class="nav-login hide-sm">登录</router-link>
+            <router-link to="/register" class="nav-register hide-sm">免费注册</router-link>
           </template>
           <template v-else>
             <router-link to="/profile" class="nav-user hide-sm">
               <span class="user-avatar">{{ avatarChar }}</span>
-              <span>{{ store.nickname }}</span>
+              <span class="user-name">{{ store.nickname }}</span>
             </router-link>
-            <button class="btn-text hide-sm" @click="handleLogout">退出</button>
+            <button class="nav-logout hide-sm" @click="handleLogout">退出</button>
           </template>
 
           <!-- 汉堡菜单按钮 -->
@@ -88,20 +88,26 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from './store/user'
 import JtLogo from './components/JtLogo.vue'
 
 const store = useUserStore()
 const router = useRouter()
-const isScrolled = ref(false)
+const route = useRoute()
+const scrollY = ref(0)
 const mobileOpen = ref(false)
 
-const avatarChar = computed(() => store.nickname ? store.nickname[0] : 'U')
+const isScrolled = computed(() => scrollY.value > 20)
+const isAtTop = computed(() => scrollY.value < 10)
+const isHome = computed(() => route.path === '/')
+const navTransparent = computed(() => isHome.value && isAtTop.value)
 
-function onScroll() { isScrolled.value = window.scrollY > 10 }
+const avatarChar = computed(() => store.nickname ? store.nickname[0].toUpperCase() : 'U')
+
+function onScroll() { scrollY.value = window.scrollY }
 function closeMobileMenu() { mobileOpen.value = false }
-onMounted(() => window.addEventListener('scroll', onScroll))
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 function handleLogout() {
@@ -119,64 +125,108 @@ function handleLogout() {
 /* ── 导航 ── */
 .navbar {
   position: sticky; top: 0; z-index: 200;
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-bottom: 1px solid rgba(229,231,235,0.8);
+  transition: background 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.navbar.transparent {
+  background: transparent;
+  border-bottom-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .navbar.scrolled {
-  border-bottom-color: var(--border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 20px rgba(0,0,0,0.06);
 }
 .nav-inner {
   max-width: 1200px; margin: 0 auto;
-  padding: 0 20px; height: var(--nav-h);
+  padding: 0 24px; height: 64px;
   display: flex; align-items: center; justify-content: space-between;
   gap: 16px;
 }
 .nav-logo {
-  display: flex; align-items: center; gap: 8px;
-  font-weight: 800; font-size: 18px; color: var(--primary);
+  display: flex; align-items: center; gap: 9px;
+  font-weight: 800; font-size: 17px; color: var(--primary);
   white-space: nowrap; flex-shrink: 0;
+  letter-spacing: -0.3px;
+  transition: opacity 0.15s;
 }
-.logo-icon { font-size: 16px; }
+.navbar.transparent .nav-logo { color: #fff; }
+.nav-logo:hover { opacity: 0.85; }
+.logo-text { background: linear-gradient(135deg, var(--primary), #4096ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.navbar.transparent .logo-text { background: none; -webkit-text-fill-color: #fff; }
 
-.nav-center { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-center { display: flex; align-items: center; gap: 0; flex: 1; padding-left: 8px; }
 .nav-link {
-  padding: 6px 12px; border-radius: 8px;
+  position: relative;
+  padding: 6px 13px; border-radius: 8px;
   font-size: 14px; font-weight: 500; color: var(--text-2);
-  transition: background 0.15s, color 0.15s; white-space: nowrap;
+  transition: color 0.15s; white-space: nowrap;
 }
-.nav-link:hover, .nav-link.active { color: var(--primary); background: var(--primary-light); }
+.nav-link::after {
+  content: ''; position: absolute; bottom: -2px; left: 13px; right: 13px;
+  height: 2px; border-radius: 2px;
+  background: var(--primary);
+  transform: scaleX(0); transform-origin: center;
+  transition: transform 0.2s ease;
+}
+.nav-link:hover { color: var(--primary); }
+.nav-link:hover::after { transform: scaleX(0.6); }
+.nav-link.active { color: var(--primary); font-weight: 600; }
+.nav-link.active::after { transform: scaleX(1); }
+.navbar.transparent .nav-link { color: rgba(255,255,255,0.85); }
+.navbar.transparent .nav-link:hover { color: #fff; }
+.navbar.transparent .nav-link.active { color: #fff; }
+.navbar.transparent .nav-link::after { background: #fff; }
 
-.nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.btn-text {
-  background: none; border: none; padding: 6px 12px;
+.nav-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.nav-login {
+  padding: 7px 14px; border-radius: 8px;
   font-size: 14px; font-weight: 500; color: var(--text-2);
-  border-radius: 8px; cursor: pointer; white-space: nowrap;
-  transition: color 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
-.btn-text:hover { color: var(--primary); }
+.nav-login:hover { color: var(--primary); background: var(--primary-light); }
+.navbar.transparent .nav-login { color: rgba(255,255,255,0.85); }
+.navbar.transparent .nav-login:hover { color: #fff; background: rgba(255,255,255,0.1); }
 
-.btn-primary-sm {
+.nav-register {
   background: var(--primary); color: #fff;
   padding: 7px 18px; border-radius: 8px;
   font-size: 14px; font-weight: 600; white-space: nowrap;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  box-shadow: 0 2px 8px rgba(22,119,255,0.25);
 }
-.btn-primary-sm:hover { background: var(--primary-dark); box-shadow: 0 4px 12px rgba(22,119,255,0.3); }
+.nav-register:hover { background: var(--primary-dark); box-shadow: 0 4px 16px rgba(22,119,255,0.35); transform: translateY(-1px); }
+.navbar.transparent .nav-register { background: rgba(255,255,255,0.18); box-shadow: none; border: 1px solid rgba(255,255,255,0.35); }
+.navbar.transparent .nav-register:hover { background: rgba(255,255,255,0.28); }
 
 .nav-user {
   display: flex; align-items: center; gap: 8px;
-  background: var(--primary-light); border-radius: 8px;
-  padding: 5px 12px; font-size: 14px; color: var(--primary); font-weight: 500;
+  border-radius: 10px; padding: 5px 12px 5px 6px;
+  font-size: 14px; color: var(--text-2); font-weight: 500;
+  transition: background 0.15s;
 }
+.nav-user:hover { background: var(--primary-light); color: var(--primary); }
 .user-avatar {
-  width: 26px; height: 26px; border-radius: 50%;
-  background: var(--primary); color: #fff;
-  font-size: 13px; font-weight: 700;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #4096ff);
+  color: #fff; font-size: 12px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(22,119,255,0.3);
 }
+.user-name { font-weight: 600; }
+
+.nav-logout {
+  background: none; border: none; padding: 7px 12px;
+  font-size: 13px; color: var(--text-3);
+  border-radius: 8px; cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-logout:hover { color: var(--danger); background: #fff1f0; }
 
 /* ── 汉堡 ── */
 .hamburger {
@@ -188,6 +238,7 @@ function handleLogout() {
   background: var(--text-2); border-radius: 2px;
   transition: all 0.25s;
 }
+.navbar.transparent .hamburger span { background: rgba(255,255,255,0.9); }
 .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
 .hamburger.open span:nth-child(2) { opacity: 0; }
 .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
