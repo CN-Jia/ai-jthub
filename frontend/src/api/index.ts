@@ -67,6 +67,11 @@ export const api = {
   cancelProductOrder: (id: string) => http.post(`/product-orders/${id}/cancel`),
   validateCoupon: (code: string, productId: string) => http.post('/promo-coupons/validate', { code, productId }),
 
+  // 旧版订单（兼容旧页面）
+  createOrder: (data: any) => http.post('/orders', data),
+  getMyOrders: () => http.get('/orders/my'),
+  getOrder: (id: string) => http.get(`/orders/${id}`),
+
   // 积分/邀请
   getInviteInfo: () => http.get('/points/invite'),
   getInvitees: () => http.get('/points/invitees'),
