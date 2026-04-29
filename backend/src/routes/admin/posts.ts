@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+﻿import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { prisma } from '../../lib/prisma.js'
 import { successResponse, errorResponse, ERROR_CODES } from '../../utils/response.js'
@@ -6,7 +6,6 @@ import { verifyAdmin } from '../../middlewares/auth.middleware.js'
 
 export async function adminPostRoutes(fastify: FastifyInstance) {
 
-  // 全部帖子（含待审核）
   fastify.get('/admin/posts', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { page = '1', pageSize = '20', status } = request.query as Record<string, string>
     const where: any = {}
@@ -28,7 +27,6 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({ list, total }))
   })
 
-  // 管理员发帖
   fastify.post('/admin/posts', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const schema = z.object({
       title: z.string().min(2).max(100),
@@ -46,7 +44,6 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.code(201).send(successResponse(post))
   })
 
-  // 编辑帖子
   fastify.put('/admin/posts/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const schema = z.object({
@@ -62,7 +59,6 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse(post))
   })
 
-  // 审核帖子
   fastify.patch('/admin/posts/:id/status', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const { status } = request.body as { status: 'APPROVED' | 'REJECTED' }
@@ -73,7 +69,6 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse(post))
   })
 
-  // 置顶 / 取消置顶
   fastify.patch('/admin/posts/:id/pin', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const existing = await prisma.post.findUnique({ where: { id }, select: { isPinned: true } })
@@ -86,14 +81,12 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({ isPinned: post.isPinned }))
   })
 
-  // 删除帖子
   fastify.delete('/admin/posts/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     await prisma.post.delete({ where: { id } })
     return reply.send(successResponse({ message: '已删除' }))
   })
 
-  // 隐藏/显示评论
   fastify.patch('/admin/comments/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const { isHidden } = request.body as { isHidden: boolean }
@@ -101,7 +94,6 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse(comment))
   })
 
-  // 删除评论
   fastify.delete('/admin/comments/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     await prisma.comment.delete({ where: { id } })

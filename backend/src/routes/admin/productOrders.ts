@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+﻿import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { verifyAdmin } from '../../middlewares/auth.middleware.js'
 import { prisma } from '../../lib/prisma.js'
@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client'
 
 export async function adminProductOrderRoutes(fastify: FastifyInstance) {
   // ????????? - must be before /:id route
-  fastify.get('/admin/product-orders/stats', { preHandler: verifyAdmin }, async (_req, reply) => {
+  fastify.get('/admin/product-orders/stats', { preHandler: [verifyAdmin] }, async (_req, reply) => {
     const rows = await prisma.productOrder.groupBy({
       by: ['status'],
       _count: { id: true },
@@ -19,7 +19,7 @@ export async function adminProductOrderRoutes(fastify: FastifyInstance) {
   })
 
   // ???????+???
-  fastify.get('/admin/product-orders', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.get('/admin/product-orders', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const q = request.query as Record<string, string>
     const page = Number(q.page ?? 1)
     const pageSize = Number(q.pageSize ?? 20)
@@ -49,7 +49,7 @@ export async function adminProductOrderRoutes(fastify: FastifyInstance) {
   })
 
   // ????
-  fastify.get('/admin/product-orders/:id', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.get('/admin/product-orders/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const order = await prisma.productOrder.findUnique({
       where: { id },
@@ -64,7 +64,7 @@ export async function adminProductOrderRoutes(fastify: FastifyInstance) {
   })
 
   // ?????PAID -> COMPLETED?
-  fastify.put('/admin/product-orders/:id/complete', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.put('/admin/product-orders/:id/complete', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const order = await prisma.productOrder.findUnique({ where: { id } })
     if (!order) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '?????'))
@@ -80,7 +80,7 @@ export async function adminProductOrderRoutes(fastify: FastifyInstance) {
   })
 
   // ????
-  fastify.put('/admin/product-orders/:id/cancel', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.put('/admin/product-orders/:id/cancel', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const parse = z.object({ reason: z.string().optional() }).safeParse(request.body)
     const reason = parse.success ? (parse.data.reason ?? 'Admin cancel') : 'Admin cancel'

@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify'
+﻿import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { verifyAdmin } from '../../middlewares/auth.middleware.js'
 import { prisma } from '../../lib/prisma.js'
@@ -15,7 +15,7 @@ const createSchema = z.object({
 
 export async function adminPromoCouponRoutes(fastify: FastifyInstance) {
   // ??
-  fastify.get('/admin/promo-coupons', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.get('/admin/promo-coupons', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const q = request.query as Record<string, string>
     const page = Number(q.page ?? 1)
     const pageSize = Number(q.pageSize ?? 20)
@@ -31,7 +31,7 @@ export async function adminPromoCouponRoutes(fastify: FastifyInstance) {
   })
 
   // ??
-  fastify.post('/admin/promo-coupons', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.post('/admin/promo-coupons', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const parse = createSchema.safeParse(request.body)
     if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, parse.error.errors[0].message))
     const data = parse.data
@@ -57,7 +57,7 @@ export async function adminPromoCouponRoutes(fastify: FastifyInstance) {
   })
 
   // ?????????????
-  fastify.delete('/admin/promo-coupons/:id', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.delete('/admin/promo-coupons/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const coupon = await prisma.promoCoupon.findUnique({ where: { id } })
     if (!coupon) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '??????'))
@@ -67,7 +67,7 @@ export async function adminPromoCouponRoutes(fastify: FastifyInstance) {
   })
 
   // ??
-  fastify.patch('/admin/promo-coupons/:id/deactivate', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.patch('/admin/promo-coupons/:id/deactivate', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     try {
       const coupon = await prisma.promoCoupon.update({ where: { id }, data: { isActive: false } })
@@ -78,7 +78,7 @@ export async function adminPromoCouponRoutes(fastify: FastifyInstance) {
   })
 
   // ??
-  fastify.patch('/admin/promo-coupons/:id/activate', { preHandler: verifyAdmin }, async (request, reply) => {
+  fastify.patch('/admin/promo-coupons/:id/activate', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     try {
       const coupon = await prisma.promoCoupon.update({ where: { id }, data: { isActive: true } })
