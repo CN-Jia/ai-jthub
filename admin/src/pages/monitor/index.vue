@@ -153,19 +153,24 @@
     <!-- 图表区 -->
     <div v-if="chartLoading" class="chart-loading">图表加载中…</div>
     <div class="charts-grid" v-if="chartReady && !chartLoading">
-      <div class="chart-card" v-if="status?.promAvailable">
-        <div class="chart-title">CPU 使用率趋势 (%)</div>
+      <div class="chart-card">
+        <div class="chart-title">CPU 使用率趋势 (%)
+          <span v-if="!status?.promAvailable" class="chart-hint">实时快照</span>
+        </div>
         <div ref="cpuChartRef" class="chart-canvas" />
       </div>
-      <div class="chart-card" v-if="status?.promAvailable">
-        <div class="chart-title">内存使用率趋势 (%)</div>
+      <div class="chart-card">
+        <div class="chart-title">内存使用率趋势 (%)
+          <span v-if="!status?.promAvailable" class="chart-hint">实时快照</span>
+        </div>
         <div ref="memChartRef" class="chart-canvas" />
       </div>
-      <div class="chart-card" v-if="status?.promAvailable">
-        <div class="chart-title">网络流量趋势 (KB/s)</div>
+      <div class="chart-card">
+        <div class="chart-title">网络流量趋势 (KB/s)
+          <span v-if="!status?.promAvailable" class="chart-hint">实时快照</span>
+        </div>
         <div ref="netChartRef" class="chart-canvas" />
       </div>
-      <!-- 负载折线图（无论是否 Prometheus 可用，用 Node.js loadavg 补充）-->
       <div class="chart-card">
         <div class="chart-title">系统负载（Load Average）</div>
         <div ref="loadChartRef" class="chart-canvas" />
@@ -346,7 +351,9 @@ async function fetchChartData() {
     const res: any = await api.getSystemChart(timeRange.value)
     chartData.value = res.data
     chartReady.value = true
+    // nextTick 仅保证 DOM 插入，需额外等待浏览器完成布局后再初始化 ECharts
     await nextTick()
+    await new Promise(r => setTimeout(r, 120))
     renderCharts()
   } catch {
   } finally {
@@ -354,53 +361,71 @@ async function fetchChartData() {
   }
 }
 
+function initChart(el: HTMLElement | undefined, instance: echarts.ECharts | null): echarts.ECharts | null {
+  if (!el) return null
+  instance?.dispose()
+  const chart = echarts.init(el, undefined, { renderer: 'canvas' })
+  // 确保容器有实际尺寸
+  if (el.offsetWidth === 0 || el.offsetHeight === 0) {
+    chart.resize({ width: el.parentElement?.offsetWidth ?? 380, height: 180 })
+  }
+  return chart
+}
+
 function renderCharts() {
-  if (!chartData.value) return
+  if (!chartData.value || !status.value) return
 
   const d = chartData.value
+  const now = Date.now()
 
-  // CPU 图
-  if (cpuChartRef.value && d.cpu.length > 0) {
-    cpuChart?.dispose()
-    cpuChart = echarts.init(cpuChartRef.value)
-    cpuChart.setOption(buildLineOption([
-      { name: 'CPU %', data: d.cpu, color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
+  // CPU 图（有 Prometheus 数据则用时序，否则用静态横线）
+  if (cpuChartRef.value) {
+    const data = d.cpu.length > 0
+      ? d.cpu
+      : Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, status.value.cpu.usagePct ?? 0])
+    cpuChart = initChart(cpuChartRef.value, cpuChart)
+    cpuChart?.setOption(buildLineOption([
+      { name: 'CPU %', data, color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
     ], 100))
   }
 
   // 内存图
-  if (memChartRef.value && d.memory.length > 0) {
-    memChart?.dispose()
-    memChart = echarts.init(memChartRef.value)
-    memChart.setOption(buildLineOption([
-      { name: '内存 %', data: d.memory, color: CHART_THEME.line2, areaColor: CHART_THEME.area2 },
+  if (memChartRef.value) {
+    const data = d.memory.length > 0
+      ? d.memory
+      : Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, status.value.memory.usedPct ?? 0])
+    memChart = initChart(memChartRef.value, memChart)
+    memChart?.setOption(buildLineOption([
+      { name: '内存 %', data, color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
     ], 100))
   }
 
   // 网络图（KB/s）
-  if (netChartRef.value && (d.netRx.length > 0 || d.netTx.length > 0)) {
-    netChart?.dispose()
-    netChart = echarts.init(netChartRef.value)
-    netChart.setOption(buildLineOption([
-      { name: '入 KB/s', data: d.netRx.map(([t, v]: [number, number]) => [t, v / 1024]), color: CHART_THEME.line2, areaColor: CHART_THEME.area2 },
-      { name: '出 KB/s', data: d.netTx.map(([t, v]: [number, number]) => [t, v / 1024]), color: '#f59e0b', areaColor: 'rgba(245,158,11,.12)' },
+  if (netChartRef.value) {
+    const rxData = d.netRx.length > 0
+      ? d.netRx.map(([t, v]: [number, number]) => [t, v / 1024])
+      : Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, 0])
+    const txData = d.netTx.length > 0
+      ? d.netTx.map(([t, v]: [number, number]) => [t, v / 1024])
+      : Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, 0])
+    netChart = initChart(netChartRef.value, netChart)
+    netChart?.setOption(buildLineOption([
+      { name: '入 KB/s', data: rxData, color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
+      { name: '出 KB/s', data: txData, color: '#f59e0b', areaColor: 'rgba(245,158,11,.12)' },
     ]))
   }
 
-  // 负载图（使用静态当前值，若 Prometheus 有数据则覆盖）
-  if (loadChartRef.value && status.value) {
-    loadChart?.dispose()
-    loadChart = echarts.init(loadChartRef.value)
-    // 若无时序数据，用当前值生成简单横线占位
-    const now = Date.now()
+  // 负载图
+  if (loadChartRef.value) {
     const l1 = status.value.cpu.load1 ?? 0
     const l5 = status.value.cpu.load5 ?? 0
     const l15 = status.value.os.loadAvg[2] ?? 0
     const pts = (v: number) => Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, v])
-    loadChart.setOption(buildLineOption([
-      { name: 'load1', data: pts(l1), color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
-      { name: 'load5', data: pts(l5), color: CHART_THEME.line2, areaColor: CHART_THEME.area2 },
-      { name: 'load15', data: pts(l15), color: '#f59e0b', areaColor: 'rgba(245,158,11,.12)' },
+    loadChart = initChart(loadChartRef.value, loadChart)
+    loadChart?.setOption(buildLineOption([
+      { name: 'load1',  data: pts(l1),  color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
+      { name: 'load5',  data: pts(l5),  color: '#f59e0b', areaColor: 'rgba(245,158,11,.12)' },
+      { name: 'load15', data: pts(l15), color: '#94a3b8', areaColor: 'rgba(148,163,184,.08)' },
     ]))
   }
 }
@@ -529,7 +554,8 @@ function onResize() {
   border-radius: 12px;
   padding: 16px;
 }
-.chart-title { font-size: 11px; font-weight: 700; color: #4d6a82; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+.chart-title { font-size: 11px; font-weight: 700; color: #4d6a82; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.chart-hint { font-size: 10px; font-weight: 500; color: #f59e0b; background: rgba(245,158,11,0.1); padding: 1px 7px; border-radius: 4px; letter-spacing: 0; text-transform: none; }
 .chart-canvas { height: 180px; }
 
 .info-card { }
