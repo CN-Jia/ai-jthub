@@ -8,15 +8,14 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
 
   // 全部帖子（含待审核）
   fastify.get('/admin/posts', { preHandler: [verifyAdmin] }, async (request, reply) => {
-    const { page = '1', pageSize = '20', status, type } = request.query as Record<string, string>
+    const { page = '1', pageSize = '20', status } = request.query as Record<string, string>
     const where: any = {}
     if (status) where.status = status
-    if (type) where.type = type
 
     const [list, total] = await Promise.all([
       prisma.post.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
         skip: (Number(page) - 1) * Number(pageSize),
         take: Number(pageSize),
         include: {
@@ -29,19 +28,20 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({ list, total }))
   })
 
-  // 发布公告（管理员）
+  // 管理员发帖
   fastify.post('/admin/posts', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const schema = z.object({
       title: z.string().min(2).max(100),
       summary: z.string().max(200).optional(),
       content: z.string().min(1),
       cover: z.string().url().optional(),
+      isPinned: z.boolean().optional().default(false),
     })
     const parse = schema.safeParse(request.body)
     if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '参数错误'))
 
     const post = await prisma.post.create({
-      data: { ...parse.data, type: 'ANNOUNCEMENT', status: 'APPROVED' },
+      data: { ...parse.data, type: 'DISCUSSION', status: 'APPROVED' },
     })
     return reply.code(201).send(successResponse(post))
   })
@@ -71,6 +71,19 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     }
     const post = await prisma.post.update({ where: { id }, data: { status } })
     return reply.send(successResponse(post))
+  })
+
+  // 置顶 / 取消置顶
+  fastify.patch('/admin/posts/:id/pin', { preHandler: [verifyAdmin] }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const existing = await prisma.post.findUnique({ where: { id }, select: { isPinned: true } })
+    if (!existing) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '帖子不存在'))
+
+    const post = await prisma.post.update({
+      where: { id },
+      data: { isPinned: !existing.isPinned },
+    })
+    return reply.send(successResponse({ isPinned: post.isPinned }))
   })
 
   // 删除帖子

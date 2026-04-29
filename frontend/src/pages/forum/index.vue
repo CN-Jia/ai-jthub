@@ -2,14 +2,10 @@
   <div class="page-container">
     <div class="forum-header">
       <h1 class="forum-title">论坛 · 交流区</h1>
-      <p class="forum-sub">浏览公告、参与讨论，共建学习社区</p>
+      <p class="forum-sub">参与讨论，共建学习社区</p>
     </div>
 
-    <!-- 分类筛选 -->
     <div class="filter-row">
-      <button v-for="t in tabs" :key="t.value" class="tab-btn" :class="{ active: activeTab === t.value }" @click="switchTab(t.value)">
-        {{ t.label }}
-      </button>
       <router-link v-if="store.isLoggedIn" to="/forum/new" class="btn btn-primary new-post-btn">+ 发帖</router-link>
     </div>
 
@@ -19,15 +15,18 @@
 
     <div v-else-if="posts.length === 0" class="empty-state">
       <div class="empty-state-icon">💬</div>
-      <div class="empty-state-text">暂无帖子</div>
+      <div class="empty-state-text">暂无帖子，来发第一篇吧</div>
     </div>
 
     <div v-else class="post-list">
-      <router-link v-for="post in posts" :key="post.id" :to="`/forum/${post.id}`" class="post-card">
+      <router-link
+        v-for="post in posts" :key="post.id"
+        :to="`/forum/${post.id}`"
+        class="post-card"
+        :class="{ pinned: post.isPinned }"
+      >
         <div class="post-meta">
-          <span class="badge" :class="post.type === 'ANNOUNCEMENT' ? 'badge-blue' : 'badge-gray'">
-            {{ post.type === 'ANNOUNCEMENT' ? '📢 公告' : '💬 讨论' }}
-          </span>
+          <span v-if="post.isPinned" class="pin-badge">📌 置顶</span>
           <span class="post-date">{{ fmt(post.createdAt) }}</span>
         </div>
         <h3 class="post-title">{{ post.title }}</h3>
@@ -67,13 +66,6 @@ const loading = ref(false)
 const total = ref(0)
 const page = ref(1)
 const pageSize = 10
-const activeTab = ref('')
-
-const tabs = [
-  { label: '全部', value: '' },
-  { label: '📢 公告', value: 'ANNOUNCEMENT' },
-  { label: '💬 讨论', value: 'DISCUSSION' },
-]
 
 const fmt = (d: string) => {
   const date = new Date(d)
@@ -88,34 +80,27 @@ const fmt = (d: string) => {
 async function load() {
   loading.value = true
   try {
-    const res: any = await api.getPosts({ page: page.value, pageSize, type: activeTab.value || undefined })
+    const res: any = await api.getPosts({ page: page.value, pageSize })
     posts.value = res.data.list
     total.value = res.data.total
   } finally { loading.value = false }
 }
 
-function switchTab(val: string) { activeTab.value = val; page.value = 1; load() }
 function changePage(p: number) { page.value = p; load() }
 
 onMounted(load)
 </script>
 
 <style scoped>
-.forum-header { text-align: center; padding: 32px 0 24px; }
+.forum-header { text-align: center; padding: 32px 0 16px; }
 .forum-title { font-size: 28px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
 .forum-sub { color: var(--text-3); font-size: 15px; }
 
 .filter-row {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 20px; flex-wrap: wrap;
+  display: flex; align-items: center; justify-content: flex-end;
+  margin-bottom: 20px;
 }
-.tab-btn {
-  padding: 6px 16px; border-radius: 20px; border: 1.5px solid var(--border);
-  background: var(--white); font-size: 13px; font-weight: 500; color: var(--text-2);
-  cursor: pointer; transition: all 0.15s;
-}
-.tab-btn.active, .tab-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
-.new-post-btn { margin-left: auto; padding: 7px 16px; font-size: 13px; }
+.new-post-btn { padding: 8px 20px; font-size: 13px; }
 
 .loading-box { display: flex; justify-content: center; padding: 40px; }
 
@@ -126,9 +111,22 @@ onMounted(load)
   transition: box-shadow 0.15s, border-color 0.15s; cursor: pointer;
   color: inherit;
 }
-.post-card:hover { box-shadow: var(--shadow); border-color: #c0d8ff; }
+.post-card:hover { box-shadow: var(--shadow); border-color: var(--primary); }
+.post-card.pinned {
+  border-left: 3px solid var(--primary);
+  background: var(--primary-light);
+}
+[data-theme="dark"] .post-card.pinned { background: rgba(59,158,255,0.05); }
+
 .post-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .post-date { font-size: 12px; color: var(--text-3); }
+
+.pin-badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 700; color: var(--primary);
+  background: var(--primary-light); padding: 2px 8px; border-radius: 100px;
+}
+
 .post-title { font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; line-height: 1.4; }
 .post-summary { font-size: 13px; color: var(--text-2); margin-bottom: 10px; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .post-footer { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-3); }

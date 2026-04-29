@@ -54,10 +54,12 @@ export const api = {
 
   // 论坛帖子
   getPosts: (params?: Record<string, any>) => http.get('/admin/posts', { params }),
+  createAdminPost: (data: any) => http.post('/admin/posts', data),
   createPost: (data: any) => http.post('/admin/posts', data),
   updatePost: (id: string, data: any) => http.put(`/admin/posts/${id}`, data),
   reviewPost: (id: string, status: 'APPROVED' | 'REJECTED') =>
     http.patch(`/admin/posts/${id}/status`, { status }),
+  pinPost: (id: string) => http.patch(`/admin/posts/${id}/pin`),
   deletePost: (id: string) => http.delete(`/admin/posts/${id}`),
   hideComment: (id: string, isHidden: boolean) =>
     http.patch(`/admin/comments/${id}`, { isHidden }),

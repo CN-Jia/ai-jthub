@@ -6,21 +6,23 @@ import { verifyJWT } from '../middlewares/auth.middleware.js'
 
 export async function postRoutes(fastify: FastifyInstance) {
 
-  // 帖子列表（公开，仅展示 APPROVED）
+  // 帖子列表（公开，仅展示 APPROVED，置顶帖排在前面）
   fastify.get('/posts', async (request, reply) => {
-    const { page = '1', pageSize = '10', type } = request.query as Record<string, string>
+    const { page = '1', pageSize = '10' } = request.query as Record<string, string>
     const where: any = { status: 'APPROVED' }
-    if (type === 'ANNOUNCEMENT' || type === 'DISCUSSION') where.type = type
 
     const [list, total] = await Promise.all([
       prisma.post.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [
+          { isPinned: 'desc' },
+          { createdAt: 'desc' },
+        ],
         skip: (Number(page) - 1) * Number(pageSize),
         take: Number(pageSize),
         select: {
           id: true, title: true, summary: true, cover: true,
-          type: true, createdAt: true,
+          isPinned: true, createdAt: true,
           author: { select: { nickname: true } },
           _count: { select: { comments: { where: { isHidden: false } } } },
         },
@@ -48,7 +50,7 @@ export async function postRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse(post))
   })
 
-  // 用户发帖（需邮箱验证）
+  // 用户发帖（需邮箱验证，类型固定为 DISCUSSION）
   fastify.post('/posts', { preHandler: [verifyJWT] }, async (request, reply) => {
     const { userId } = request.user as { userId: string }
     const user = await prisma.user.findUnique({ where: { id: userId } })

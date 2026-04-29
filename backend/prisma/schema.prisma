@@ -172,6 +172,7 @@ model Post {
   cover       String?
   type        PostType   @default(DISCUSSION)
   status      PostStatus @default(PENDING)
+  isPinned    Boolean    @default(false)
   authorId    String?
   author      User?      @relation(fields: [authorId], references: [id])
 
@@ -180,7 +181,7 @@ model Post {
 
   comments Comment[]
 
-  @@index([status, createdAt])
+  @@index([status, isPinned, createdAt])
   @@map("posts")
 }
 
