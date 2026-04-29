@@ -72,7 +72,48 @@
       <router-view />
     </main>
 
-    <footer class="footer">
+    <!-- ══ 移动端底部导航栏 ══ -->
+    <nav class="bottom-nav show-sm-only">
+      <router-link to="/" class="bn-item" exact-active-class="bn-active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>首页</span>
+      </router-link>
+      <router-link to="/forum" class="bn-item" active-class="bn-active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>论坛</span>
+      </router-link>
+
+      <!-- 中间突出按钮 -->
+      <div class="bn-center">
+        <button class="bn-submit" @click="handleSubmit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <span class="bn-submit-label">提交</span>
+      </div>
+
+      <template v-if="store.isLoggedIn">
+        <router-link to="/my-orders" class="bn-item" active-class="bn-active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>订单</span>
+        </router-link>
+        <router-link to="/profile" class="bn-item" active-class="bn-active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>我的</span>
+        </router-link>
+      </template>
+      <template v-else>
+        <router-link to="/activity" class="bn-item" active-class="bn-active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          <span>活动</span>
+        </router-link>
+        <router-link to="/login" class="bn-item" active-class="bn-active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>登录</span>
+        </router-link>
+      </template>
+    </nav>
+
+    <footer class="footer hide-on-mobile">
       <div class="footer-inner">
         <div class="footer-logo"><JtLogo :size="22" style="display:inline-block;vertical-align:middle;margin-right:6px"/> JT-Hub</div>
         <div class="footer-info">
@@ -115,12 +156,22 @@ function handleLogout() {
   closeMobileMenu()
   router.push('/')
 }
+
+function handleSubmit() {
+  closeMobileMenu()
+  store.isLoggedIn ? router.push('/submit') : router.push('/login')
+}
 </script>
 
 <style scoped>
 /* ── 布局 ── */
 .app-layout { min-height: 100vh; display: flex; flex-direction: column; }
 .main-content { flex: 1; }
+
+@media (max-width: 640px) {
+  .main-content { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+  .hide-on-mobile { display: none !important; }
+}
 
 /* ── 导航 ── */
 .navbar {
@@ -272,6 +323,55 @@ function handleLogout() {
 .slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-8px); }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* ── 底部导航栏 ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(60px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-top: 1px solid rgba(229,231,235,0.9);
+  display: flex; align-items: stretch;
+  z-index: 300;
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.07);
+}
+.bn-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px; padding: 6px 0;
+  color: #9ca3af; font-size: 10px; font-weight: 500;
+  transition: color 0.15s;
+  cursor: pointer;
+}
+.bn-item svg { width: 22px; height: 22px; stroke: currentColor; }
+.bn-item span { line-height: 1; }
+.bn-item:hover { color: var(--primary); }
+.bn-item.bn-active { color: var(--primary); }
+.bn-item.bn-active svg { stroke: var(--primary); }
+
+/* 中间突出提交按钮 */
+.bn-center {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  position: relative;
+}
+.bn-submit {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #4096ff);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(22,119,255,0.4);
+  margin-top: -16px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.bn-submit:active { transform: scale(0.92); }
+.bn-submit svg { width: 22px; height: 22px; stroke: #fff; }
+.bn-submit-label {
+  font-size: 10px; font-weight: 500; color: var(--primary);
+  line-height: 1; margin-top: 2px;
+}
 
 /* ── Footer ── */
 .footer {

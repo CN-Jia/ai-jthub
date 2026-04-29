@@ -131,6 +131,7 @@ input, textarea, select { font-family: inherit; }
 /* ── 响应式工具 ── */
 @media (max-width: 640px) {
   .hide-sm { display: none !important; }
+  .hide-on-mobile { display: none !important; }
   .page-container { padding: 16px 14px; }
 }
 @media (min-width: 641px) {
