@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import os from 'os'
 import Fastify from 'fastify'
 import { env } from './config/env.js'
 import { logger } from './utils/logger.js'
@@ -38,7 +39,7 @@ export async function buildApp() {
   app.get('/health', async () => ({
     ok: true,
     timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime()),
+    uptime: Math.floor(os.uptime()),
   }))
 
   // 限流：提交订单
