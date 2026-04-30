@@ -226,7 +226,7 @@ pnpm --filter jthub-frontend build
 # 产物位于 frontend/dist/
 
 # ── 构建管理后台 ─────────────────────────────────────────────
-pnpm --filter jthub-admin build
+pnpm --filter admin build
 # 产物位于 admin/dist/
 
 # 确认构建产物存在
@@ -537,7 +537,7 @@ pnpm install
 # 重新构建（按需选择）
 pnpm --filter backend build
 pnpm --filter jthub-frontend build
-pnpm --filter jthub-admin build
+pnpm --filter admin build
 
 # 数据库迁移（仅 schema 有变更时执行）
 cd backend && pnpm prisma migrate deploy && cd ..
