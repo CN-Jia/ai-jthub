@@ -111,10 +111,10 @@ export async function adminSystemRoutes(fastify: FastifyInstance) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const [totalOrders, todayOrders, totalUsers, pendingOrders, pendingRedeems] = await Promise.all([
-      prisma.order.count(),
-      prisma.order.count({ where: { createdAt: { gte: today } } }),
+      prisma.productOrder.count(),
+      prisma.productOrder.count({ where: { createdAt: { gte: today } } }),
       prisma.user.count(),
-      prisma.order.count({ where: { status: 'PENDING' } }),
+      prisma.productOrder.count({ where: { status: { in: ['CREATED', 'PAID'] } } }),
       prisma.redeemOrder.count({ where: { status: 'PENDING' } }).catch(() => 0),
     ])
 

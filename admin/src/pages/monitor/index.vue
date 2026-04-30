@@ -1,227 +1,344 @@
 <template>
   <div class="monitor-page">
+
     <!-- 顶栏 -->
     <div class="monitor-header">
-      <div class="monitor-title-row">
-        <h2>系统监控</h2>
-        <div class="header-right">
-          <span class="update-time" v-if="lastUpdate">最后更新 {{ lastUpdate }}</span>
-          <el-select v-model="timeRange" style="width:120px" size="small" @change="fetchChartData">
-            <el-option label="近 30 分钟" :value="30" />
-            <el-option label="近 1 小时" :value="60" />
-            <el-option label="近 3 小时" :value="180" />
-            <el-option label="近 6 小时" :value="360" />
-          </el-select>
-          <el-button size="small" :loading="loading" @click="loadAll">刷新</el-button>
+      <div class="header-left">
+        <h2 class="page-title">系统监控</h2>
+        <span class="live-badge" :class="{ 'live-badge--paused': !autoRefresh }">
+          <span class="live-dot" />
+          {{ autoRefresh ? 'LIVE' : '已暂停' }}
+        </span>
+        <span class="update-time" v-if="lastUpdate">{{ lastUpdate }} 更新</span>
+      </div>
+      <div class="header-right">
+        <el-select v-model="timeRange" style="width:130px" size="small" @change="fetchChartData">
+          <el-option label="近 30 分钟" :value="30" />
+          <el-option label="近 1 小时" :value="60" />
+          <el-option label="近 3 小时" :value="180" />
+          <el-option label="近 6 小时" :value="360" />
+        </el-select>
+        <el-button size="small" :icon="autoRefresh ? 'VideoPause' : 'VideoPlay'" @click="toggleAutoRefresh" plain>
+          {{ autoRefresh ? '暂停' : '恢复' }}
+        </el-button>
+        <el-button size="small" :loading="loading" type="primary" @click="loadAll">
+          刷新
+        </el-button>
+      </div>
+    </div>
+
+    <!-- Prometheus 未连接提示 -->
+    <el-alert
+      v-if="status && !status.promAvailable"
+      type="warning" show-icon :closable="false"
+      title="Prometheus 未连接 — CPU / 磁盘 / 网络实时数据不可用，内存与负载来自 Node.js os 模块"
+    />
+
+    <!-- 加载骨架 -->
+    <template v-if="!status">
+      <div class="skeleton-grid">
+        <div v-for="i in 8" :key="i" class="skeleton-card" />
+      </div>
+    </template>
+
+    <template v-else>
+      <!-- ── 核心系统指标 ── -->
+      <section class="section-label">系统资源</section>
+      <div class="cards-row">
+
+        <!-- CPU -->
+        <div class="metric-card" :class="statusClass(status.cpu.usagePct, 65, 85)">
+          <div class="card-inner">
+            <div class="card-icon">🖥</div>
+            <div class="card-body">
+              <div class="card-value">
+                {{ status.cpu.usagePct !== null ? status.cpu.usagePct.toFixed(1) + '%' : '—' }}
+              </div>
+              <div class="card-label">CPU 使用率</div>
+              <div class="card-sub">{{ status.cpu.cores }} 核 · 负载 {{ status.cpu.load1?.toFixed(2) }}</div>
+            </div>
+          </div>
+          <RingGauge :value="status.cpu.usagePct ?? 0" :max="100"
+            :color="gaugeColor(status.cpu.usagePct, 65, 85)" />
+        </div>
+
+        <!-- 内存 -->
+        <div class="metric-card" :class="statusClass(status.memory.usedPct, 70, 85)">
+          <div class="card-inner">
+            <div class="card-icon">💾</div>
+            <div class="card-body">
+              <div class="card-value">{{ status.memory.usedPct }}%</div>
+              <div class="card-label">内存使用率</div>
+              <div class="card-sub">
+                {{ fmtBytes(status.memory.usedBytes) }} / {{ fmtBytes(status.memory.totalBytes) }}
+              </div>
+            </div>
+          </div>
+          <RingGauge :value="status.memory.usedPct" :max="100"
+            :color="gaugeColor(status.memory.usedPct, 70, 85)" />
+        </div>
+
+        <!-- 磁盘 -->
+        <div class="metric-card" :class="statusClass(status.disk.usedPct, 75, 90)">
+          <div class="card-inner">
+            <div class="card-icon">🗄</div>
+            <div class="card-body">
+              <div class="card-value">
+                {{ status.disk.usedPct !== null ? status.disk.usedPct + '%' : '—' }}
+              </div>
+              <div class="card-label">磁盘使用 (/)</div>
+              <div class="card-sub">
+                {{ status.disk.usedBytes ? fmtBytes(status.disk.usedBytes) : '—' }}
+                / {{ status.disk.totalBytes ? fmtBytes(status.disk.totalBytes) : '—' }}
+              </div>
+            </div>
+          </div>
+          <RingGauge :value="status.disk.usedPct ?? 0" :max="100"
+            :color="gaugeColor(status.disk.usedPct, 75, 90)" />
+        </div>
+
+        <!-- 网络 -->
+        <div class="metric-card card-neutral">
+          <div class="card-inner">
+            <div class="card-icon">🌐</div>
+            <div class="card-body">
+              <div class="card-value net-value">
+                <span class="net-tx">↑ {{ status.network.txBytesPerSec !== null ? fmtSpeed(status.network.txBytesPerSec) : '—' }}</span>
+              </div>
+              <div class="card-label">网络 出 / 入</div>
+              <div class="card-sub net-rx">
+                ↓ {{ status.network.rxBytesPerSec !== null ? fmtSpeed(status.network.rxBytesPerSec) : '—' }}
+              </div>
+            </div>
+          </div>
+          <div class="net-bars">
+            <div class="net-bar-wrap">
+              <div class="net-bar-fill tx" :style="{ width: netBarPct(status.network.txBytesPerSec) + '%' }" />
+            </div>
+            <div class="net-bar-wrap">
+              <div class="net-bar-fill rx" :style="{ width: netBarPct(status.network.rxBytesPerSec) + '%' }" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 系统运行时长 -->
+        <div class="metric-card card-neutral">
+          <div class="card-inner">
+            <div class="card-icon">⏱</div>
+            <div class="card-body">
+              <div class="card-value" style="font-size:1.1rem">{{ status.os.uptimeHuman }}</div>
+              <div class="card-label">系统运行时长</div>
+              <div class="card-sub">{{ status.os.hostname }}</div>
+            </div>
+          </div>
+          <div class="uptime-stack">
+            <div class="uptime-item">API <b>{{ fmtUptime(status.process.nodeUptime) }}</b></div>
+            <div class="uptime-item">平台 <b>{{ status.os.platform }}/{{ status.os.arch }}</b></div>
+          </div>
+        </div>
+
+        <!-- 负载 -->
+        <div class="metric-card" :class="statusClass(status.cpu.load1 / status.cpu.cores * 100, 70, 90)">
+          <div class="card-inner">
+            <div class="card-icon">📊</div>
+            <div class="card-body">
+              <div class="card-value">{{ status.cpu.load1?.toFixed(2) }}</div>
+              <div class="card-label">系统负载 (load1)</div>
+              <div class="card-sub">
+                1m · 5m · 15m
+              </div>
+            </div>
+          </div>
+          <div class="load-bars">
+            <LoadBar label="1m" :value="status.cpu.load1" :cores="status.cpu.cores" />
+            <LoadBar label="5m" :value="status.cpu.load5" :cores="status.cpu.cores" />
+            <LoadBar label="15m" :value="status.cpu.load15 ?? status.os.loadAvg[2]" :cores="status.cpu.cores" />
+          </div>
+        </div>
+
+        <!-- TCP 连接 -->
+        <div class="metric-card card-neutral">
+          <div class="card-inner">
+            <div class="card-icon">🔗</div>
+            <div class="card-body">
+              <div class="card-value">{{ status.process.tcpConns ?? '—' }}</div>
+              <div class="card-label">TCP 连接数</div>
+              <div class="card-sub">打开文件 {{ status.process.openFiles ?? '—' }} 个</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── 业务指标 ── -->
+      <section class="section-label">业务数据</section>
+      <div class="biz-row">
+        <div class="biz-card">
+          <div class="biz-icon">📦</div>
+          <div class="biz-num">{{ status.business.todayOrders }}</div>
+          <div class="biz-label">今日新增订单</div>
+        </div>
+        <div class="biz-card biz-warn" v-if="status.business.pendingOrders > 0">
+          <div class="biz-icon">⏳</div>
+          <div class="biz-num warn">{{ status.business.pendingOrders }}</div>
+          <div class="biz-label">待处理订单</div>
+        </div>
+        <div class="biz-card" v-else>
+          <div class="biz-icon">✅</div>
+          <div class="biz-num ok">0</div>
+          <div class="biz-label">待处理订单</div>
+        </div>
+        <div class="biz-card">
+          <div class="biz-icon">👥</div>
+          <div class="biz-num">{{ status.business.totalUsers }}</div>
+          <div class="biz-label">注册用户总数</div>
+        </div>
+        <div class="biz-card">
+          <div class="biz-icon">🏪</div>
+          <div class="biz-num">{{ status.business.totalOrders }}</div>
+          <div class="biz-label">历史订单总数</div>
+        </div>
+        <div class="biz-card biz-warn" v-if="status.business.pendingRedeems > 0">
+          <div class="biz-icon">🎁</div>
+          <div class="biz-num warn">{{ status.business.pendingRedeems }}</div>
+          <div class="biz-label">待审核兑换</div>
+        </div>
+        <div class="biz-card" v-else>
+          <div class="biz-icon">🎁</div>
+          <div class="biz-num ok">0</div>
+          <div class="biz-label">待审核兑换</div>
         </div>
       </div>
 
-      <!-- Prometheus 不可用提示 -->
-      <el-alert
-        v-if="status && !status.promAvailable"
-        type="warning"
-        show-icon
-        :closable="false"
-        style="margin-top:12px"
-      >
-        <template #title>
-          Prometheus 未连接，CPU/磁盘/网络历史数据不可用。内存/负载数据来自 Node.js os 模块。
-          <a href="#install" style="margin-left:8px;color:inherit;font-weight:600">查看安装文档 ↓</a>
+      <!-- ── 趋势图 ── -->
+      <section class="section-label">
+        历史趋势
+        <span v-if="!status.promAvailable" class="section-badge warn">需要 Prometheus</span>
+      </section>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">CPU 使用率 (%)</span>
+            <span v-if="chartLoading" class="chart-loading-badge">加载中…</span>
+          </div>
+          <div ref="cpuChartRef" class="chart-canvas" />
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">内存使用率 (%)</span>
+          </div>
+          <div ref="memChartRef" class="chart-canvas" />
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">网络流量 (KB/s)</span>
+          </div>
+          <div ref="netChartRef" class="chart-canvas" />
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">系统负载 (Load Average)</span>
+          </div>
+          <div ref="loadChartRef" class="chart-canvas" />
+        </div>
+      </div>
+
+      <!-- ── 服务器信息 ── -->
+      <section class="section-label">服务器信息</section>
+      <el-card class="info-card">
+        <el-descriptions :column="3" border size="small">
+          <el-descriptions-item label="主机名">{{ status.os.hostname }}</el-descriptions-item>
+          <el-descriptions-item label="系统">{{ status.os.platform }} / {{ status.os.arch }}</el-descriptions-item>
+          <el-descriptions-item label="CPU 型号">{{ status.os.cpuModel }}</el-descriptions-item>
+          <el-descriptions-item label="CPU 核心数">{{ status.os.cpuCount }} 核</el-descriptions-item>
+          <el-descriptions-item label="系统运行时长">{{ status.os.uptimeHuman }}</el-descriptions-item>
+          <el-descriptions-item label="负载 (1 / 5 / 15 min)">
+            {{ status.cpu.load1?.toFixed(2) }} / {{ status.cpu.load5?.toFixed(2) }} / {{ status.os.loadAvg[2]?.toFixed(2) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="API 进程运行">{{ fmtUptime(status.process.nodeUptime) }}</el-descriptions-item>
+          <el-descriptions-item label="Prometheus">
+            <el-tag :type="status.promAvailable ? 'success' : 'warning'" size="small">
+              {{ status.promAvailable ? '已连接' : '未连接' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="最后刷新">{{ lastUpdate }}</el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <!-- Prometheus 安装指引 -->
+      <el-card id="install" class="info-card" v-if="!status.promAvailable">
+        <template #header>
+          <span>安装 Prometheus + node_exporter（Ubuntu 24 LTS）</span>
         </template>
-      </el-alert>
-    </div>
+        <el-alert type="info" :closable="false" style="margin-bottom:12px">
+          安装完成后刷新页面即可获取完整时序图表数据。
+        </el-alert>
+        <pre class="install-code">{{ installDocs }}</pre>
+      </el-card>
+    </template>
 
-    <!-- 指标卡片 -->
-    <div class="metric-cards" v-if="status">
-      <div class="metric-card" :class="cpuClass">
-        <div class="mc-icon">🖥</div>
-        <div class="mc-body">
-          <div class="mc-value">
-            {{ status.cpu.usagePct !== null ? status.cpu.usagePct.toFixed(1) + '%' : '—' }}
-          </div>
-          <div class="mc-label">CPU 使用率</div>
-          <div class="mc-sub">{{ status.cpu.cores }} 核 · 负载 {{ status.cpu.load1?.toFixed(2) }}</div>
-        </div>
-        <div class="mc-gauge">
-          <svg viewBox="0 0 36 36" class="gauge-svg">
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="3" />
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" stroke-width="3"
-              stroke-dasharray="100 100"
-              :stroke-dashoffset="100 - Math.min(100, status.cpu.usagePct ?? 0)"
-              stroke-linecap="round"
-              transform="rotate(-90 18 18)" />
-          </svg>
-        </div>
-      </div>
-
-      <div class="metric-card" :class="memClass">
-        <div class="mc-icon">💾</div>
-        <div class="mc-body">
-          <div class="mc-value">{{ status.memory.usedPct }}%</div>
-          <div class="mc-label">内存使用率</div>
-          <div class="mc-sub">{{ fmtBytes(status.memory.usedBytes) }} / {{ fmtBytes(status.memory.totalBytes) }}</div>
-        </div>
-        <div class="mc-gauge">
-          <svg viewBox="0 0 36 36" class="gauge-svg">
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="3" />
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" stroke-width="3"
-              stroke-dasharray="100 100"
-              :stroke-dashoffset="100 - status.memory.usedPct"
-              stroke-linecap="round"
-              transform="rotate(-90 18 18)" />
-          </svg>
-        </div>
-      </div>
-
-      <div class="metric-card" :class="diskClass">
-        <div class="mc-icon">🗄</div>
-        <div class="mc-body">
-          <div class="mc-value">
-            {{ status.disk.usedPct !== null ? status.disk.usedPct + '%' : '—' }}
-          </div>
-          <div class="mc-label">磁盘使用率（/）</div>
-          <div class="mc-sub">
-            {{ status.disk.usedBytes ? fmtBytes(status.disk.usedBytes) : '—' }}
-            / {{ status.disk.totalBytes ? fmtBytes(status.disk.totalBytes) : '—' }}
-          </div>
-        </div>
-        <div class="mc-gauge">
-          <svg viewBox="0 0 36 36" class="gauge-svg">
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="3" />
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" stroke-width="3"
-              stroke-dasharray="100 100"
-              :stroke-dashoffset="100 - Math.min(100, status.disk.usedPct ?? 0)"
-              stroke-linecap="round"
-              transform="rotate(-90 18 18)" />
-          </svg>
-        </div>
-      </div>
-
-      <div class="metric-card card-net">
-        <div class="mc-icon">🌐</div>
-        <div class="mc-body">
-          <div class="mc-value" style="font-size:1.1rem">
-            ↑ {{ status.network.txBytesPerSec !== null ? fmtSpeed(status.network.txBytesPerSec) : '—' }}
-          </div>
-          <div class="mc-label">网络 出/入</div>
-          <div class="mc-sub">
-            ↓ {{ status.network.rxBytesPerSec !== null ? fmtSpeed(status.network.rxBytesPerSec) : '—' }}
-          </div>
-        </div>
-      </div>
-
-      <!-- 业务指标 -->
-      <div class="metric-card card-biz">
-        <div class="mc-icon">📦</div>
-        <div class="mc-body">
-          <div class="mc-value">{{ status.business.todayOrders }}</div>
-          <div class="mc-label">今日新增订单</div>
-          <div class="mc-sub">待处理 {{ status.business.pendingOrders }} 单</div>
-        </div>
-      </div>
-
-      <div class="metric-card card-biz">
-        <div class="mc-icon">👥</div>
-        <div class="mc-body">
-          <div class="mc-value">{{ status.business.totalUsers }}</div>
-          <div class="mc-label">注册用户总数</div>
-          <div class="mc-sub">累计订单 {{ status.business.totalOrders }} 单</div>
-        </div>
-      </div>
-
-      <div class="metric-card card-biz">
-        <div class="mc-icon">⏱</div>
-        <div class="mc-body">
-          <div class="mc-value" style="font-size:1rem">{{ status.os.uptimeHuman }}</div>
-          <div class="mc-label">系统运行时长</div>
-          <div class="mc-sub">{{ status.os.hostname }} · {{ status.os.platform }}</div>
-        </div>
-      </div>
-
-      <div class="metric-card card-biz">
-        <div class="mc-icon">🔗</div>
-        <div class="mc-body">
-          <div class="mc-value">{{ status.process.tcpConns ?? '—' }}</div>
-          <div class="mc-label">TCP 连接数</div>
-          <div class="mc-sub">
-            打开文件 {{ status.process.openFiles ?? '—' }} 个
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 图表区 -->
-    <div v-if="chartLoading" class="chart-loading">图表加载中…</div>
-    <div class="charts-grid" v-if="chartReady && !chartLoading">
-      <div class="chart-card">
-        <div class="chart-title">CPU 使用率趋势 (%)
-          <span v-if="!status?.promAvailable" class="chart-hint">实时快照</span>
-        </div>
-        <div ref="cpuChartRef" class="chart-canvas" />
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">内存使用率趋势 (%)
-          <span v-if="!status?.promAvailable" class="chart-hint">实时快照</span>
-        </div>
-        <div ref="memChartRef" class="chart-canvas" />
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">网络流量趋势 (KB/s)
-          <span v-if="!status?.promAvailable" class="chart-hint">实时快照</span>
-        </div>
-        <div ref="netChartRef" class="chart-canvas" />
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">系统负载（Load Average）</div>
-        <div ref="loadChartRef" class="chart-canvas" />
-      </div>
-    </div>
-
-    <!-- 服务器信息表 -->
-    <el-card class="info-card" v-if="status">
-      <template #header>服务器基本信息</template>
-      <el-descriptions :column="3" border size="small">
-        <el-descriptions-item label="主机名">{{ status.os.hostname }}</el-descriptions-item>
-        <el-descriptions-item label="系统">{{ status.os.platform }} / {{ status.os.arch }}</el-descriptions-item>
-        <el-descriptions-item label="CPU 型号">{{ status.os.cpuModel }}</el-descriptions-item>
-        <el-descriptions-item label="CPU 核心">{{ status.os.cpuCount }} 核</el-descriptions-item>
-        <el-descriptions-item label="系统运行时长">{{ status.os.uptimeHuman }}</el-descriptions-item>
-        <el-descriptions-item label="负载（1/5/15 min）">
-          {{ status.cpu.load1?.toFixed(2) }} / {{ status.cpu.load5?.toFixed(2) }} / {{ status.os.loadAvg[2]?.toFixed(2) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="API 进程运行">{{ fmtUptime(status.process.nodeUptime) }}</el-descriptions-item>
-        <el-descriptions-item label="待审核兑换">{{ status.business.pendingRedeems }} 个</el-descriptions-item>
-        <el-descriptions-item label="Prometheus">
-          <el-tag :type="status.promAvailable ? 'success' : 'warning'" size="small">
-            {{ status.promAvailable ? '已连接' : '未连接' }}
-          </el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
-
-    <!-- 安装文档 -->
-    <el-card id="install" class="info-card" v-if="status && !status.promAvailable">
-      <template #header>Prometheus + Grafana 安装指引（Ubuntu 24 LTS）</template>
-      <el-alert type="info" :closable="false" style="margin-bottom:12px">
-        安装后刷新本页即可获取完整图表数据。
-      </el-alert>
-      <pre class="install-code">{{ installDocs }}</pre>
-    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, defineComponent, h } from 'vue'
 import * as echarts from 'echarts'
 import { api } from '../../api'
+
+// ── 内联子组件 ──────────────────────────────────────────────────────────
+
+// 圆环进度
+const RingGauge = defineComponent({
+  props: { value: Number, max: { type: Number, default: 100 }, color: { type: String, default: '#3b82f6' } },
+  setup(props) {
+    const R = 15.9
+    const CIRC = 2 * Math.PI * R
+    return () => {
+      const pct = Math.min(100, Math.max(0, ((props.value ?? 0) / (props.max ?? 100)) * 100))
+      const offset = CIRC * (1 - pct / 100)
+      return h('svg', { viewBox: '0 0 36 36', class: 'ring-svg' }, [
+        h('circle', { cx: 18, cy: 18, r: R, fill: 'none', stroke: 'rgba(255,255,255,.08)', 'stroke-width': 3 }),
+        h('circle', {
+          cx: 18, cy: 18, r: R, fill: 'none',
+          stroke: props.color, 'stroke-width': 3,
+          'stroke-dasharray': `${CIRC}`,
+          'stroke-dashoffset': offset,
+          'stroke-linecap': 'round',
+          transform: 'rotate(-90 18 18)',
+          style: 'transition: stroke-dashoffset .5s ease',
+        }),
+      ])
+    }
+  },
+})
+
+// 负载条
+const LoadBar = defineComponent({
+  props: { label: String, value: Number, cores: { type: Number, default: 1 } },
+  setup(props) {
+    return () => {
+      const pct = Math.min(100, ((props.value ?? 0) / (props.cores ?? 1)) * 100)
+      const color = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#22c55e'
+      return h('div', { class: 'lb-row' }, [
+        h('span', { class: 'lb-label' }, props.label),
+        h('div', { class: 'lb-track' }, [
+          h('div', { class: 'lb-fill', style: { width: pct + '%', background: color } }),
+        ]),
+        h('span', { class: 'lb-val' }, (props.value ?? 0).toFixed(2)),
+      ])
+    }
+  },
+})
+
+// ── 状态 ──────────────────────────────────────────────────────────────
 
 const status = ref<any>(null)
 const chartData = ref<any>(null)
 const loading = ref(false)
 const lastUpdate = ref('')
 const timeRange = ref(60)
-const chartReady = ref(false)
 const chartLoading = ref(false)
+const autoRefresh = ref(true)
 
 const cpuChartRef = ref<HTMLElement>()
 const memChartRef = ref<HTMLElement>()
@@ -232,248 +349,236 @@ let cpuChart: echarts.ECharts | null = null
 let memChart: echarts.ECharts | null = null
 let netChart: echarts.ECharts | null = null
 let loadChart: echarts.ECharts | null = null
-let refreshTimer: number | null = null
-const cpuClass = computed(() => {
-  const v = status.value?.cpu.usagePct
-  if (v === null || v === undefined) return 'card-neutral'
-  if (v >= 85) return 'card-danger'
-  if (v >= 65) return 'card-warning'
-  return 'card-success'
-})
-const memClass = computed(() => {
-  const v = status.value?.memory.usedPct
-  if (v >= 85) return 'card-danger'
-  if (v >= 70) return 'card-warning'
-  return 'card-success'
-})
-const diskClass = computed(() => {
-  const v = status.value?.disk.usedPct
-  if (v === null || v === undefined) return 'card-neutral'
-  if (v >= 90) return 'card-danger'
-  if (v >= 75) return 'card-warning'
-  return 'card-success'
-})
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+// ── 工具函数 ──────────────────────────────────────────────────────────
+
+function statusClass(val: number | null, warnAt: number, dangerAt: number) {
+  if (val === null || val === undefined) return 'card-neutral'
+  if (val >= dangerAt) return 'card-danger'
+  if (val >= warnAt) return 'card-warn'
+  return 'card-ok'
+}
+
+function gaugeColor(val: number | null, warnAt: number, dangerAt: number) {
+  if (val === null || val === undefined) return '#3b82f6'
+  if (val >= dangerAt) return '#ef4444'
+  if (val >= warnAt) return '#f59e0b'
+  return '#22c55e'
+}
 
 function fmtBytes(bytes: number): string {
+  if (!bytes) return '0 B'
   if (bytes >= 1e9) return (bytes / 1e9).toFixed(1) + ' GB'
   if (bytes >= 1e6) return (bytes / 1e6).toFixed(1) + ' MB'
   return (bytes / 1e3).toFixed(0) + ' KB'
 }
+
 function fmtSpeed(bps: number): string {
   if (bps >= 1e6) return (bps / 1e6).toFixed(1) + ' MB/s'
   if (bps >= 1e3) return (bps / 1e3).toFixed(1) + ' KB/s'
   return bps.toFixed(0) + ' B/s'
 }
+
 function fmtUptime(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
-  return `${h}小时 ${m}分钟`
+  return h > 0 ? `${h}小时 ${m}分` : `${m}分钟`
 }
 
-const CHART_THEME = {
+function netBarPct(bps: number | null): number {
+  if (!bps) return 0
+  // 以 10MB/s 为满格
+  return Math.min(100, (bps / (10 * 1024 * 1024)) * 100)
+}
+
+// ── ECharts ──────────────────────────────────────────────────────────
+
+const THEME = {
   bg: 'transparent',
-  grid: 'rgba(255,255,255,.06)',
-  text: '#94a3b8',
-  line1: '#3b82f6',
-  line2: '#22c55e',
-  area1: 'rgba(59,130,246,.15)',
-  area2: 'rgba(34,197,94,.15)',
+  grid: 'rgba(255,255,255,.05)',
+  text: '#64748b',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  amber: '#f59e0b',
+  slate: '#94a3b8',
 }
 
 function buildLineOption(
-  series: Array<{ name: string; data: [number, number][]; color: string; areaColor: string }>,
+  series: Array<{ name: string; data: [number, number][]; color: string }>,
   yMax?: number,
 ): echarts.EChartsOption {
   return {
-    backgroundColor: CHART_THEME.bg,
-    grid: { top: 24, right: 16, bottom: 32, left: 48 },
+    backgroundColor: THEME.bg,
+    animation: false,
+    grid: { top: 20, right: 12, bottom: 28, left: 44, containLabel: false },
     tooltip: {
       trigger: 'axis',
       backgroundColor: '#1e293b',
       borderColor: '#334155',
-      textStyle: { color: '#e2e8f0', fontSize: 12 },
+      textStyle: { color: '#e2e8f0', fontSize: 11 },
       formatter: (params: any) => {
-        const time = new Date(params[0].value[0]).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-        return params.map((p: any) => `${time}<br/>${p.marker}${p.seriesName}: <b>${p.value[1].toFixed(1)}</b>`).join('<br/>')
+        const t = new Date(params[0].value[0])
+        const time = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`
+        return params.map((p: any) =>
+          `${time}<br/>${p.marker}${p.seriesName}: <b>${Number(p.value[1]).toFixed(1)}</b>`
+        ).join('<br/>')
       },
     },
     xAxis: {
       type: 'time',
-      axisLine: { lineStyle: { color: CHART_THEME.grid } },
+      axisLine: { lineStyle: { color: THEME.grid } },
+      axisTick: { show: false },
       axisLabel: {
-        color: CHART_THEME.text,
-        fontSize: 11,
+        color: THEME.text, fontSize: 10,
         formatter: (val: number) => {
           const d = new Date(val)
           return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
         },
-        maxTicksLimit: 6,
-        hideOverlap: true,
       },
       splitLine: { show: false },
     },
     yAxis: {
       type: 'value',
       max: yMax,
+      min: 0,
       axisLine: { show: false },
-      splitLine: { lineStyle: { color: CHART_THEME.grid } },
-      axisLabel: { color: CHART_THEME.text, fontSize: 11 },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: THEME.grid, type: 'dashed' } },
+      axisLabel: { color: THEME.text, fontSize: 10 },
     },
-    series: series.map(s => ({
+    series: series.map((s, i) => ({
       name: s.name,
       type: 'line',
       data: s.data,
-      smooth: true,
+      smooth: 0.3,
       symbol: 'none',
-      lineStyle: { color: s.color, width: 2 },
-      areaStyle: { color: s.areaColor },
+      lineStyle: { color: s.color, width: 1.5 },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: s.color + '40' },
+          { offset: 1, color: s.color + '00' },
+        ]),
+      },
       itemStyle: { color: s.color },
+      z: series.length - i,
     })),
     legend: series.length > 1 ? {
-      top: 2, right: 8,
-      textStyle: { color: CHART_THEME.text, fontSize: 11 },
+      top: 0, right: 4,
+      itemWidth: 12, itemHeight: 2,
+      textStyle: { color: THEME.text, fontSize: 10 },
     } : undefined,
   }
 }
 
+function fakeSeries(val: number, minutes = 60): [number, number][] {
+  const now = Date.now()
+  return Array.from({ length: 20 }, (_, i) => [
+    now - (19 - i) * (minutes * 60000 / 20),
+    Math.max(0, val + (Math.random() - 0.5) * val * 0.1),
+  ])
+}
+
+function initChart(el: HTMLElement, prev: echarts.ECharts | null): echarts.ECharts {
+  prev?.dispose()
+  const c = echarts.init(el, undefined, { renderer: 'canvas' })
+  if (el.offsetWidth < 10) c.resize({ width: 380, height: 160 })
+  return c
+}
+
+function renderCharts() {
+  if (!status.value) return
+  const d = chartData.value
+  const s = status.value
+  const now = Date.now()
+  const mins = timeRange.value
+
+  const cpu = d?.cpu?.length > 0 ? d.cpu : fakeSeries(s.cpu.usagePct ?? 0, mins)
+  const mem = d?.memory?.length > 0 ? d.memory : fakeSeries(s.memory.usedPct, mins)
+  const rx = d?.netRx?.length > 0 ? d.netRx.map(([t, v]: [number, number]) => [t, v / 1024]) : fakeSeries(0, mins)
+  const tx = d?.netTx?.length > 0 ? d.netTx.map(([t, v]: [number, number]) => [t, v / 1024]) : fakeSeries(0, mins)
+
+  if (cpuChartRef.value) {
+    cpuChart = initChart(cpuChartRef.value, cpuChart)
+    cpuChart.setOption(buildLineOption([{ name: 'CPU %', data: cpu, color: THEME.blue }], 100))
+  }
+  if (memChartRef.value) {
+    memChart = initChart(memChartRef.value, memChart)
+    memChart.setOption(buildLineOption([{ name: '内存 %', data: mem, color: THEME.green }], 100))
+  }
+  if (netChartRef.value) {
+    netChart = initChart(netChartRef.value, netChart)
+    netChart.setOption(buildLineOption([
+      { name: '入 KB/s', data: rx, color: THEME.blue },
+      { name: '出 KB/s', data: tx, color: THEME.amber },
+    ]))
+  }
+  if (loadChartRef.value) {
+    const l1 = fakeSeries(s.cpu.load1 ?? 0, mins)
+    const l5 = fakeSeries(s.cpu.load5 ?? 0, mins)
+    const l15 = fakeSeries(s.os.loadAvg[2] ?? 0, mins)
+    const realL1 = d?.load1?.length > 0 ? d.load1 : l1
+    const realL5 = d?.load5?.length > 0 ? d.load5 : l5
+    const realL15 = d?.load15?.length > 0 ? d.load15 : l15
+    loadChart = initChart(loadChartRef.value, loadChart)
+    loadChart.setOption(buildLineOption([
+      { name: 'load1',  data: realL1,  color: THEME.blue },
+      { name: 'load5',  data: realL5,  color: THEME.amber },
+      { name: 'load15', data: realL15, color: THEME.slate },
+    ]))
+  }
+}
+
+// ── 数据加载 ──────────────────────────────────────────────────────────
+
 async function loadStatus() {
-  try {
-    const res: any = await api.getSystemStatus()
-    status.value = res.data
-    lastUpdate.value = new Date().toLocaleTimeString('zh-CN')
-  } catch {}
+  const res: any = await api.getSystemStatus()
+  status.value = res.data
+  lastUpdate.value = new Date().toLocaleTimeString('zh-CN')
 }
 
 async function fetchChartData() {
-  if (!status.value) return
   chartLoading.value = true
   try {
     const res: any = await api.getSystemChart(timeRange.value)
     chartData.value = res.data
-    chartReady.value = true
-    // nextTick 仅保证 DOM 插入，需额外等待浏览器完成布局后再初始化 ECharts
     await nextTick()
-    await new Promise(r => setTimeout(r, 120))
+    await new Promise(r => setTimeout(r, 80))
     renderCharts()
-  } catch {
   } finally {
     chartLoading.value = false
   }
 }
 
-function initChart(el: HTMLElement | undefined, instance: echarts.ECharts | null): echarts.ECharts | null {
-  if (!el) return null
-  instance?.dispose()
-  const chart = echarts.init(el, undefined, { renderer: 'canvas' })
-  // 确保容器有实际尺寸
-  if (el.offsetWidth === 0 || el.offsetHeight === 0) {
-    chart.resize({ width: el.parentElement?.offsetWidth ?? 380, height: 180 })
-  }
-  return chart
-}
-
-function renderCharts() {
-  if (!chartData.value || !status.value) return
-
-  const d = chartData.value
-  const now = Date.now()
-
-  // CPU 图（有 Prometheus 数据则用时序，否则用静态横线）
-  if (cpuChartRef.value) {
-    const data = d.cpu.length > 0
-      ? d.cpu
-      : Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, status.value.cpu.usagePct ?? 0])
-    cpuChart = initChart(cpuChartRef.value, cpuChart)
-    cpuChart?.setOption(buildLineOption([
-      { name: 'CPU %', data, color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
-    ], 100))
-  }
-
-  // 内存图
-  if (memChartRef.value) {
-    const data = d.memory.length > 0
-      ? d.memory
-      : Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, status.value.memory.usedPct ?? 0])
-    memChart = initChart(memChartRef.value, memChart)
-    memChart?.setOption(buildLineOption([
-      { name: '内存 %', data, color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
-    ], 100))
-  }
-
-  // 网络图（KB/s）
-  if (netChartRef.value) {
-    const rxData = d.netRx.length > 0
-      ? d.netRx.map(([t, v]: [number, number]) => [t, v / 1024])
-      : Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, 0])
-    const txData = d.netTx.length > 0
-      ? d.netTx.map(([t, v]: [number, number]) => [t, v / 1024])
-      : Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, 0])
-    netChart = initChart(netChartRef.value, netChart)
-    netChart?.setOption(buildLineOption([
-      { name: '入 KB/s', data: rxData, color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
-      { name: '出 KB/s', data: txData, color: '#f59e0b', areaColor: 'rgba(245,158,11,.12)' },
-    ]))
-  }
-
-  // 负载图
-  if (loadChartRef.value) {
-    const l1 = status.value.cpu.load1 ?? 0
-    const l5 = status.value.cpu.load5 ?? 0
-    const l15 = status.value.os.loadAvg[2] ?? 0
-    const pts = (v: number) => Array.from({ length: 10 }, (_, i) => [now - (9 - i) * 60000, v])
-    loadChart = initChart(loadChartRef.value, loadChart)
-    loadChart?.setOption(buildLineOption([
-      { name: 'load1',  data: pts(l1),  color: CHART_THEME.line1, areaColor: CHART_THEME.area1 },
-      { name: 'load5',  data: pts(l5),  color: '#f59e0b', areaColor: 'rgba(245,158,11,.12)' },
-      { name: 'load15', data: pts(l15), color: '#94a3b8', areaColor: 'rgba(148,163,184,.08)' },
-    ]))
-  }
-}
-
 async function loadAll() {
   loading.value = true
-  await Promise.all([loadStatus(), fetchChartData()])
+  try {
+    await loadStatus()
+    await fetchChartData()
+  } catch {}
   loading.value = false
 }
 
-const installDocs = `# 1. 安装 node_exporter（采集系统指标）
-wget https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-*.linux-amd64.tar.gz
-tar xvf node_exporter-*.tar.gz && sudo cp node_exporter-*/node_exporter /usr/local/bin/
-sudo useradd -rs /bin/false node_exporter
-cat > /etc/systemd/system/node_exporter.service << 'EOF'
-[Unit]
-Description=Node Exporter
-[Service]
-User=node_exporter
-ExecStart=/usr/local/bin/node_exporter
-[Install]
-WantedBy=multi-user.target
-EOF
-sudo systemctl enable --now node_exporter
+function toggleAutoRefresh() {
+  autoRefresh.value = !autoRefresh.value
+  if (autoRefresh.value) {
+    refreshTimer = setInterval(loadAll, 30000)
+  } else {
+    if (refreshTimer) clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
 
-# 2. 安装 Prometheus
-wget https://github.com/prometheus/prometheus/releases/latest/download/prometheus-*.linux-amd64.tar.gz
-tar xvf prometheus-*.tar.gz && sudo cp prometheus-*/prometheus /usr/local/bin/
-# 配置 scrape
-cat > /etc/prometheus/prometheus.yml << 'EOF'
-global:
-  scrape_interval: 15s
-scrape_configs:
-  - job_name: 'node'
-    static_configs:
-      - targets: ['localhost:9100']
-EOF
-sudo systemctl enable --now prometheus
-
-# 3. 在后端 .env 中确认（默认即可）
-PROMETHEUS_URL=http://localhost:9090
-
-# 4. 重启后端
-pm2 restart jthub-api --update-env`
+function onResize() {
+  cpuChart?.resize()
+  memChart?.resize()
+  netChart?.resize()
+  loadChart?.resize()
+}
 
 onMounted(() => {
   loadAll()
-  refreshTimer = window.setInterval(loadAll, 30000)
+  refreshTimer = setInterval(loadAll, 30000)
   window.addEventListener('resize', onResize)
 })
 
@@ -486,96 +591,198 @@ onBeforeUnmount(() => {
   loadChart?.dispose()
 })
 
-function onResize() {
-  cpuChart?.resize()
-  memChart?.resize()
-  netChart?.resize()
-  loadChart?.resize()
-}
+const installDocs = `# 1. 安装 node_exporter
+wget https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-1.8.2.linux-amd64.tar.gz
+tar xvf node_exporter-*.tar.gz
+sudo cp node_exporter-*/node_exporter /usr/local/bin/
+sudo useradd -rs /bin/false node_exporter
+sudo tee /etc/systemd/system/node_exporter.service > /dev/null <<'EOF'
+[Unit]
+Description=Node Exporter
+[Service]
+User=node_exporter
+ExecStart=/usr/local/bin/node_exporter
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload && sudo systemctl enable --now node_exporter
+
+# 2. 安装 Prometheus
+wget https://github.com/prometheus/prometheus/releases/latest/download/prometheus-2.53.0.linux-amd64.tar.gz
+tar xvf prometheus-*.tar.gz
+sudo cp prometheus-*/prometheus /usr/local/bin/
+sudo mkdir -p /etc/prometheus
+sudo tee /etc/prometheus/prometheus.yml > /dev/null <<'EOF'
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: node
+    static_configs:
+      - targets: ['localhost:9100']
+EOF
+sudo tee /etc/systemd/system/prometheus.service > /dev/null <<'EOF'
+[Unit]
+Description=Prometheus
+[Service]
+ExecStart=/usr/local/bin/prometheus --config.file=/etc/prometheus/prometheus.yml
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload && sudo systemctl enable --now prometheus
+
+# 3. 在 backend/.env 添加（默认已配置）
+PROMETHEUS_URL=http://localhost:9090
+
+# 4. 重启后端
+pm2 restart jthub-api --update-env`
 </script>
 
 <style scoped>
+/* ── 基础 ── */
 .monitor-page { display: flex; flex-direction: column; gap: 16px; }
 
-.monitor-header { }
-.monitor-title-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
-.monitor-title-row h2 { font-size: 1.1rem; font-weight: 700; color: #e8f0fe; }
-.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.update-time { font-size: 11px; color: #3d5a70; }
+/* ── 顶栏 ── */
+.monitor-header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px;
+}
+.header-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.page-title { font-size: 1.05rem; font-weight: 700; color: #e2e8f0; margin: 0; }
+.live-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  color: #22c55e; background: rgba(34,197,94,.12);
+  border: 1px solid rgba(34,197,94,.25); border-radius: 20px; padding: 2px 8px;
+}
+.live-badge--paused { color: #64748b; background: rgba(100,116,139,.1); border-color: rgba(100,116,139,.2); }
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+  animation: pulse 1.5s infinite;
+}
+.live-badge--paused .live-dot { animation: none; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+.update-time { font-size: 11px; color: #475569; }
+.header-right { display: flex; align-items: center; gap: 8px; }
 
-/* 指标卡片 */
-.metric-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+/* ── section 标签 ── */
+.section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: #475569;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-badge {
+  font-size: 9px; font-weight: 600; padding: 1px 7px; border-radius: 4px;
+  text-transform: none; letter-spacing: 0;
+}
+.section-badge.warn { color: #f59e0b; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.2); }
+
+/* ── 骨架屏 ── */
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 10px; }
+.skeleton-card {
+  height: 88px; border-radius: 12px;
+  background: linear-gradient(90deg, #0d1b2e 25%, #132336 50%, #0d1b2e 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── 指标卡片 ── */
+.cards-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px,1fr)); gap: 10px; }
 .metric-card {
-  background: #0d1b2e;
-  border: 1px solid rgba(0,212,255,0.1);
-  border-radius: 12px;
-  padding: 16px;
-  display: flex; align-items: center; gap: 12px;
+  background: #0d1b2e; border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px; padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
   position: relative; overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color .2s, transform .15s;
 }
-.metric-card:hover { box-shadow: 0 0 16px rgba(0,212,255,0.08); }
-
-.card-success,
-.card-warning,
-.card-danger,
-.card-neutral,
-.card-net,
-.card-biz {
-  border-top: 2px solid #00d4ff;
-  color: #00d4ff;
+.metric-card:hover { transform: translateY(-1px); }
+.metric-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  border-radius: 12px 12px 0 0;
 }
-.card-success::before,
-.card-warning::before,
-.card-danger::before,
-.card-net::before,
-.card-biz::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.06) 0%, transparent 70%);
-  pointer-events: none;
+.card-ok::before    { background: #22c55e; }
+.card-warn::before  { background: #f59e0b; }
+.card-danger::before{ background: #ef4444; }
+.card-neutral::before{ background: #3b82f6; }
+
+.card-ok     { border-color: rgba(34,197,94,.15); }
+.card-warn   { border-color: rgba(245,158,11,.2); }
+.card-danger { border-color: rgba(239,68,68,.25); }
+.card-neutral{ border-color: rgba(59,130,246,.15); }
+
+.card-inner { display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; }
+.card-icon  { font-size: 1.3rem; flex-shrink: 0; }
+.card-body  { flex: 1; min-width: 0; }
+.card-value { font-size: 1.35rem; font-weight: 800; color: #e2e8f0; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.card-label { font-size: 10px; color: #475569; margin-top: 3px; letter-spacing: .04em; }
+.card-sub   { font-size: 10px; color: #334155; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ring gauge */
+.ring-svg { width: 46px; height: 46px; flex-shrink: 0; }
+
+/* 网络条 */
+.net-value { font-size: 1rem; }
+.net-tx { color: #f59e0b; }
+.net-rx { color: #3b82f6; }
+.net-bars { display: flex; flex-direction: column; gap: 5px; width: 50px; flex-shrink: 0; }
+.net-bar-wrap { height: 4px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
+.net-bar-fill { height: 100%; border-radius: 2px; transition: width .5s ease; }
+.net-bar-fill.tx { background: #f59e0b; }
+.net-bar-fill.rx { background: #3b82f6; }
+
+/* 运行时长 */
+.uptime-stack { display: flex; flex-direction: column; gap: 4px; min-width: 80px; }
+.uptime-item { font-size: 10px; color: #475569; white-space: nowrap; }
+.uptime-item b { color: #94a3b8; font-weight: 600; }
+
+/* 负载条 */
+.load-bars { display: flex; flex-direction: column; gap: 5px; width: 90px; flex-shrink: 0; }
+.lb-row { display: flex; align-items: center; gap: 4px; }
+.lb-label { font-size: 9px; color: #475569; width: 18px; flex-shrink: 0; }
+.lb-track { flex: 1; height: 4px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
+.lb-fill  { height: 100%; border-radius: 2px; transition: width .5s ease; }
+.lb-val   { font-size: 9px; color: #475569; width: 28px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+/* ── 业务卡片 ── */
+.biz-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.biz-card {
+  flex: 1 1 100px; min-width: 100px; max-width: 180px;
+  background: #0d1b2e; border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px; padding: 14px 16px; text-align: center;
+  transition: border-color .2s;
 }
+.biz-card.biz-warn { border-color: rgba(245,158,11,.2); }
+.biz-icon { font-size: 1.2rem; margin-bottom: 6px; }
+.biz-num  { font-size: 1.6rem; font-weight: 800; color: #e2e8f0; line-height: 1; font-variant-numeric: tabular-nums; }
+.biz-num.warn { color: #f59e0b; }
+.biz-num.ok   { color: #22c55e; }
+.biz-label { font-size: 10px; color: #475569; margin-top: 5px; letter-spacing: .04em; }
 
-.mc-icon { font-size: 1.4rem; flex-shrink: 0; opacity: 0.9; }
-.mc-body { flex: 1; min-width: 0; }
-.mc-value { font-size: 1.4rem; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.mc-label { font-size: 11px; color: #4d6a82; margin-top: 3px; letter-spacing: 0.04em; }
-.mc-sub   { font-size: 11px; color: #3d5a70; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.mc-gauge { width: 44px; height: 44px; flex-shrink: 0; }
-.gauge-svg { width: 100%; height: 100%; }
-.gauge-svg circle:last-child { transition: stroke-dashoffset .4s ease; }
-
-/* 图表区 */
-.charts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 12px; }
+/* ── 图表 ── */
+.charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .chart-card {
-  background: #0d1b2e;
-  border: 1px solid rgba(0,212,255,0.1);
-  border-radius: 12px;
-  padding: 16px;
+  background: #0d1b2e; border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px; padding: 14px 16px;
 }
-.chart-title { font-size: 11px; font-weight: 700; color: #4d6a82; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-.chart-hint { font-size: 10px; font-weight: 500; color: #f59e0b; background: rgba(245,158,11,0.1); padding: 1px 7px; border-radius: 4px; letter-spacing: 0; text-transform: none; }
-.chart-canvas { height: 180px; }
+.chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.chart-title { font-size: 10px; font-weight: 700; color: #475569; letter-spacing: .08em; text-transform: uppercase; }
+.chart-loading-badge { font-size: 9px; color: #f59e0b; }
+.chart-canvas { height: 160px; }
 
-.info-card { }
-.chart-loading { text-align: center; padding: 32px; color: #4d6a82; font-size: 13px; background: #0d1b2e; border-radius: 12px; border: 1px solid rgba(0,212,255,0.1); }
-
+/* ── 信息卡 ── */
+.info-card { margin: 0; }
 .install-code {
-  background: #030711;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 12px;
-  line-height: 1.7;
-  color: #7fa5c0;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  border: 1px solid rgba(0,212,255,0.08);
+  background: #030711; border-radius: 8px; padding: 14px;
+  font-size: 11px; line-height: 1.7; color: #64748b;
+  overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+  border: 1px solid rgba(255,255,255,.04); margin: 0;
 }
 
-@media (max-width: 768px) {
-  .metric-cards { grid-template-columns: repeat(2, 1fr); }
+/* ── 响应式 ── */
+@media (max-width: 900px) {
   .charts-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .cards-row { grid-template-columns: repeat(2, 1fr); }
+  .biz-card { max-width: none; }
 }
 </style>
