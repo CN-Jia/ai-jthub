@@ -21,7 +21,7 @@ export async function pointsRoutes(fastify: FastifyInstance) {
       prisma.user.count({
         where: {
           invitedById: userId,
-          orders: { some: { status: 'COMPLETED' } },
+          productOrders: { some: { status: 'COMPLETED' } },
         },
       }),
     ])
@@ -43,7 +43,7 @@ export async function pointsRoutes(fastify: FastifyInstance) {
       select: {
         nickname: true,
         createdAt: true,
-        orders: {
+        productOrders: {
           where: { status: 'COMPLETED' },
           orderBy: { createdAt: 'asc' },
           take: 1,
@@ -57,7 +57,7 @@ export async function pointsRoutes(fastify: FastifyInstance) {
       list: invitees.map(u => ({
         nickname: u.nickname,
         registeredAt: u.createdAt,
-        firstOrderAt: u.orders[0]?.createdAt ?? null,
+        firstOrderAt: u.productOrders[0]?.createdAt ?? null,
       })),
     }))
   })

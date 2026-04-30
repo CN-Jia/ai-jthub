@@ -203,11 +203,3 @@ export async function unfreeze(
     })
   })
 }
-
-// 判断用户是否有首笔完成订单（用于拉新首购积分判断）
-export async function isFirstCompletedOrder(userId: string): Promise<boolean> {
-  const count = await prisma.order.count({
-    where: { userId, status: 'COMPLETED' },
-  })
-  return count === 1
-}

@@ -4,6 +4,7 @@ import { verifyAdmin } from '../../middlewares/auth.middleware.js'
 import { prisma } from '../../lib/prisma.js'
 import { successResponse, errorResponse, ERROR_CODES } from '../../utils/response.js'
 import { createAdminNotification } from '../../services/adminNotification.service.js'
+import { awardPoints } from '../../services/points.service.js'
 import { Prisma } from '@prisma/client'
 
 export async function adminProductOrderRoutes(fastify: FastifyInstance) {
@@ -56,38 +57,57 @@ export async function adminProductOrderRoutes(fastify: FastifyInstance) {
         coupon: { select: { code: true, discountType: true, discountValue: true } },
       },
     })
-    if (!order) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '?????'))
+    if (!order) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '订单不存在'))
     return reply.send(successResponse(order))
   })
 
   fastify.put('/admin/product-orders/:id/complete', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const order = await prisma.productOrder.findUnique({ where: { id } })
-    if (!order) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '?????'))
+    const order = await prisma.productOrder.findUnique({
+      where: { id },
+      include: { user: { select: { id: true, invitedById: true } } },
+    })
+    if (!order) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '订单不存在'))
     if (order.status !== 'PAID') {
-      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '??????????????'))
+      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '只有已支付的订单才能标记完成'))
     }
+
     const updated = await prisma.productOrder.update({
       where: { id },
       data: { status: 'COMPLETED', completedAt: new Date() },
     })
+
+    // 积分首购挂钩：判断是否为该用户第一笔完成的商品订单
+    const { userId, user } = order
+    if (user.invitedById) {
+      const completedCount = await prisma.productOrder.count({
+        where: { userId, status: 'COMPLETED' },
+      })
+      if (completedCount === 1) {
+        // 邀请者获得首购积分
+        awardPoints(user.invitedById, 'INVITE_FIRST_ORDER', id, `被邀请用户首次完成商品订单`).catch(() => {})
+        // 新用户本人获得首购积分
+        awardPoints(userId, 'NEW_USER_FIRST_ORDER', id, '首次完成商品订单').catch(() => {})
+      }
+    }
+
     return reply.send(successResponse({ status: updated.status }))
   })
 
   fastify.put('/admin/product-orders/:id/cancel', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
     const parse = z.object({ reason: z.string().optional() }).safeParse(request.body)
-    const reason = parse.success ? (parse.data.reason ?? '?????') : '?????'
+    const reason = parse.success ? (parse.data.reason ?? '管理员操作') : '管理员操作'
     const order = await prisma.productOrder.findUnique({ where: { id } })
-    if (!order) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '?????'))
+    if (!order) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '订单不存在'))
     if (order.status === 'COMPLETED' || order.status === 'CANCELLED') {
-      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '??????????'))
+      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '已完成或已取消的订单无法操作'))
     }
     const updated = await prisma.productOrder.update({
       where: { id },
       data: { status: 'CANCELLED', cancelledAt: new Date(), cancelReason: reason },
     })
-    createAdminNotification({ type: 'ORDER_CANCELLED', summary: `?? ${order.orderNo} ???????`, orderId: id }).catch(() => {})
+    createAdminNotification({ type: 'ORDER_CANCELLED', summary: `订单 ${order.orderNo} 已被取消`, orderId: id }).catch(() => {})
     return reply.send(successResponse({ status: updated.status }))
   })
 }

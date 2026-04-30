@@ -234,11 +234,14 @@ export async function adminPointsRoutes(fastify: FastifyInstance) {
       data: { status: 'REJECTED', adminNote: parse.data.note },
     })
 
-    // 归还库存
-    await prisma.shopItem.update({
-      where: { id: order.shopItemId },
-      data: { stock: { increment: 1 } },
-    }).catch(() => {})
+    // 归还库存（仅有限库存商品，stock=-1 表示无限库存，不需要归还）
+    const item = await prisma.shopItem.findUnique({ where: { id: order.shopItemId }, select: { stock: true } })
+    if (item && item.stock >= 0) {
+      await prisma.shopItem.update({
+        where: { id: order.shopItemId },
+        data: { stock: { increment: 1 } },
+      }).catch(() => {})
+    }
 
     await unfreeze(order.userId, order.pointsCost, id)
 
