@@ -40,6 +40,8 @@
 - [ ] T014 修改 `backend/src/routes/admin/orders.ts` 的订单状态变更逻辑：当状态变为 `COMPLETED` 时，若该用户存在 `invitedById` 且是首笔完成订单，则调用 `pointsService.awardPoints(inviterId, 'INVITE_FIRST_ORDER')` + `pointsService.awardPoints(userId, 'NEW_USER_FIRST_ORDER')`
 - [ ] T015 在 `backend/src/routes/admin/orders.ts` 添加辅助查询：判断当前订单是否为该用户的第一笔 COMPLETED 订单（`prisma.order.count({ where: { userId, status: 'COMPLETED' } }) === 1`）
 
+> ⚠️ **跨 Feature 迁移说明**：T014–T015 针对现有旧版 `Order` 模型。Feature 002（商品结算流程）将旧 `Order` 替换为 `ProductOrder`，届时需将上述挂钩迁移至 `backend/src/routes/admin/productOrders.ts` 并将查询改为 `prisma.productOrder.count(...)`。迁移任务已在 Feature 002 的 plan.md"积分系统集成"章节中说明，由 Feature 002 的 T029 承接。在 Feature 002 合并前，本任务按旧 `Order` 实现即可。
+
 **⚠️ Checkpoint**: Phase 2 完成后，注册邀请积分和首购积分自动触发可验证。
 
 ---
@@ -134,7 +136,8 @@
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T057 [P] 在积分商城商品卡片中，当用户积分不足时显示灰色"积分不足"禁用状态
+- [ ] T057 [P] 为 `backend/src/services/points.service.ts` 编写核心逻辑 smoke test（使用 Prisma mock 或 in-memory DB）：① `awardPoints` 正确写入 PointBalance + PointLog；② `freezePoints` totalPoints 减少 + frozenPoints 增加；③ `deductFrozen` 审核通过后 frozenPoints 清零；④ `unfreeze` 审核拒绝后 frozenPoints 归还；⑤ `awardPoints` 在 totalPoints 为 0 时不出现负值
+- [ ] T057b [P] 在积分商城商品卡片中，当用户积分不足时显示灰色"积分不足"禁用状态
 - [ ] T058 [P] `points.service.ts` 补充边界保护：`totalPoints < 0` 时抛出业务异常（`INSUFFICIENT_POINTS`），确保数据库不出现负值
 - [ ] T059 [P] 前端所有积分相关数字格式化：三位分隔符（`1,000`），正负 delta 分别用绿色/红色显示
 - [ ] T060 [P] 后端所有积分路由补充 zod 参数校验（分页 page/pageSize 范围、delta 为非零整数等）

@@ -119,9 +119,11 @@ admin/src/
 
 详见 [data-model.md](data-model.md)
 
-**新增模型**：`Product`、新版 `Order`（替换旧版）、`Coupon`、`PaymentConfig`、`Notification`  
+**新增模型**：`Product`、新版 `ProductOrder`（替换旧版 `Order`）、`PromoCoupon`（促销优惠码，区别于积分兑换产生的 `Coupon`）、`PaymentConfig`、`Notification`  
 **删除模型**：`OrderType`（旧需求类型）  
-**保留模型**：`User`、`Post`、`Comment`、`Feedback`、`Carousel`、`PointBalance` 等
+**保留模型**：`User`、`Post`、`Comment`、`Feedback`、`Carousel`、`PointBalance`、`PointLog`、`Coupon`（积分系统兑换券，Feature 001 产出，不修改）等
+
+> **命名约定**：本 feature 的促销优惠码模型统一命名为 `PromoCoupon`（对应后台路由文件 `admin/promoCoupons.ts`、service 文件 `coupon.service.ts`），以避免与 Feature 001 中积分兑换生成的 `Coupon` 产生 Prisma schema 冲突。
 
 ### 订单状态机
 
@@ -162,6 +164,17 @@ admin/src/
 | `/api/admin/payment-config` | GET/PUT | 管理员 | 收款码图片配置 |
 
 ---
+
+## 积分系统集成（Feature 001 交叉点）
+
+Feature 001（积分系统）在旧版 `admin/orders.ts` 中挂钩监听 `Order.status → COMPLETED` 以触发邀请首购积分奖励。本 feature 将旧 `Order` 替换为 `ProductOrder`，**必须同步迁移此挂钩**，否则积分首购奖励将永久失效。
+
+**集成方案**：
+- 在 `backend/src/routes/admin/productOrders.ts` 的 `PUT /api/admin/orders/:id/complete` 接口中，复用 Feature 001 的 `pointsService.awardPoints` 逻辑：
+  1. 查询 `ProductOrder` 的 `userId`，检查其是否存在 `user.invitedById`
+  2. 判断是否为该用户第一笔 `COMPLETED` 的 `ProductOrder`（`prisma.productOrder.count({ where: { userId, status: 'COMPLETED' } }) === 1`）
+  3. 若满足，调用 `pointsService.awardPoints(inviterId, 'INVITE_FIRST_ORDER')` + `pointsService.awardPoints(userId, 'NEW_USER_FIRST_ORDER')`
+- Feature 001 的原始 T014–T015 任务在 002 部署后**不再适用**，由本 feature 的 T029 承接此逻辑（详见 tasks.md T029-migration）
 
 ## Complexity Tracking
 

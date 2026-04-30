@@ -30,11 +30,11 @@
 
 **⚠️ CRITICAL**: 此阶段完成前，任何 User Story 均不可开始。
 
-- [ ] T008 更新 `backend/prisma/schema.prisma`：新增 `Product`、`ProductOrder`、`OrderStatus` 枚举、`Coupon`、`DiscountType` 枚举、`PaymentConfig`、`Notification`、`NotificationType` 枚举（参照 data-model.md）
+- [ ] T008 更新 `backend/prisma/schema.prisma`：新增 `Product`、`ProductOrder`、`OrderStatus` 枚举、`PromoCoupon`（促销优惠码，区别于积分系统的 `Coupon` 模型）、`DiscountType` 枚举、`PaymentConfig`、`Notification`、`NotificationType` 枚举（参照 data-model.md）
 - [ ] T009 在 `backend/prisma/schema.prisma` 中将旧 `Order` 模型重命名为 `OrderLegacy`，将 `OrderType` 重命名为 `OrderTypeLegacy`
 - [ ] T010 运行 `npx prisma migrate dev --name product_shop_checkout` 生成并应用迁移文件
 - [ ] T011 [P] 创建 `backend/src/services/order.service.ts`：实现 `generateOrderNo()` 函数（格式 `ORD-YYYYMMDD-XXXXX`）、订单状态流转校验（`assertCanTransition`）
-- [ ] T012 [P] 创建 `backend/src/services/coupon.service.ts`：实现 `validateCoupon(code, productId)`（校验有效期、使用次数）和 `applyCoupon(couponId, tx)`（乐观锁消耗次数）
+- [ ] T012 [P] 创建 `backend/src/services/coupon.service.ts`：实现 `validatePromoCoupon(code, productId)`（校验 `PromoCoupon` 有效期、使用次数）和 `applyPromoCoupon(couponId, tx)`（乐观锁消耗次数）；注意 service 内部操作的是 `promoCoupon` 表，不影响积分系统的 `coupon` 表
 - [ ] T013 [P] 创建 `backend/src/services/notification.service.ts`：实现 `createOrderNotification(orderId, type)`，写入 `Notification` 表
 - [ ] T014 [P] 创建 `backend/src/middleware/adminAuth.ts`（如尚未存在）：管理员权限校验中间件
 
@@ -86,7 +86,7 @@
 - [ ] T026 [P] [US3] 在 `backend/src/routes/orders.ts` 添加：`POST /api/orders/:id/pay`（CREATED→PAID，调用 `notification.service.createOrderNotification`）、`POST /api/orders/:id/cancel`（用户取消，仅 CREATED 状态）
 - [ ] T027 [P] [US3] 创建 `backend/src/routes/paymentConfig.ts`：`GET /api/payment-config`（需登录，获取收款码 URL）、`PUT /api/admin/payment-config`（管理员更新，支持图片 URL）
 - [ ] T028 [P] [US3] 创建 `backend/src/routes/notifications.ts`：`GET /api/notifications`（管理员，支持 `?unread=true&limit=20`）、`PUT /api/notifications/:id/read`、`PUT /api/notifications/read-all`
-- [ ] T029 [P] [US3] 创建 `backend/src/routes/admin/orders.ts`：`GET /api/admin/orders`（分页+筛选 status）、`PUT /api/admin/orders/:id/complete`（PAID→COMPLETED）、`PUT /api/admin/orders/:id/cancel`（管理员取消，含 `reason`）
+- [ ] T029 [P] [US3] 创建 `backend/src/routes/admin/productOrders.ts`（对应实现文件 `admin/productOrders.ts`）：`GET /api/admin/orders`（分页+筛选 status）、`PUT /api/admin/orders/:id/complete`（PAID→COMPLETED）、`PUT /api/admin/orders/:id/cancel`（管理员取消，含 `reason`）；**在 `complete` 接口中承接 Feature 001 积分首购挂钩**：订单变为 COMPLETED 时检查用户是否有 `invitedById`、是否为首笔 `ProductOrder` COMPLETED，若满足则调用 `pointsService.awardPoints(inviterId, 'INVITE_FIRST_ORDER')` + `pointsService.awardPoints(userId, 'NEW_USER_FIRST_ORDER')`（使用 `prisma.productOrder.count` 替代旧版 `prisma.order.count`）
 - [ ] T030 [US3] 在 `backend/src/app.ts` 注册新路由：`paymentConfig`、`notifications`、`admin/orders`
 
 ### 前台实现（US3）
@@ -118,8 +118,8 @@
 
 ### 后端实现（US2）
 
-- [ ] T039 [P] [US2] 创建 `backend/src/routes/coupons.ts`：`POST /api/coupons/validate`（校验优惠码+预览价格，不消耗次数）；需登录鉴权
-- [ ] T040 [US2] 更新 `backend/src/routes/orders.ts` 中 `POST /api/orders`：接受可选 `couponCode` 参数，在事务内调用 `coupon.service.applyCoupon` 消耗次数（乐观锁），计算 `discountAmount` 和 `paidPrice`
+- [ ] T039 [P] [US2] 创建 `backend/src/routes/coupons.ts`：`POST /api/coupons/validate`（校验 `PromoCoupon` 优惠码+预览价格，不消耗次数）；需登录鉴权
+- [ ] T040 [US2] 更新 `backend/src/routes/orders.ts` 中 `POST /api/orders`：接受可选 `couponCode` 参数，在事务内调用 `coupon.service.applyPromoCoupon` 消耗次数（乐观锁），计算 `discountAmount` 和 `paidPrice`
 
 ### 前台实现（US2）
 
@@ -165,13 +165,13 @@
 
 ### 后端实现（US5）
 
-- [ ] T048 [P] [US5] 创建 `backend/src/routes/admin/coupons.ts`：`GET /api/admin/coupons`（列表）、`POST /api/admin/coupons`（创建，自动检查 `code` 唯一性）、`DELETE /api/admin/coupons/:id`（已使用的不允许删除，返回 400）、`PUT /api/admin/coupons/:id/deactivate`（软停用）
-- [ ] T049 [US5] 在 `backend/src/app.ts` 注册 `admin/coupons` 路由
+- [ ] T048 [P] [US5] 创建 `backend/src/routes/admin/promoCoupons.ts`（对应实现文件 `admin/promoCoupons.ts`）：`GET /api/admin/promo-coupons`（列表）、`POST /api/admin/promo-coupons`（创建，自动检查 `code` 唯一性）、`DELETE /api/admin/promo-coupons/:id`（已使用的不允许删除，返回 400）、`PUT /api/admin/promo-coupons/:id/deactivate`（软停用）
+- [ ] T049 [US5] 在 `backend/src/app.ts` 注册 `admin/promoCoupons` 路由
 
 ### 后台实现（US5）
 
-- [ ] T050 [P] [US5] 创建 `admin/src/pages/coupons/index.vue`：优惠码管理页（表格：优惠码、折扣类型/值、有效期、已用/上限、状态）；新增表单（优惠码字符串、折扣类型单选、折扣值、有效期范围 `el-date-picker`、使用次数上限）；支持停用和删除操作
-- [ ] T051 [US5] 更新 `admin/src/router/index.ts` 和侧边栏：添加"优惠码管理"菜单项
+- [ ] T050 [P] [US5] 创建 `admin/src/pages/coupons/index.vue`：促销优惠码管理页（表格：优惠码、折扣类型/值、有效期、已用/上限、状态）；新增表单（优惠码字符串、折扣类型单选、折扣值、有效期范围 `el-date-picker`、使用次数上限）；支持停用和删除操作；对应后端 `GET /api/admin/promo-coupons`
+- [ ] T051 [US5] 更新 `admin/src/router/index.ts` 和侧边栏：添加"促销优惠码"菜单项
 
 **Checkpoint**: US5 可验收——管理员创建优惠码 → 用户在购买页验证成功 → 使用后 `usedCount+1` → 重复使用报错
 
@@ -181,7 +181,9 @@
 
 **Purpose**: 提升整体质量，补全边界逻辑、错误提示和视觉一致性。
 
-- [ ] T052 [P] 在 `frontend/src/pages/products/index.vue` 添加空状态（无商品时的占位提示）和骨架屏 loading 效果
+- [ ] T052 [P] 为 `backend/src/services/order.service.ts` 编写单元测试：① `assertCanTransition` 校验合法状态流转（CREATED→PAID、PAID→COMPLETED）；② 非法流转（COMPLETED→PAID）抛出异常；③ `generateOrderNo` 生成符合 `ORD-YYYYMMDD-XXXXX` 格式的唯一编号
+- [ ] T052b [P] 为 `backend/src/services/coupon.service.ts` 编写单元测试：① `validatePromoCoupon` 对已过期码返回错误；② 对已达使用上限的码返回错误；③ `applyPromoCoupon` 在并发场景下（乐观锁）只允许一次成功消耗
+- [ ] T052c [P] 在 `frontend/src/pages/products/index.vue` 添加空状态（无商品时的占位提示）和骨架屏 loading 效果
 - [ ] T053 [P] 在 `frontend/src/pages/orders/index.vue` 添加订单状态的彩色 Tag（已创建-灰、已支付-蓝、已完成-绿、已取消-红）和空状态提示
 - [ ] T054 [P] 在 `admin/src/pages/orders/index.vue` 添加批量筛选、导出（可选）和分页
 - [ ] T055 [P] 前台 `frontend/src/App.vue` 底部导航栏：将"提交"按钮改为"商品"入口（指向 `/products`）
