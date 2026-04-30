@@ -1,7 +1,34 @@
 <template>
-  <div class="dash">
+  <div class="screen">
 
-    <!-- ── 顶部核心指标 ── -->
+    <!-- 大屏顶栏 -->
+    <header class="screen-header">
+      <div class="sh-left">
+        <h1 class="sh-title">监控大屏</h1>
+        <span class="live-badge" :class="{ 'live-badge--paused': !autoRefresh }">
+          <span class="live-dot" />
+          {{ autoRefresh ? 'LIVE' : '已暂停' }}
+        </span>
+        <span v-if="lastGlobalRefresh" class="sh-meta">最后刷新 {{ lastGlobalRefresh }}</span>
+      </div>
+      <div class="sh-right">
+        <el-button size="small" plain @click="toggleAuto">
+          <el-icon class="el-icon--left"><VideoPause v-if="autoRefresh" /><VideoPlay v-else /></el-icon>
+          {{ autoRefresh ? '暂停轮询' : '恢复轮询' }}
+        </el-button>
+        <el-button size="small" type="primary" :loading="globalLoading" @click="refreshAll">
+          全部刷新
+        </el-button>
+      </div>
+    </header>
+
+    <!-- ── 旧版需求订单统计 ── -->
+    <section class="screen-section-title">
+      <span class="sst-line" />
+      <span>需求订单运营（旧版）</span>
+      <span class="sst-line" />
+    </section>
+
     <div class="metrics-grid">
       <div
         v-for="card in metricCards"
@@ -21,11 +48,10 @@
       </div>
     </div>
 
-    <!-- ── 订单状态分布 ── -->
-    <div class="section-title">
-      <span class="st-line" />
-      <span>订单状态分布</span>
-      <span class="st-line" />
+    <div class="screen-section-title">
+      <span class="sst-line" />
+      <span>旧版订单状态分布</span>
+      <span class="sst-line" />
     </div>
     <div class="status-grid">
       <div v-for="s in statusCards" :key="s.key" class="status-card" :style="{ '--sc': s.color }">
@@ -35,9 +61,7 @@
       </div>
     </div>
 
-    <!-- ── 快捷操作 + 最近订单 ── -->
     <div class="bottom-grid">
-      <!-- 快捷操作 -->
       <div class="panel quick-panel">
         <div class="panel-hd">
           <span class="ph-icon"><el-icon><Grid /></el-icon></span>
@@ -57,11 +81,10 @@
         </div>
       </div>
 
-      <!-- 最近订单 -->
       <div class="panel orders-panel">
         <div class="panel-hd">
           <span class="ph-icon"><el-icon><List /></el-icon></span>
-          最近订单
+          最近需求订单（旧版）
           <span class="ph-more" @click="$router.push('/orders')">全部 →</span>
         </div>
         <div class="orders-table">
@@ -90,20 +113,36 @@
         </div>
       </div>
     </div>
+
+    <!-- ── 系统 + 商品业务监控 ── -->
+    <section class="screen-section-title screen-section-title--accent">
+      <span class="sst-line" />
+      <span>系统资源与商品业务</span>
+      <span class="sst-line" />
+    </section>
+
+    <DashboardSysMonitor ref="sysRef" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { VideoPause, VideoPlay } from '@element-plus/icons-vue'
 import { api } from '../../api'
+import DashboardSysMonitor from '../../components/DashboardSysMonitor.vue'
 
+const sysRef = ref<InstanceType<typeof DashboardSysMonitor> | null>(null)
 const statsData = ref<any>({})
 const recentOrders = ref<any[]>([])
+const displayVals = ref<Record<string, number>>({})
+const autoRefresh = ref(true)
+const globalLoading = ref(false)
+const lastGlobalRefresh = ref('')
+
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const byStatus = computed(() => statsData.value?.byStatus ?? {})
 
-// 动态数字 counter 动画
-const displayVals = ref<Record<string, number>>({})
 function countUp(key: string, to: number, duration = 900) {
   const start = Date.now()
   const tick = () => {
@@ -144,20 +183,20 @@ const barWidths = computed(() => {
 })
 
 const statusCards = [
-  { key: 'PENDING',     label: '待确认', color: '#f59e0b' },
-  { key: 'ACCEPTED',    label: '已接单', color: '#00d4ff' },
+  { key: 'PENDING', label: '待确认', color: '#f59e0b' },
+  { key: 'ACCEPTED', label: '已接单', color: '#00d4ff' },
   { key: 'IN_PROGRESS', label: '进行中', color: '#a855f7' },
-  { key: 'COMPLETED',   label: '已完成', color: '#10d98a' },
-  { key: 'CLOSED',      label: '已关闭', color: '#4b5563' },
+  { key: 'COMPLETED', label: '已完成', color: '#10d98a' },
+  { key: 'CLOSED', label: '已关闭', color: '#4b5563' },
 ]
 
 const quickActions = [
-  { label: '处理待确认', path: '/orders?status=PENDING', icon: 'Warning',       color: '#f59e0b' },
-  { label: '全部订单',   path: '/orders',                icon: 'List',          color: '#00d4ff' },
-  { label: '需求类型',   path: '/order-types',           icon: 'Grid',          color: '#a855f7' },
-  { label: '发布公告',   path: '/activities',            icon: 'Bell',          color: '#10d98a' },
-  { label: '论坛管理',   path: '/posts',                 icon: 'ChatDotRound',  color: '#f472b6' },
-  { label: '用户管理',   path: '/users',                 icon: 'User',          color: '#60a5fa' },
+  { label: '商品订单', path: '/product-orders', icon: 'Goods', color: '#00d4ff' },
+  { label: '处理待确认', path: '/orders?status=PENDING', icon: 'Warning', color: '#f59e0b' },
+  { label: '旧版订单', path: '/orders', icon: 'List', color: '#94a3b8' },
+  { label: '需求类型', path: '/order-types', icon: 'Grid', color: '#a855f7' },
+  { label: '兑换审核', path: '/points/redeem', icon: 'Tickets', color: '#f472b6' },
+  { label: '用户管理', path: '/users', icon: 'User', color: '#60a5fa' },
 ]
 
 const STATUS_LABELS: Record<string, string> = {
@@ -166,11 +205,10 @@ const STATUS_LABELS: Record<string, string> = {
 }
 const statusLabel = (s: string) => STATUS_LABELS[s] ?? s
 
-onMounted(async () => {
+async function loadBiz() {
   const res: any = await api.getStats()
   statsData.value = res.data
   recentOrders.value = res.data?.recentOrders ?? []
-  // 启动数字动画
   const keyMap: Record<string, number> = {
     todayNew: res.data?.today?.new ?? 0,
     todayDone: res.data?.today?.completed ?? 0,
@@ -178,22 +216,76 @@ onMounted(async () => {
     total: res.data?.total ?? 0,
   }
   Object.entries(keyMap).forEach(([k, v]) => countUp(k, v))
+}
+
+async function refreshAll() {
+  globalLoading.value = true
+  try {
+    await loadBiz()
+    await sysRef.value?.loadAll()
+    lastGlobalRefresh.value = new Date().toLocaleTimeString('zh-CN')
+  } catch { /* ignore */ }
+  globalLoading.value = false
+}
+
+function toggleAuto() {
+  autoRefresh.value = !autoRefresh.value
+}
+
+onMounted(async () => {
+  await nextTick()
+  await refreshAll()
+  pollTimer = setInterval(() => {
+    if (autoRefresh.value) refreshAll()
+  }, 30000)
+})
+
+onBeforeUnmount(() => {
+  if (pollTimer) clearInterval(pollTimer)
 })
 </script>
 
 <style scoped>
-.dash { padding: 4px 0; }
+.screen { padding: 4px 0 24px; display: flex; flex-direction: column; gap: 0; }
 
-/* ─ Section title ─ */
-.section-title {
+.screen-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+  padding: 4px 4px 18px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.sh-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sh-title {
+  font-size: 1.25rem; font-weight: 800; color: var(--text-hi);
+  letter-spacing: 0.02em; margin: 0;
+}
+.live-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  color: #22c55e; background: rgba(34,197,94,.12);
+  border: 1px solid rgba(34,197,94,.25); border-radius: 20px; padding: 2px 10px;
+}
+.live-badge--paused { color: var(--text-lo); background: var(--bg-hover); border-color: var(--border); }
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+  animation: pulse 1.5s infinite;
+}
+.live-badge--paused .live-dot { animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+.sh-meta { font-size: 11px; color: var(--text-lo); }
+.sh-right { display: flex; align-items: center; gap: 8px; }
+
+.screen-section-title {
   display: flex; align-items: center; gap: 12px;
   color: var(--text-lo); font-size: 11px; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase;
   margin: 28px 0 14px;
 }
-.st-line { flex: 1; height: 1px; background: var(--border); }
+.screen-section-title--accent { color: var(--accent); margin-top: 32px; }
+.sst-line { flex: 1; height: 1px; background: var(--border); }
 
-/* ─ Metric cards ─ */
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -220,10 +312,9 @@ onMounted(async () => {
   pointer-events: none;
 }
 .metric-card:hover {
-  box-shadow: 0 0 20px var(--clr-dim), 0 4px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 0 20px var(--clr-dim), 0 4px 20px rgba(0,0,0,0.15);
   transform: translateY(-2px);
 }
-
 .mc-top {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 12px;
@@ -236,7 +327,6 @@ onMounted(async () => {
   border-radius: 4px;
   opacity: 0.7;
 }
-
 .mc-val {
   font-size: 40px;
   font-weight: 900;
@@ -263,7 +353,6 @@ onMounted(async () => {
   box-shadow: 0 0 8px var(--clr);
 }
 
-/* ─ Status cards ─ */
 .status-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -295,7 +384,6 @@ onMounted(async () => {
   box-shadow: 0 0 8px var(--sc);
 }
 
-/* ─ Bottom grid ─ */
 .bottom-grid {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -325,7 +413,6 @@ onMounted(async () => {
 }
 .ph-more:hover { opacity: 1; }
 
-/* Quick actions */
 .quick-actions {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 8px; padding: 14px;
@@ -344,11 +431,9 @@ onMounted(async () => {
 .qa-btn .el-icon { font-size: 14px; color: var(--qc); }
 .qa-btn:hover { background: var(--bg-hover); border-color: var(--qc); color: var(--text-hi); }
 
-/* Orders table */
 .orders-table { padding: 0 18px 14px; }
 .ot-head {
-  display: flex;
-  padding: 10px 0 6px;
+  display: flex; padding: 10px 0 6px;
   font-size: 11px; font-weight: 700;
   color: var(--text-lo); letter-spacing: 0.08em; text-transform: uppercase;
   border-bottom: 1px solid var(--border);

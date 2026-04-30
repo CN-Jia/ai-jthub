@@ -119,8 +119,7 @@ const navGroups = [
   {
     label: '概览',
     items: [
-      { path: '/',        label: '数据概览', icon: 'Odometer' },
-      { path: '/monitor', label: '系统监控', icon: 'Monitor' },
+      { path: '/', label: '监控大屏', icon: 'Monitor' },
     ],
   },
   {
@@ -164,8 +163,7 @@ const navGroups = [
 ]
 
 const titleMap: Record<string, string> = {
-  '/': '数据概览',
-  '/monitor': '系统监控',
+  '/': '监控大屏',
   '/products': '商品管理',
   '/product-orders': '订单管理',
   '/promo-coupons': '优惠码管理',

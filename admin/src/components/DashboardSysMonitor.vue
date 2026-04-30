@@ -1,40 +1,22 @@
 <template>
-  <div class="monitor-page">
-
-    <!-- 顶栏 -->
-    <div class="monitor-header">
-      <div class="header-left">
-        <h2 class="page-title">系统监控</h2>
-        <span class="live-badge" :class="{ 'live-badge--paused': !autoRefresh }">
-          <span class="live-dot" />
-          {{ autoRefresh ? 'LIVE' : '已暂停' }}
-        </span>
-        <span class="update-time" v-if="lastUpdate">{{ lastUpdate }} 更新</span>
-      </div>
-      <div class="header-right">
-        <el-select v-model="timeRange" style="width:130px" size="small" @change="fetchChartData">
-          <el-option label="近 30 分钟" :value="30" />
-          <el-option label="近 1 小时" :value="60" />
-          <el-option label="近 3 小时" :value="180" />
-          <el-option label="近 6 小时" :value="360" />
-        </el-select>
-        <el-button size="small" :icon="autoRefresh ? 'VideoPause' : 'VideoPlay'" @click="toggleAutoRefresh" plain>
-          {{ autoRefresh ? '暂停' : '恢复' }}
-        </el-button>
-        <el-button size="small" :loading="loading" type="primary" @click="loadAll">
-          刷新
-        </el-button>
-      </div>
+  <div class="sys-monitor">
+    <div class="sys-toolbar">
+      <span class="sys-toolbar-label">时序图表范围</span>
+      <el-select v-model="timeRange" style="width:130px" size="small" @change="fetchChartData">
+        <el-option label="近 30 分钟" :value="30" />
+        <el-option label="近 1 小时" :value="60" />
+        <el-option label="近 3 小时" :value="180" />
+        <el-option label="近 6 小时" :value="360" />
+      </el-select>
+      <span v-if="lastUpdate" class="sys-toolbar-meta">系统快照 {{ lastUpdate }}</span>
     </div>
 
-    <!-- Prometheus 未连接提示 -->
     <el-alert
       v-if="status && !status.promAvailable"
       type="warning" show-icon :closable="false"
-      title="Prometheus 未连接 — CPU / 磁盘 / 网络实时数据不可用，内存与负载来自 Node.js os 模块"
+      title="Prometheus 未连接 — CPU / 磁盘 / 网络时序不可用，卡片数据仍以 Node.js 快照为准"
     />
 
-    <!-- 加载骨架 -->
     <template v-if="!status">
       <div class="skeleton-grid">
         <div v-for="i in 8" :key="i" class="skeleton-card" />
@@ -42,11 +24,8 @@
     </template>
 
     <template v-else>
-      <!-- ── 核心系统指标 ── -->
       <section class="section-label">系统资源</section>
       <div class="cards-row">
-
-        <!-- CPU -->
         <div class="metric-card" :class="statusClass(status.cpu.usagePct, 65, 85)">
           <div class="card-inner">
             <div class="card-icon">🖥</div>
@@ -62,7 +41,6 @@
             :color="gaugeColor(status.cpu.usagePct, 65, 85)" />
         </div>
 
-        <!-- 内存 -->
         <div class="metric-card" :class="statusClass(status.memory.usedPct, 70, 85)">
           <div class="card-inner">
             <div class="card-icon">💾</div>
@@ -78,7 +56,6 @@
             :color="gaugeColor(status.memory.usedPct, 70, 85)" />
         </div>
 
-        <!-- 磁盘 -->
         <div class="metric-card" :class="statusClass(status.disk.usedPct, 75, 90)">
           <div class="card-inner">
             <div class="card-icon">🗄</div>
@@ -97,7 +74,6 @@
             :color="gaugeColor(status.disk.usedPct, 75, 90)" />
         </div>
 
-        <!-- 网络 -->
         <div class="metric-card card-neutral">
           <div class="card-inner">
             <div class="card-icon">🌐</div>
@@ -121,7 +97,6 @@
           </div>
         </div>
 
-        <!-- 系统运行时长 -->
         <div class="metric-card card-neutral">
           <div class="card-inner">
             <div class="card-icon">⏱</div>
@@ -137,16 +112,13 @@
           </div>
         </div>
 
-        <!-- 负载 -->
         <div class="metric-card" :class="statusClass(status.cpu.load1 / status.cpu.cores * 100, 70, 90)">
           <div class="card-inner">
             <div class="card-icon">📊</div>
             <div class="card-body">
               <div class="card-value">{{ status.cpu.load1?.toFixed(2) }}</div>
               <div class="card-label">系统负载 (load1)</div>
-              <div class="card-sub">
-                1m · 5m · 15m
-              </div>
+              <div class="card-sub">1m · 5m · 15m</div>
             </div>
           </div>
           <div class="load-bars">
@@ -156,7 +128,6 @@
           </div>
         </div>
 
-        <!-- TCP 连接 -->
         <div class="metric-card card-neutral">
           <div class="card-inner">
             <div class="card-icon">🔗</div>
@@ -167,36 +138,34 @@
             </div>
           </div>
         </div>
-
       </div>
 
-      <!-- ── 业务指标 ── -->
-      <section class="section-label">业务数据</section>
+      <section class="section-label">商品业务快照（数据库）</section>
       <div class="biz-row">
         <div class="biz-card">
           <div class="biz-icon">📦</div>
           <div class="biz-num">{{ status.business.todayOrders }}</div>
-          <div class="biz-label">今日新增订单</div>
+          <div class="biz-label">今日新增商品订单</div>
         </div>
         <div class="biz-card biz-warn" v-if="status.business.pendingOrders > 0">
           <div class="biz-icon">⏳</div>
           <div class="biz-num warn">{{ status.business.pendingOrders }}</div>
-          <div class="biz-label">待处理订单</div>
+          <div class="biz-label">待处理（未完结）</div>
         </div>
         <div class="biz-card" v-else>
           <div class="biz-icon">✅</div>
           <div class="biz-num ok">0</div>
-          <div class="biz-label">待处理订单</div>
+          <div class="biz-label">待处理（未完结）</div>
         </div>
         <div class="biz-card">
           <div class="biz-icon">👥</div>
           <div class="biz-num">{{ status.business.totalUsers }}</div>
-          <div class="biz-label">注册用户总数</div>
+          <div class="biz-label">注册用户</div>
         </div>
         <div class="biz-card">
           <div class="biz-icon">🏪</div>
           <div class="biz-num">{{ status.business.totalOrders }}</div>
-          <div class="biz-label">历史订单总数</div>
+          <div class="biz-label">商品订单累计</div>
         </div>
         <div class="biz-card biz-warn" v-if="status.business.pendingRedeems > 0">
           <div class="biz-icon">🎁</div>
@@ -210,40 +179,32 @@
         </div>
       </div>
 
-      <!-- ── 趋势图 ── -->
       <section class="section-label">
-        历史趋势
-        <span v-if="!status.promAvailable" class="section-badge warn">需要 Prometheus</span>
+        资源时序
+        <span v-if="!status.promAvailable" class="section-badge warn">需 Prometheus</span>
       </section>
       <div class="charts-grid">
         <div class="chart-card">
           <div class="chart-header">
-            <span class="chart-title">CPU 使用率 (%)</span>
+            <span class="chart-title">CPU (%)</span>
             <span v-if="chartLoading" class="chart-loading-badge">加载中…</span>
           </div>
           <div ref="cpuChartRef" class="chart-canvas" />
         </div>
         <div class="chart-card">
-          <div class="chart-header">
-            <span class="chart-title">内存使用率 (%)</span>
-          </div>
+          <div class="chart-header"><span class="chart-title">内存 (%)</span></div>
           <div ref="memChartRef" class="chart-canvas" />
         </div>
         <div class="chart-card">
-          <div class="chart-header">
-            <span class="chart-title">网络流量 (KB/s)</span>
-          </div>
+          <div class="chart-header"><span class="chart-title">网络 (KB/s)</span></div>
           <div ref="netChartRef" class="chart-canvas" />
         </div>
         <div class="chart-card">
-          <div class="chart-header">
-            <span class="chart-title">系统负载 (Load Average)</span>
-          </div>
+          <div class="chart-header"><span class="chart-title">Load Average</span></div>
           <div ref="loadChartRef" class="chart-canvas" />
         </div>
       </div>
 
-      <!-- ── 服务器信息 ── -->
       <section class="section-label">服务器信息</section>
       <el-card class="info-card">
         <el-descriptions :column="3" border size="small">
@@ -261,33 +222,26 @@
               {{ status.promAvailable ? '已连接' : '未连接' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="最后刷新">{{ lastUpdate }}</el-descriptions-item>
+          <el-descriptions-item label="快照时间">{{ lastUpdate }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
-      <!-- Prometheus 安装指引 -->
       <el-card id="install" class="info-card" v-if="!status.promAvailable">
-        <template #header>
-          <span>安装 Prometheus + node_exporter（Ubuntu 24 LTS）</span>
-        </template>
+        <template #header><span>安装 Prometheus + node_exporter</span></template>
         <el-alert type="info" :closable="false" style="margin-bottom:12px">
-          安装完成后刷新页面即可获取完整时序图表数据。
+          安装完成后在大屏点击「全部刷新」即可加载时序图表。
         </el-alert>
         <pre class="install-code">{{ installDocs }}</pre>
       </el-card>
     </template>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, defineComponent, h } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, defineComponent, h } from 'vue'
 import * as echarts from 'echarts'
-import { api } from '../../api'
+import { api } from '../api'
 
-// ── 内联子组件 ──────────────────────────────────────────────────────────
-
-// 圆环进度
 const RingGauge = defineComponent({
   props: { value: Number, max: { type: Number, default: 100 }, color: { type: String, default: '#3b82f6' } },
   setup(props) {
@@ -312,7 +266,6 @@ const RingGauge = defineComponent({
   },
 })
 
-// 负载条
 const LoadBar = defineComponent({
   props: { label: String, value: Number, cores: { type: Number, default: 1 } },
   setup(props) {
@@ -330,15 +283,11 @@ const LoadBar = defineComponent({
   },
 })
 
-// ── 状态 ──────────────────────────────────────────────────────────────
-
 const status = ref<any>(null)
 const chartData = ref<any>(null)
-const loading = ref(false)
 const lastUpdate = ref('')
 const timeRange = ref(60)
 const chartLoading = ref(false)
-const autoRefresh = ref(true)
 
 const cpuChartRef = ref<HTMLElement>()
 const memChartRef = ref<HTMLElement>()
@@ -349,9 +298,6 @@ let cpuChart: echarts.ECharts | null = null
 let memChart: echarts.ECharts | null = null
 let netChart: echarts.ECharts | null = null
 let loadChart: echarts.ECharts | null = null
-let refreshTimer: ReturnType<typeof setInterval> | null = null
-
-// ── 工具函数 ──────────────────────────────────────────────────────────
 
 function statusClass(val: number | null, warnAt: number, dangerAt: number) {
   if (val === null || val === undefined) return 'card-neutral'
@@ -388,11 +334,8 @@ function fmtUptime(seconds: number): string {
 
 function netBarPct(bps: number | null): number {
   if (!bps) return 0
-  // 以 10MB/s 为满格
   return Math.min(100, (bps / (10 * 1024 * 1024)) * 100)
 }
-
-// ── ECharts ──────────────────────────────────────────────────────────
 
 const THEME = {
   bg: 'transparent',
@@ -490,7 +433,6 @@ function renderCharts() {
   if (!status.value) return
   const d = chartData.value
   const s = status.value
-  const now = Date.now()
   const mins = timeRange.value
 
   const cpu = d?.cpu?.length > 0 ? d.cpu : fakeSeries(s.cpu.usagePct ?? 0, mins)
@@ -522,14 +464,12 @@ function renderCharts() {
     const realL15 = d?.load15?.length > 0 ? d.load15 : l15
     loadChart = initChart(loadChartRef.value, loadChart)
     loadChart.setOption(buildLineOption([
-      { name: 'load1',  data: realL1,  color: THEME.blue },
-      { name: 'load5',  data: realL5,  color: THEME.amber },
+      { name: 'load1', data: realL1, color: THEME.blue },
+      { name: 'load5', data: realL5, color: THEME.amber },
       { name: 'load15', data: realL15, color: THEME.slate },
     ]))
   }
 }
-
-// ── 数据加载 ──────────────────────────────────────────────────────────
 
 async function loadStatus() {
   const res: any = await api.getSystemStatus()
@@ -551,22 +491,8 @@ async function fetchChartData() {
 }
 
 async function loadAll() {
-  loading.value = true
-  try {
-    await loadStatus()
-    await fetchChartData()
-  } catch {}
-  loading.value = false
-}
-
-function toggleAutoRefresh() {
-  autoRefresh.value = !autoRefresh.value
-  if (autoRefresh.value) {
-    refreshTimer = setInterval(loadAll, 30000)
-  } else {
-    if (refreshTimer) clearInterval(refreshTimer)
-    refreshTimer = null
-  }
+  await loadStatus()
+  await fetchChartData()
 }
 
 function onResize() {
@@ -577,13 +503,10 @@ function onResize() {
 }
 
 onMounted(() => {
-  loadAll()
-  refreshTimer = setInterval(loadAll, 30000)
   window.addEventListener('resize', onResize)
 })
 
 onBeforeUnmount(() => {
-  if (refreshTimer) clearInterval(refreshTimer)
   window.removeEventListener('resize', onResize)
   cpuChart?.dispose()
   memChart?.dispose()
@@ -591,83 +514,27 @@ onBeforeUnmount(() => {
   loadChart?.dispose()
 })
 
-const installDocs = `# 1. 安装 node_exporter
-wget https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-1.8.2.linux-amd64.tar.gz
-tar xvf node_exporter-*.tar.gz
-sudo cp node_exporter-*/node_exporter /usr/local/bin/
-sudo useradd -rs /bin/false node_exporter
-sudo tee /etc/systemd/system/node_exporter.service > /dev/null <<'EOF'
-[Unit]
-Description=Node Exporter
-[Service]
-User=node_exporter
-ExecStart=/usr/local/bin/node_exporter
-[Install]
-WantedBy=multi-user.target
-EOF
-sudo systemctl daemon-reload && sudo systemctl enable --now node_exporter
+defineExpose({ loadAll })
 
-# 2. 安装 Prometheus
-wget https://github.com/prometheus/prometheus/releases/latest/download/prometheus-2.53.0.linux-amd64.tar.gz
-tar xvf prometheus-*.tar.gz
-sudo cp prometheus-*/prometheus /usr/local/bin/
-sudo mkdir -p /etc/prometheus
-sudo tee /etc/prometheus/prometheus.yml > /dev/null <<'EOF'
-global:
-  scrape_interval: 15s
-scrape_configs:
-  - job_name: node
-    static_configs:
-      - targets: ['localhost:9100']
-EOF
-sudo tee /etc/systemd/system/prometheus.service > /dev/null <<'EOF'
-[Unit]
-Description=Prometheus
-[Service]
-ExecStart=/usr/local/bin/prometheus --config.file=/etc/prometheus/prometheus.yml
-[Install]
-WantedBy=multi-user.target
-EOF
-sudo systemctl daemon-reload && sudo systemctl enable --now prometheus
-
-# 3. 在 backend/.env 添加（默认已配置）
-PROMETHEUS_URL=http://localhost:9090
-
-# 4. 重启后端
-pm2 restart jthub-api --update-env`
+const installDocs = `# 参考 deploy/DEPLOY.md 或监控页历史版本中的完整脚本
+# 核心：node_exporter :9100 + Prometheus :9090
+# backend/.env: PROMETHEUS_URL=http://localhost:9090
+# pm2 restart jthub-api --update-env`
 </script>
 
 <style scoped>
-/* ── 基础 ── */
-.monitor-page { display: flex; flex-direction: column; gap: 16px; }
+.sys-monitor { display: flex; flex-direction: column; gap: 14px; }
 
-/* ── 顶栏 ── */
-.monitor-header {
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 10px;
+.sys-toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 0 4px;
 }
-.header-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.page-title { font-size: 1.05rem; font-weight: 700; color: #e2e8f0; margin: 0; }
-.live-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 10px; font-weight: 700; letter-spacing: .06em;
-  color: #22c55e; background: rgba(34,197,94,.12);
-  border: 1px solid rgba(34,197,94,.25); border-radius: 20px; padding: 2px 8px;
-}
-.live-badge--paused { color: #64748b; background: rgba(100,116,139,.1); border-color: rgba(100,116,139,.2); }
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
-  animation: pulse 1.5s infinite;
-}
-.live-badge--paused .live-dot { animation: none; }
-@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
-.update-time { font-size: 11px; color: #475569; }
-.header-right { display: flex; align-items: center; gap: 8px; }
+.sys-toolbar-label { font-size: 11px; color: var(--text-lo); font-weight: 600; }
+.sys-toolbar-meta { font-size: 11px; color: var(--text-lo); margin-left: auto; }
 
-/* ── section 标签 ── */
 .section-label {
   font-size: 10px; font-weight: 700; letter-spacing: .1em;
-  text-transform: uppercase; color: #475569;
+  text-transform: uppercase; color: var(--text-lo);
   display: flex; align-items: center; gap: 8px;
 }
 .section-badge {
@@ -676,19 +543,18 @@ pm2 restart jthub-api --update-env`
 }
 .section-badge.warn { color: #f59e0b; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.2); }
 
-/* ── 骨架屏 ── */
 .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 10px; }
 .skeleton-card {
   height: 88px; border-radius: 12px;
-  background: linear-gradient(90deg, #0d1b2e 25%, #132336 50%, #0d1b2e 75%);
+  background: linear-gradient(90deg, var(--bg-panel) 25%, var(--bg-deep) 50%, var(--bg-panel) 75%);
   background-size: 200% 100%; animation: shimmer 1.4s infinite;
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-/* ── 指标卡片 ── */
 .cards-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px,1fr)); gap: 10px; }
 .metric-card {
-  background: #0d1b2e; border: 1px solid rgba(255,255,255,.06);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
   border-radius: 12px; padding: 14px 16px;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   position: relative; overflow: hidden;
@@ -702,7 +568,7 @@ pm2 restart jthub-api --update-env`
 .card-ok::before    { background: #22c55e; }
 .card-warn::before  { background: #f59e0b; }
 .card-danger::before{ background: #ef4444; }
-.card-neutral::before{ background: #3b82f6; }
+.card-neutral::before{ background: var(--accent); }
 
 .card-ok     { border-color: rgba(34,197,94,.15); }
 .card-warn   { border-color: rgba(245,158,11,.2); }
@@ -712,14 +578,12 @@ pm2 restart jthub-api --update-env`
 .card-inner { display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; }
 .card-icon  { font-size: 1.3rem; flex-shrink: 0; }
 .card-body  { flex: 1; min-width: 0; }
-.card-value { font-size: 1.35rem; font-weight: 800; color: #e2e8f0; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.card-label { font-size: 10px; color: #475569; margin-top: 3px; letter-spacing: .04em; }
-.card-sub   { font-size: 10px; color: #334155; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-value { font-size: 1.35rem; font-weight: 800; color: var(--text-hi); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.card-label { font-size: 10px; color: var(--text-lo); margin-top: 3px; letter-spacing: .04em; }
+.card-sub   { font-size: 10px; color: var(--text-md); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ring gauge */
 .ring-svg { width: 46px; height: 46px; flex-shrink: 0; }
 
-/* 网络条 */
 .net-value { font-size: 1rem; }
 .net-tx { color: #f59e0b; }
 .net-rx { color: #3b82f6; }
@@ -729,55 +593,51 @@ pm2 restart jthub-api --update-env`
 .net-bar-fill.tx { background: #f59e0b; }
 .net-bar-fill.rx { background: #3b82f6; }
 
-/* 运行时长 */
 .uptime-stack { display: flex; flex-direction: column; gap: 4px; min-width: 80px; }
-.uptime-item { font-size: 10px; color: #475569; white-space: nowrap; }
-.uptime-item b { color: #94a3b8; font-weight: 600; }
+.uptime-item { font-size: 10px; color: var(--text-lo); white-space: nowrap; }
+.uptime-item b { color: var(--text-md); font-weight: 600; }
 
-/* 负载条 */
 .load-bars { display: flex; flex-direction: column; gap: 5px; width: 90px; flex-shrink: 0; }
 .lb-row { display: flex; align-items: center; gap: 4px; }
-.lb-label { font-size: 9px; color: #475569; width: 18px; flex-shrink: 0; }
+.lb-label { font-size: 9px; color: var(--text-lo); width: 18px; flex-shrink: 0; }
 .lb-track { flex: 1; height: 4px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
 .lb-fill  { height: 100%; border-radius: 2px; transition: width .5s ease; }
-.lb-val   { font-size: 9px; color: #475569; width: 28px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.lb-val   { font-size: 9px; color: var(--text-lo); width: 28px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
-/* ── 业务卡片 ── */
 .biz-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .biz-card {
   flex: 1 1 100px; min-width: 100px; max-width: 180px;
-  background: #0d1b2e; border: 1px solid rgba(255,255,255,.06);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
   border-radius: 10px; padding: 14px 16px; text-align: center;
   transition: border-color .2s;
 }
-.biz-card.biz-warn { border-color: rgba(245,158,11,.2); }
+.biz-card.biz-warn { border-color: rgba(245,158,11,.35); }
 .biz-icon { font-size: 1.2rem; margin-bottom: 6px; }
-.biz-num  { font-size: 1.6rem; font-weight: 800; color: #e2e8f0; line-height: 1; font-variant-numeric: tabular-nums; }
+.biz-num  { font-size: 1.6rem; font-weight: 800; color: var(--text-hi); line-height: 1; font-variant-numeric: tabular-nums; }
 .biz-num.warn { color: #f59e0b; }
 .biz-num.ok   { color: #22c55e; }
-.biz-label { font-size: 10px; color: #475569; margin-top: 5px; letter-spacing: .04em; }
+.biz-label { font-size: 10px; color: var(--text-lo); margin-top: 5px; letter-spacing: .04em; }
 
-/* ── 图表 ── */
 .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .chart-card {
-  background: #0d1b2e; border: 1px solid rgba(255,255,255,.06);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
   border-radius: 12px; padding: 14px 16px;
 }
 .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.chart-title { font-size: 10px; font-weight: 700; color: #475569; letter-spacing: .08em; text-transform: uppercase; }
+.chart-title { font-size: 10px; font-weight: 700; color: var(--text-lo); letter-spacing: .08em; text-transform: uppercase; }
 .chart-loading-badge { font-size: 9px; color: #f59e0b; }
 .chart-canvas { height: 160px; }
 
-/* ── 信息卡 ── */
 .info-card { margin: 0; }
 .install-code {
-  background: #030711; border-radius: 8px; padding: 14px;
-  font-size: 11px; line-height: 1.7; color: #64748b;
+  background: var(--bg-deep); border-radius: 8px; padding: 14px;
+  font-size: 11px; line-height: 1.7; color: var(--text-md);
   overflow-x: auto; white-space: pre-wrap; word-break: break-all;
-  border: 1px solid rgba(255,255,255,.04); margin: 0;
+  border: 1px solid var(--border); margin: 0;
 }
 
-/* ── 响应式 ── */
 @media (max-width: 900px) {
   .charts-grid { grid-template-columns: 1fr; }
 }
