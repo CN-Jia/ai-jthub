@@ -27,23 +27,31 @@ export async function orderRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse(types))
   })
 
-  // 获取活动/公告列表（公开，含已过期活动）
+  // 获取活动/公告列表（公开，含已过期活动，支持分页）
   fastify.get('/activities', async (request, reply) => {
     const now = new Date()
     const q = request.query as Record<string, string>
-    const limit = q.limit ? Math.min(Number(q.limit), 50) : 50
+    const page = Math.max(1, Number(q.page) || 1)
+    const pageSize = Math.min(Math.max(1, Number(q.pageSize) || 20), 50)
+    const skip = (page - 1) * pageSize
     const typeFilter = q.type ? { type: q.type as 'PROMO' | 'NOTICE' } : {}
 
-    const list = await prisma.activity.findMany({
-      where: {
-        isActive: true,
-        startAt: { lte: now },
-        ...typeFilter,
-      },
-      orderBy: { startAt: 'desc' },
-      take: limit,
-      select: { id: true, title: true, content: true, type: true, startAt: true, endAt: true },
-    })
+    const [list, total] = await Promise.all([
+      prisma.activity.findMany({
+        where: {
+          isActive: true,
+          startAt: { lte: now },
+          ...typeFilter,
+        },
+        orderBy: { startAt: 'desc' },
+        skip,
+        take: pageSize,
+        select: { id: true, title: true, content: true, type: true, startAt: true, endAt: true },
+      }),
+      prisma.activity.count({
+        where: { isActive: true, startAt: { lte: now }, ...typeFilter },
+      }),
+    ])
 
     const enriched = list.map(item => {
       const isExpired = item.endAt != null && item.endAt < now
@@ -55,7 +63,7 @@ export async function orderRoutes(fastify: FastifyInstance) {
       return { ...item, isExpired, daysLeft }
     })
 
-    return reply.send(successResponse({ list: enriched, total: enriched.length }))
+    return reply.send(successResponse({ list: enriched, total, page, pageSize }))
   })
 
   // 创建订单（需 JWT 登录）

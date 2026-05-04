@@ -29,8 +29,13 @@ export const api = {
   getMe: () => http.get('/auth/me'),
   updateProfile: (data: any) => http.put('/auth/profile', data),
   changePassword: (oldPassword: string, newPassword: string) => http.put('/auth/password', { oldPassword, newPassword }),
+  forgotPassword: (email: string) => http.post('/auth/forgot-password', { email }),
+  resetPassword: (email: string, code: string, newPassword: string) => http.post('/auth/reset-password', { email, code, newPassword }),
+  resendVerification: () => http.post('/auth/resend-verification'),
+  verifyEmail: (code: string) => http.post('/auth/verify-email', { code }),
 
   // 公开数据
+  getConfig: () => http.get('/config'),
   getOrderTypes: () => http.get('/order-types'),
   getActivities: () => http.get('/activities'),
   getCarousel: () => http.get('/carousel'),

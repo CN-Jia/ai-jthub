@@ -119,7 +119,10 @@ async function submitReply() {
   submitting.value = true
   try {
     await api.replyFeedback(current.value.id, replyText.value)
-    await api.updateFeedbackStatus(current.value.id, replyStatus.value)
+    // replyFeedback 已将状态设为 REPLIED，如果管理员选择 RESOLVED 则再更新一次
+    if (replyStatus.value === 'RESOLVED') {
+      await api.updateFeedbackStatus(current.value.id, 'RESOLVED')
+    }
     ElMessage.success('回复成功')
     detailVisible.value = false
     load()

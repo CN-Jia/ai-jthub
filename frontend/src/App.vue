@@ -69,7 +69,7 @@
       <div class="footer-inner">
         <div class="footer-logo">⚡ JT-Hub</div>
         <div class="footer-info">
-          <span>联系管理员微信：<strong>Jt--04</strong></span>
+          <span>联系管理员微信：<strong>{{ adminWechat }}</strong></span>
           <span class="footer-sep">·</span>
           <span>专业学业辅助平台</span>
         </div>
@@ -88,12 +88,20 @@ const store = useUserStore()
 const router = useRouter()
 const isScrolled = ref(false)
 const mobileOpen = ref(false)
+const adminWechat = ref('Jt--04')
 
 const avatarChar = computed(() => store.nickname ? store.nickname[0] : 'U')
 
 function onScroll() { isScrolled.value = window.scrollY > 10 }
 function closeMobileMenu() { mobileOpen.value = false }
-onMounted(() => window.addEventListener('scroll', onScroll))
+onMounted(async () => {
+  window.addEventListener('scroll', onScroll)
+  try {
+    const { api } = await import('./api')
+    const res: any = await api.getConfig()
+    if (res.data?.adminWechatId) adminWechat.value = res.data.adminWechatId
+  } catch { /* ignore */ }
+})
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 function handleLogout() {

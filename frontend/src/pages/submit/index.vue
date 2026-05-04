@@ -57,7 +57,7 @@
         <div class="notice-bar">
           <span class="notice-icon">📌</span>
           <span>提交后请添加管理员微信
-            <strong class="wechat-id" @click="copyWechat">Jt--04</strong>
+            <strong class="wechat-id" @click="copyWechat">{{ adminWechat }}</strong>
             并备注订单号
           </span>
         </div>
@@ -103,7 +103,7 @@
           <h3 class="info-card-title">💬 管理员联系方式</h3>
           <div class="wechat-box" @click="copyWechat">
             <div class="wechat-label">微信号</div>
-            <div class="wechat-val">Jt--04</div>
+            <div class="wechat-val">{{ adminWechat }}</div>
             <div class="wechat-copy">点击复制</div>
           </div>
         </div>
@@ -132,10 +132,12 @@ const today = new Date().toISOString().slice(0, 10)
 const submitting = ref(false)
 const form = reactive({ courseName: '', orderTypeId: '', grade: '', deadline: '', contactWechat: '' })
 const selectedType = computed(() => orderTypes.value.find(t => t.id === form.orderTypeId) ?? null)
+const adminWechat = ref('Jt--04')
 
 onMounted(async () => {
-  const res: any = await api.getOrderTypes()
-  orderTypes.value = res.data ?? []
+  const [typesRes, configRes]: any[] = await Promise.all([api.getOrderTypes(), api.getConfig()])
+  orderTypes.value = typesRes.data ?? []
+  if (configRes.data?.adminWechatId) adminWechat.value = configRes.data.adminWechatId
   // 从首页价格行跳转时预选类型
   const preTypeId = route.query.typeId as string
   if (preTypeId && orderTypes.value.some(t => t.id === preTypeId)) {
@@ -144,7 +146,7 @@ onMounted(async () => {
 })
 
 function copyWechat() {
-  navigator.clipboard.writeText('Jt--04').then(() => alert('✅ 已复制微信号 Jt--04'))
+  navigator.clipboard.writeText(adminWechat.value).then(() => alert(`✅ 已复制微信号 ${adminWechat.value}`))
 }
 
 async function doSubmit() {

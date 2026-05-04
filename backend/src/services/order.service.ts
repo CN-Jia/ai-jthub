@@ -90,9 +90,9 @@ export async function adminListOrders(filters: {
     ...(status ? { status } : {}),
     ...(keyword ? {
       OR: [
-        { courseName: { contains: keyword } },
-        { orderNo: { contains: keyword } },
-        { contactWechat: { contains: keyword } },
+        { courseName: { contains: keyword, mode: 'insensitive' } },
+        { orderNo: { contains: keyword, mode: 'insensitive' } },
+        { contactWechat: { contains: keyword, mode: 'insensitive' } },
       ],
     } : {}),
   }

@@ -37,7 +37,7 @@
       <div class="carousel-track">
         <div class="carousel-slide" v-for="item in carousel" :key="item.id">
           <div class="carousel-img-wrap">
-            <img :src="item.imageUrl" :alt="item.courseName" class="carousel-img" />
+            <img :src="item.imageUrl" :alt="item.courseName" class="carousel-img" @error="($event.target as HTMLImageElement).src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22260%22 height=%22160%22 fill=%22%23e8edf2%22%3E%3Crect width=%22260%22 height=%22160%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2214%22%3E图片加载失败%3C/text%3E%3C/svg%3E'" />
             <span class="carousel-type-tag">{{ item.orderType }}</span>
           </div>
           <div class="carousel-info">
@@ -121,7 +121,7 @@
               <div class="cta-step"><span class="step-n">2</span><span>添加管理员微信备注订单号</span></div>
               <div class="cta-step"><span class="step-n">3</span><span>等待确认报价，完成交易</span></div>
             </div>
-            <div class="cta-wechat">管理员微信：<strong>Jt--04</strong></div>
+            <div class="cta-wechat">管理员微信：<strong>{{ adminWechat }}</strong></div>
             <template v-if="store.isLoggedIn">
               <router-link to="/submit" class="cta-btn">立即提交 →</router-link>
             </template>
@@ -148,6 +148,7 @@ const orderTypes = ref<any[]>([])
 const carousel = ref<any[]>([])
 const loadingActivities = ref(true)
 const loadingTypes = ref(true)
+const adminWechat = ref('Jt--04')
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const fmtDate = (d: string) => {
@@ -169,10 +170,11 @@ function goSubmitWithType(typeId: string) {
 
 async function fetchData(silent = false) {
   try {
-    const [a, t, c]: any[] = await Promise.all([api.getActivities(), api.getOrderTypes(), api.getCarousel()])
+    const [a, t, c, cfg]: any[] = await Promise.all([api.getActivities(), api.getOrderTypes(), api.getCarousel(), api.getConfig()])
     activities.value = a.data?.list ?? a.data ?? []
     orderTypes.value = t.data ?? []
     carousel.value = c.data ?? []
+    if (cfg.data?.adminWechatId) adminWechat.value = cfg.data.adminWechatId
   } finally {
     if (!silent) {
       loadingActivities.value = false

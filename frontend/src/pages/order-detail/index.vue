@@ -62,7 +62,7 @@
             <div class="wechat-box" @click="copyWechat">
               <div>
                 <div class="wechat-label-sm">管理员微信</div>
-                <div class="wechat-id">Jt--04</div>
+                <div class="wechat-id">{{ adminWechat }}</div>
               </div>
               <div class="copy-pill">复制</div>
             </div>
@@ -109,6 +109,7 @@ import { api } from '../../api'
 
 const route = useRoute()
 const order = ref<any>(null)
+const adminWechat = ref('Jt--04')
 
 const statusLabels: Record<string,string> = { PENDING:'待处理', ACCEPTED:'已接单', IN_PROGRESS:'进行中', COMPLETED:'已完成', CLOSED:'已关闭' }
 const gradeLabels: Record<string,string> = { FRESHMAN:'大一', SOPHOMORE:'大二', JUNIOR:'大三' }
@@ -128,11 +129,14 @@ const statusIcon = (s: string) => ({ PENDING:'⏳', ACCEPTED:'✅', IN_PROGRESS:
 const isPassed = (key: string, current: string) => flowOrder.indexOf(key) < flowOrder.indexOf(current)
 
 onMounted(async () => {
-  try { const res: any = await api.getOrder(route.params.id as string); order.value = res.data }
-  catch { history.back() }
+  try {
+    const [orderRes, configRes]: any[] = await Promise.all([api.getOrder(route.params.id as string), api.getConfig()])
+    order.value = orderRes.data
+    if (configRes.data?.adminWechatId) adminWechat.value = configRes.data.adminWechatId
+  } catch { history.back() }
 })
 
-function copyWechat() { navigator.clipboard.writeText('Jt--04').then(() => alert('✅ 已复制 Jt--04')) }
+function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(() => alert(`✅ 已复制 ${adminWechat.value}`)) }
 </script>
 
 <style scoped>

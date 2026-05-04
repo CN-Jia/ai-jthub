@@ -102,7 +102,7 @@ sudo systemctl start postgresql
 
 # 创建数据库和用户
 sudo -u postgres psql <<EOF
-CREATE USER jthub WITH PASSWORD 'jiao0924';
+CREATE USER jthub WITH PASSWORD '替换为强密码';
 CREATE DATABASE jthub_prod OWNER jthub;
 GRANT ALL PRIVILEGES ON DATABASE jthub_prod TO jthub;
 EOF
@@ -168,11 +168,11 @@ nano .env
 
 ```bash
 # ── 数据库 ───────────────────────────────────────────────────
-DATABASE_URL="postgresql://jiao0924@localhost:5432/jthub_prod"
+DATABASE_URL="postgresql://用户名:密码@localhost:5432/jthub_prod"
 
 # ── JWT ──────────────────────────────────────────────────────
 # 生成随机密钥：node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-JWT_SECRET="610dab1866633cb5644b75f8a1aa66ed71cf3629841889646c7c45efcbdd4bcb261e98e5432dd0ba6259769bff9643cf22da2d44bd3c511542d2c145134a87dd"
+JWT_SECRET="运行上面命令生成的随机密钥"
 JWT_EXPIRES_IN="7d"
 
 # ── Server酱推送（管理员新订单通知）─────────────────────────
@@ -186,7 +186,7 @@ ADMIN_USERNAME="admin"
 ADMIN_PASSWORD_HASH="$2b$10$..."
 
 # ── 管理员微信号（展示给用户的联系方式）─────────────────────
-ADMIN_WECHAT_ID="Jt--04"
+ADMIN_WECHAT_ID="你的微信号"
 
 # ── 应用配置 ─────────────────────────────────────────────────
 NODE_ENV="production"

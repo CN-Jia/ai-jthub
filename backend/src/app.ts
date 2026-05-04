@@ -34,6 +34,12 @@ export async function buildApp() {
 
   app.get('/health', async () => ({ ok: true, timestamp: new Date().toISOString() }))
 
+  // 公开配置（前端获取管理员微信号等）
+  app.get('/api/config', async () => ({
+    success: true,
+    data: { adminWechatId: env.ADMIN_WECHAT_ID },
+  }))
+
   // 限流：提交订单
   app.addHook('preHandler', async (request, reply) => {
     if (request.method === 'POST' && request.url === '/api/orders') {

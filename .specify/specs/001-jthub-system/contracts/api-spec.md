@@ -1,7 +1,7 @@
-# API Contract: JT-Hub RESTful API v2
+# API Contract: JT-Hub RESTful API v3
 
-**Version**: v2.1 | **Updated**: 2026-04-23（移除小程序登录描述，改为PC端虚拟登录）  
-**Base URL**: `https://yourdomain.com/api`  
+**Version**: v3.0 | **Updated**: 2026-05-04（完整重写，匹配当前实现）
+**Base URL**: `https://yourdomain.com/api`
 **Auth**: Bearer JWT（Header: `Authorization: Bearer <token>`）
 
 ---
@@ -34,25 +34,82 @@
 
 ## 认证接口（Auth）
 
-### POST `/auth/mp-login` — 用户登录
-
-PC 端登录：传入 `pc_${wechatId}` 作为 code，后端生成对应用户并返回 JWT。
+### POST `/auth/send-code` — 发送邮箱验证码
 
 ```json
-// Request（PC 端）
-{ "code": "pc_Jt--04_user" }
+// Request
+{ "email": "user@example.com" }
+
+// Response 200
+{ "success": true, "data": { "message": "验证码已发送" } }
+```
+
+60秒冷却，5分钟有效。
+
+### POST `/auth/register` — 用户注册
+
+```json
+// Request
+{
+  "username": "testuser",
+  "nickname": "测试用户",
+  "email": "user@example.com",
+  "password": "pass1234",
+  "phone": "13800138000",
+  "wechatId": "wxid_xxx",
+  "grade": "JUNIOR",
+  "code": "123456"
+}
+
+// Response 200
+{
+  "success": true,
+  "data": { "token": "eyJhbGci...", "userId": "clxxx...", "nickname": "测试用户" }
+}
+```
+
+### POST `/auth/login` — 用户登录
+
+```json
+// Request
+{ "identifier": "user@example.com", "password": "pass1234" }
 
 // Response 200
 {
   "success": true,
   "data": {
     "token": "eyJhbGci...",
-    "userId": "clxxx..."
+    "userId": "clxxx...",
+    "nickname": "测试用户",
+    "username": "testuser",
+    "email": "user@example.com"
   }
 }
 ```
 
-> 开发模式：直接用 code 作为虚拟 openid，创建或复用对应用户
+连续5次失败锁定5分钟。
+
+### POST `/auth/forgot-password` — 忘记密码（发送重置验证码）
+
+```json
+// Request
+{ "email": "user@example.com" }
+
+// Response 200
+{ "success": true, "data": { "message": "如果该邮箱已注册，验证码将发送到您的邮箱" } }
+```
+
+不泄露邮箱是否已注册。验证码10分钟有效，60秒冷却。
+
+### POST `/auth/reset-password` — 重置密码
+
+```json
+// Request
+{ "email": "user@example.com", "code": "123456", "newPassword": "newpass123" }
+
+// Response 200
+{ "success": true, "data": { "message": "密码重置成功，请使用新密码登录" } }
+```
 
 ### POST `/auth/admin-login` — 管理员登录
 
@@ -64,40 +121,37 @@ PC 端登录：传入 `pc_${wechatId}` 作为 code，后端生成对应用户并
 { "success": true, "data": { "token": "eyJhbGci..." } }
 ```
 
+15分钟内5次失败封IP。
+
+### GET `/auth/me` — 获取当前用户（需登录）
+
+### PUT `/auth/profile` — 更新个人资料（需登录）
+
+### PUT `/auth/password` — 修改密码（需登录）
+
+### POST `/auth/resend-verification` — 重新发送邮箱验证（需登录）
+
+### POST `/auth/verify-email` — 验证邮箱（需登录）
+
 ---
 
 ## 公开接口（无需登录）
 
-### GET `/order-types` — 获取需求类型列表
-
-用于前端表单下拉框和首页价格表展示。
+### GET `/config` — 获取公开配置
 
 ```json
 // Response 200
-{
-  "success": true,
-  "data": [
-    {
-      "id": "clxxx...",
-      "name": "期末作业",
-      "description": "期末考核作业、大作业",
-      "price": "200-500元",
-      "sortOrder": 2
-    }
-  ]
-}
+{ "success": true, "data": { "adminWechatId": "Jt--04" } }
 ```
 
-> 只返回 `isActive = true` 的类型，按 `sortOrder` 升序
+### GET `/order-types` — 获取需求类型列表
 
----
+只返回 `isActive = true` 的类型，按 `sortOrder` 升序。
 
 ### GET `/activities` — 获取活动/公告列表
 
-用于前端首页和活动 Tab 展示。
-
 ```json
-// Query: ?type=PROMO&limit=10
+// Query: ?type=PROMO&page=1&pageSize=20
 
 // Response 200
 {
@@ -105,312 +159,135 @@ PC 端登录：传入 `pc_${wechatId}` 作为 code，后端生成对应用户并
   "data": {
     "list": [
       {
-        "id": "clxxx...",
-        "title": "期末季全场9折",
-        "content": "2026年6月1日-30日，所有期末作业享9折优惠",
-        "type": "PROMO",
-        "startAt": "2026-06-01T00:00:00Z",
-        "endAt": "2026-06-30T23:59:59Z",
-        "isExpired": false,
-        "daysLeft": 42
+        "id": "...", "title": "...", "content": "...",
+        "type": "PROMO", "startAt": "...", "endAt": "...",
+        "isExpired": false, "daysLeft": 42
       }
     ],
-    "total": 5
+    "total": 5, "page": 1, "pageSize": 20
   }
 }
 ```
 
+### GET `/carousel` — 获取轮播列表
+
+### GET `/posts` — 论坛帖子列表
+
+```json
+// Query: ?type=ANNOUNCEMENT&page=1&pageSize=10
+
+// Response 200
+{
+  "success": true,
+  "data": {
+    "list": [
+      {
+        "id": "...", "title": "...", "summary": "...", "cover": "...",
+        "type": "ANNOUNCEMENT", "createdAt": "...",
+        "author": { "nickname": "管理员" },
+        "_count": { "comments": 5 }
+      }
+    ],
+    "total": 10, "page": 1, "pageSize": 10
+  }
+}
+```
+
+### GET `/posts/:id` — 帖子详情 + 评论
+
 ---
 
-## 订单接口（Orders）
+## 订单接口（需登录）
 
-### POST `/orders` — 创建订单（需登录）
+### POST `/orders` — 创建订单
 
 ```json
 // Request
 {
   "courseName": "高等数学",
   "orderTypeId": "clxxx...",
-  "grade": "JUNIOR",          // FRESHMAN | SOPHOMORE | JUNIOR
+  "grade": "JUNIOR",
   "deadline": "2026-06-30T00:00:00Z",
-  "contactWechat": "wxid_xxxxx",
-  "source": "MINIPROGRAM"     // MINIPROGRAM | PC
-}
-
-// Response 200（正常创建）
-{
-  "success": true,
-  "data": {
-    "orderId": "clxxx...",
-    "orderNo": "JT-20260419-A3F2",
-    "status": "PENDING",
-    "createdAt": "2026-04-19T10:00:00Z",
-    "adminWechatId": "Jt--04"   // 固定值，引导用户添加
-  }
-}
-```
-
-**字段校验**:
-- `courseName`: 必填，2-100字
-- `orderTypeId`: 必填，必须是有效的活跃类型 ID
-- `grade`: 必填，枚举值之一
-- `deadline`: 必填，ISO 8601 格式，必须是未来时间
-- `contactWechat`: 必填，2-50字
-- `source`: 必填
-
----
-
-### GET `/orders/my` — 我的订单列表（需登录）
-
-```json
-// Query: ?page=1&pageSize=20&status=PENDING
-
-// Response 200
-{
-  "success": true,
-  "data": {
-    "list": [
-      {
-        "id": "clxxx...",
-        "orderNo": "JT-20260419-A3F2",
-        "courseName": "高等数学",
-        "orderType": { "name": "期末作业" },
-        "grade": "JUNIOR",
-        "status": "PENDING",
-        "deadline": "2026-06-30T00:00:00Z",
-        "createdAt": "2026-04-19T10:00:00Z",
-        "quotedPrice": null
-      }
-    ],
-    "total": 3,
-    "page": 1,
-    "pageSize": 20
-  }
-}
-```
-
----
-
-### GET `/orders/:id` — 订单详情（需登录，仅本人）
-
-```json
-// Response 200
-{
-  "success": true,
-  "data": {
-    "id": "clxxx...",
-    "orderNo": "JT-20260419-A3F2",
-    "courseName": "高等数学",
-    "orderType": { "id": "...", "name": "期末作业", "price": "200-500元" },
-    "grade": "JUNIOR",
-    "deadline": "2026-06-30T00:00:00Z",
-    "contactWechat": "wxid_xxxxx",
-    "status": "ACCEPTED",
-    "quotedPrice": "350元",
-    "createdAt": "2026-04-19T10:00:00Z",
-    "statusHistory": [
-      { "fromStatus": null, "toStatus": "PENDING", "createdAt": "..." },
-      { "fromStatus": "PENDING", "toStatus": "ACCEPTED", "createdAt": "..." }
-    ]
-  }
-}
-```
-
----
-
-## 管理员接口（Admin，全部需要管理员 JWT）
-
-### GET `/admin/orders` — 订单列表
-
-```json
-// Query: ?page=1&pageSize=20&status=PENDING&keyword=高等数学
-
-// Response 200
-{
-  "success": true,
-  "data": {
-    "list": [
-      {
-        "id": "clxxx...",
-        "orderNo": "JT-20260419-A3F2",
-        "courseName": "高等数学",
-        "orderType": { "name": "期末作业" },
-        "grade": "JUNIOR",
-        "contactWechat": "wxid_xxxxx",
-        "status": "PENDING",
-        "deadline": "2026-06-30T00:00:00Z",
-        "createdAt": "2026-04-19T10:00:00Z"
-      }
-    ],
-    "total": 42,
-    "stats": {
-      "PENDING": 5,
-      "ACCEPTED": 8,
-      "IN_PROGRESS": 12,
-      "COMPLETED": 15,
-      "CLOSED": 2
-    }
-  }
-}
-```
-
----
-
-### GET `/admin/orders/:id` — 订单详情（管理员视角）
-
-同用户详情，额外返回 `adminNote` 字段。
-
----
-
-### PATCH `/admin/orders/:id/status` — 更新订单状态
-
-```json
-// Request
-{
-  "status": "ACCEPTED",
-  "adminNote": "已确认，预计3天完成",
-  "quotedPrice": "350元"
+  "contactWechat": "wxid_xxx",
+  "source": "PC"
 }
 
 // Response 200
 {
   "success": true,
-  "data": { "orderId": "...", "newStatus": "ACCEPTED" }
-}
-
-// Response 422（非法流转）
-{
-  "success": false,
-  "error": { "code": "INVALID_STATUS_TRANSITION", "message": "不允许从 COMPLETED 流转到 PENDING" }
+  "data": {
+    "orderId": "...", "orderNo": "JT-20260419-A3F2",
+    "status": "PENDING", "createdAt": "...",
+    "adminWechatId": "Jt--04"
+  }
 }
 ```
 
-> 状态变更后异步触发 Server酱 推送给管理员（记录状态变更通知）
+### GET `/orders/my` — 我的订单（需登录）
+
+### GET `/orders/:id` — 订单详情（需登录）
+
+### POST `/posts` — 发帖（需登录，需邮箱验证）
+
+### POST `/posts/:id/comments` — 评论（需登录，需邮箱验证）
+
+### POST `/feedback` — 提交反馈（需登录）
+
+### GET `/feedback/my` — 我的反馈（需登录）
+
+### GET `/feedback/:id` — 反馈详情（需登录）
 
 ---
+
+## 管理员接口（全部需要 admin JWT）
 
 ### GET `/admin/stats` — 数据统计
 
-```json
-// Response 200
-{
-  "success": true,
-  "data": {
-    "today": { "new": 5, "completed": 2 },
-    "thisWeek": { "new": 23, "completed": 11 },
-    "total": { "new": 156, "completed": 89 },
-    "byStatus": {
-      "PENDING": 5, "ACCEPTED": 8, "IN_PROGRESS": 12,
-      "COMPLETED": 89, "CLOSED": 42
-    },
-    "recentOrders": [ ... ]   // 最近5条
-  }
-}
-```
+### GET `/admin/orders` — 订单列表（含状态汇总）
+
+### GET `/admin/orders/:id` — 订单详情（含 adminNote）
+
+### PATCH `/admin/orders/:id/status` — 更新订单状态
+
+### POST `/admin/orders/:id/note` — 添加内部备注
+
+### POST `/admin/orders/:id/quote` — 设置报价
+
+### CRUD `/admin/order-types` — 需求类型管理
+
+### CRUD `/admin/activities` — 活动管理
+
+### GET `/admin/posts` — 帖子列表（含待审核）
+
+### POST `/admin/posts` — 发布公告
+
+### PUT `/admin/posts/:id` — 编辑帖子
+
+### PATCH `/admin/posts/:id/status` — 审核帖子
+
+### DELETE `/admin/posts/:id` — 删除帖子
+
+### PATCH `/admin/comments/:id` — 隐藏/显示评论
+
+### DELETE `/admin/comments/:id` — 删除评论
+
+### GET `/admin/feedback` — 反馈列表
+
+### POST `/admin/feedback/:id/reply` — 回复反馈（自动设为 REPLIED）
+
+### PATCH `/admin/feedback/:id/status` — 更新反馈状态
+
+### CRUD `/admin/carousel` — 轮播管理
+
+### GET `/admin/users` — 用户列表
+
+### PATCH `/admin/users/:id` — 启用/禁用用户
 
 ---
 
-### 需求类型管理（CRUD）
-
-#### GET `/admin/order-types` — 列表（含停用）
-
-```json
-// Response 200
-{
-  "success": true,
-  "data": [
-    { "id": "...", "name": "期末作业", "description": "...", "price": "200-500元", "sortOrder": 2, "isActive": true, "orderCount": 42 }
-  ]
-}
-```
-
-#### POST `/admin/order-types` — 新增
-
-```json
-// Request
-{ "name": "课程设计", "description": "...", "price": "150-400元", "sortOrder": 4 }
-```
-
-#### PUT `/admin/order-types/:id` — 修改（全量替换）
-
-```json
-// Request（字段均可选）
-{ "name": "...", "price": "...", "isActive": false, "sortOrder": 1 }
-```
-
-#### DELETE `/admin/order-types/:id` — 删除
-
-> 只允许删除无关联订单的类型，否则返回 400
-
----
-
-### 活动管理（CRUD）
-
-#### GET `/admin/activities` — 列表
-
-```json
-// Response 200
-{
-  "success": true,
-  "data": [
-    {
-      "id": "...", "title": "期末季9折", "type": "PROMO",
-      "startAt": "...", "endAt": "...", "isActive": true
-    }
-  ]
-}
-```
-
-#### POST `/admin/activities` — 新增
-
-```json
-// Request
-{
-  "title": "期末季全场9折",
-  "content": "2026年6月所有期末作业享9折...",
-  "type": "PROMO",            // PROMO | NOTICE
-  "startAt": "2026-06-01T00:00:00Z",
-  "endAt": "2026-06-30T23:59:59Z"
-}
-```
-
-#### PUT `/admin/activities/:id` — 修改（全量替换）
-
-#### DELETE `/admin/activities/:id` — 删除
-
----
-
-## Server酱推送规范
-
-### 新订单通知（`POST /admin/orders` 成功后触发）
+## 订单状态流转
 
 ```
-标题: 📋 JT-Hub 新订单 #JT-20260419-A3F2
-内容:
-课程：高等数学
-类型：期末作业
-年级：大三
-联系微信：wxid_xxxxx
-截止：2026-06-30
-提交时间：2026-04-19 18:00
+PENDING → ACCEPTED → IN_PROGRESS → COMPLETED
+任意状态 → CLOSED（终态）
 ```
-
-**发送方式**: `POST https://sctapi.ftqq.com/{SERVERCHAN_TOKEN}.send`
-
----
-
-## 接口变更汇总（v1 → v2）
-
-| 接口 | 变更 |
-|---|---|
-| `POST /orders` | 字段全部重写（见上） |
-| `GET /orders/my` | 无变化（内部字段更新） |
-| `POST /orders/query` | **删除**（改为登录查询） |
-| `POST /files` | **删除**（移除文件上传） |
-| `GET /s/:hash` | **删除**（移除短链接） |
-| `GET /order-types` | **新增** |
-| `GET /activities` | **新增** |
-| `PATCH /admin/orders/:id/status` | 更新（去掉邮件通知触发） |
-| `GET /admin/stats` | **新增** |
-| `CRUD /admin/order-types` | **新增** |
-| `CRUD /admin/activities` | **新增** |

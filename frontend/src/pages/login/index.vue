@@ -16,7 +16,7 @@
         <div class="form-group">
           <label class="form-label">
             密码
-            <!-- <a href="#" class="forgot-link">忘记密码？</a> -->
+            <router-link to="/forgot-password" class="forgot-link">忘记密码？</router-link>
           </label>
           <div class="input-eye">
             <input v-model="form.password" :type="showPwd ? 'text' : 'password'" class="form-input" placeholder="输入密码" autocomplete="current-password" />
