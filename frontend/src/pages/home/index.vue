@@ -13,7 +13,7 @@
         <p class="hero-sub" :class="{ visible: heroVis }">期末作业、日常作业、毕业设计，一站式搞定</p>
         <div class="hero-actions" :class="{ visible: heroVis }">
           <template v-if="store.isLoggedIn">
-            <router-link to="/products" class="btn-hero-primary">立即选购 →</router-link>
+            <router-link to="/submit" class="btn-hero-primary">立即提交 →</router-link>
             <router-link to="/my-orders" class="btn-hero-ghost">查看我的订单</router-link>
           </template>
           <template v-else>
@@ -165,7 +165,7 @@
             </div>
             <div class="cta-wechat">管理员微信：<strong>Jt--04</strong></div>
             <template v-if="store.isLoggedIn">
-              <router-link to="/products" class="cta-btn">立即选购 →</router-link>
+              <router-link to="/submit" class="cta-btn">提交需求 →</router-link>
             </template>
             <template v-else>
               <button class="cta-btn" @click="openLogin">登录后提交 →</button>
@@ -202,7 +202,7 @@ const fmtDate = (d: string) => {
 }
 function openLogin() { router.push('/login') }
 function goSubmitWithType(id: string) {
-  store.isLoggedIn ? router.push('/products') : openLogin()
+  store.isLoggedIn ? router.push('/submit') : openLogin()
 }
 
 const features = [

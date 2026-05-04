@@ -17,7 +17,7 @@
           <router-link to="/activity" class="nav-link" active-class="active">活动公告</router-link>
           <router-link to="/forum" class="nav-link" active-class="active">论坛</router-link>
           <template v-if="store.isLoggedIn">
-            <router-link to="/products" class="nav-link" active-class="active">立即选购</router-link>
+            <!-- <router-link to="/products" class="nav-link" active-class="active">立即选购</router-link> -->
             <router-link to="/orders" class="nav-link" active-class="active">我的订单</router-link>
             <router-link to="/points" class="nav-link" active-class="active">积分</router-link>
             <router-link to="/invite" class="nav-link" active-class="active">邀请</router-link>
@@ -79,7 +79,7 @@
         <router-link to="/activity" class="mobile-link" @click="closeMobileMenu">活动公告</router-link>
         <router-link to="/forum" class="mobile-link" @click="closeMobileMenu">论坛</router-link>
         <template v-if="store.isLoggedIn">
-          <router-link to="/products" class="mobile-link" @click="closeMobileMenu">立即选购</router-link>
+          <!-- <router-link to="/products" class="mobile-link" @click="closeMobileMenu">立即选购</router-link> -->
           <router-link to="/orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
           <router-link to="/points" class="mobile-link" @click="closeMobileMenu">我的积分</router-link>
           <router-link to="/invite" class="mobile-link" @click="closeMobileMenu">邀请好友</router-link>
@@ -117,7 +117,7 @@
         <button class="bn-submit" @click="handleSubmit">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
-        <span class="bn-submit-label">选购</span>
+        <span class="bn-submit-label">提交</span>
       </div>
 
       <template v-if="store.isLoggedIn">
@@ -347,7 +347,7 @@ function handleLogout() {
 
 function handleSubmit() {
   closeMobileMenu()
-  store.isLoggedIn ? router.push('/products') : router.push('/login')
+  store.isLoggedIn ? router.push('/submit') : router.push('/login')
 }
 </script>
 
