@@ -69,6 +69,7 @@ model OrderType {
   price       String
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
+  pointRewardRate Decimal  @default(0.05) @db.Decimal(5,4)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -108,7 +109,7 @@ model Order {
   orderType     OrderType   @relation(fields: [orderTypeId], references: [id])
   deadline      DateTime
   contactWechat String
-  status        OrderStatus @default(PENDING)
+  status        OrderStatus @default(CREATED)
   source        OrderSource @default(PC)
 
   userId String?
@@ -116,6 +117,9 @@ model Order {
 
   adminNote   String? @db.Text
   quotedPrice String?
+  estimatedDelivery DateTime?
+  rewardPoints     Int?
+  redeemItemId     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -136,11 +140,11 @@ enum Grade {
 }
 
 enum OrderStatus {
+  CREATED
   PENDING
-  ACCEPTED
   IN_PROGRESS
   COMPLETED
-  CLOSED
+  CANCELLED
 }
 
 enum OrderSource {
@@ -173,6 +177,7 @@ model Post {
   type        PostType   @default(DISCUSSION)
   status      PostStatus @default(PENDING)
   isPinned    Boolean    @default(false)
+  board       String     @default("exchange")
   authorId    String?
   author      User?      @relation(fields: [authorId], references: [id])
 
@@ -181,7 +186,7 @@ model Post {
 
   comments Comment[]
 
-  @@index([status, isPinned, createdAt])
+  @@index([board, status, isPinned, createdAt])
   @@map("posts")
 }
 
@@ -297,6 +302,7 @@ enum PointEventType {
   INVITE_REGISTER
   INVITE_FIRST_ORDER
   NEW_USER_FIRST_ORDER
+  ORDER_COMPLETED
   ADMIN_ADJUST
   REDEEM_FREEZE
   REDEEM_DEDUCT
@@ -350,8 +356,11 @@ model RedeemOrder {
   shopItemId String
   shopItem   ShopItem     @relation(fields: [shopItemId], references: [id])
   pointsCost Int
-  status     RedeemStatus @default(PENDING)
+  status     RedeemStatus @default(COMPLETED)
   adminNote  String?
+  usedAt     DateTime?
+  usedOrderId String?
+  expiresAt  DateTime?
 
   coupon Coupon?
 

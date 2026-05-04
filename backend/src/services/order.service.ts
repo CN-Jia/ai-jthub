@@ -12,6 +12,7 @@ export interface CreateOrderInput {
   contactWechat: string
   source: OrderSource
   userId?: string
+  redeemItemId?: string
 }
 
 /** 创建订单 */
@@ -27,19 +28,29 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         deadline: input.deadline,
         contactWechat: input.contactWechat,
         source: input.source,
-        status: 'PENDING',
+        status: 'CREATED',
         userId: input.userId ?? null,
+        redeemItemId: input.redeemItemId ?? null,
       },
     })
     await tx.statusHistory.create({
       data: {
         orderId: order.id,
         fromStatus: null,
-        toStatus: 'PENDING',
+        toStatus: 'CREATED',
         operator: 'system',
         remark: '订单创建',
       },
     })
+
+    // 如果使用了兑换项，标记为已使用
+    if (input.redeemItemId) {
+      await tx.redeemOrder.update({
+        where: { id: input.redeemItemId },
+        data: { usedAt: new Date(), usedOrderId: order.id },
+      })
+    }
+
     return order
   })
 }
@@ -96,7 +107,7 @@ export async function adminListOrders(filters: {
       ],
     } : {}),
   }
-  const [list, total, pending, accepted, inProgress, completed, closed] = await Promise.all([
+  const [list, total, created, pending, inProgress, completed, cancelled] = await Promise.all([
     prisma.order.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -105,15 +116,15 @@ export async function adminListOrders(filters: {
       include: { orderType: { select: { name: true } } },
     }),
     prisma.order.count({ where }),
+    prisma.order.count({ where: { status: 'CREATED' } }),
     prisma.order.count({ where: { status: 'PENDING' } }),
-    prisma.order.count({ where: { status: 'ACCEPTED' } }),
     prisma.order.count({ where: { status: 'IN_PROGRESS' } }),
     prisma.order.count({ where: { status: 'COMPLETED' } }),
-    prisma.order.count({ where: { status: 'CLOSED' } }),
+    prisma.order.count({ where: { status: 'CANCELLED' } }),
   ])
   return {
     list, total, page, pageSize,
-    stats: { PENDING: pending, ACCEPTED: accepted, IN_PROGRESS: inProgress, COMPLETED: completed, CLOSED: closed },
+    stats: { CREATED: created, PENDING: pending, IN_PROGRESS: inProgress, COMPLETED: completed, CANCELLED: cancelled },
   }
 }
 
@@ -177,17 +188,17 @@ export async function getStats() {
   const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); weekStart.setHours(0, 0, 0, 0)
 
   const [
-    pending, accepted, inProgress, completed, closed,
+    created, pending, inProgress, completed, cancelled,
     todayNew, todayCompleted,
     weekNew, weekCompleted,
     total,
     recentOrders,
   ] = await Promise.all([
+    prisma.order.count({ where: { status: 'CREATED' } }),
     prisma.order.count({ where: { status: 'PENDING' } }),
-    prisma.order.count({ where: { status: 'ACCEPTED' } }),
     prisma.order.count({ where: { status: 'IN_PROGRESS' } }),
     prisma.order.count({ where: { status: 'COMPLETED' } }),
-    prisma.order.count({ where: { status: 'CLOSED' } }),
+    prisma.order.count({ where: { status: 'CANCELLED' } }),
     prisma.order.count({ where: { createdAt: { gte: todayStart } } }),
     prisma.order.count({ where: { status: 'COMPLETED', updatedAt: { gte: todayStart } } }),
     prisma.order.count({ where: { createdAt: { gte: weekStart } } }),
@@ -207,7 +218,7 @@ export async function getStats() {
     today: { new: todayNew, completed: todayCompleted },
     thisWeek: { new: weekNew, completed: weekCompleted },
     total,
-    byStatus: { PENDING: pending, ACCEPTED: accepted, IN_PROGRESS: inProgress, COMPLETED: completed, CLOSED: closed },
+    byStatus: { CREATED: created, PENDING: pending, IN_PROGRESS: inProgress, COMPLETED: completed, CANCELLED: cancelled },
     recentOrders,
   }
 }

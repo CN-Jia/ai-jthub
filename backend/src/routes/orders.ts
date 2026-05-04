@@ -14,6 +14,7 @@ const createOrderSchema = z.object({
   deadline: z.string().datetime(),
   contactWechat: z.string().min(1).max(100),
   source: z.enum(['MINIPROGRAM', 'PC']),
+  redeemItemId: z.string().optional(),
 })
 
 export async function orderRoutes(fastify: FastifyInstance) {
@@ -90,6 +91,7 @@ export async function orderRoutes(fastify: FastifyInstance) {
       ...data,
       deadline: new Date(data.deadline),
       userId: user.userId,
+      redeemItemId: data.redeemItemId,
     })
 
     // 异步通知管理员
