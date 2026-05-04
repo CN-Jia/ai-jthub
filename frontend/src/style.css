@@ -173,6 +173,118 @@ input, textarea, select { font-family: inherit; }
 [data-theme="dark"] .status-PAID { background: rgba(250,140,22,0.15); color: #ffa940; }
 [data-theme="dark"] .status-CANCELLED { background: rgba(255,77,79,0.15); color: #ff7875; }
 
+/* ── 暗色模式：骨架屏 shimmer ── */
+[data-theme="dark"] .skeleton-card,
+[data-theme="dark"] .skeleton-order {
+  background: linear-gradient(90deg, #1c2333 25%, #252d3f 50%, #1c2333 75%);
+  background-size: 200% 100%;
+}
+
+/* ── 暗色模式：表单输入 ── */
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .input {
+  background: #0d1117;
+  border-color: #30363d;
+  color: #e6edf3;
+}
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .input:focus {
+  background: #0d1117;
+  border-color: #3b9eff;
+  box-shadow: 0 0 0 3px rgba(59,158,255,0.15);
+}
+
+/* ── 暗色模式：成功/错误反馈 ── */
+[data-theme="dark"] .form-success,
+[data-theme="dark"] .feedback-msg.success {
+  background: rgba(82,196,26,0.12);
+  color: #73d13d;
+}
+[data-theme="dark"] .form-error,
+[data-theme="dark"] .feedback-msg.error {
+  background: rgba(255,77,79,0.12);
+  color: #ff7875;
+}
+
+/* ── 暗色模式：认证页面背景 ── */
+[data-theme="dark"] .auth-page {
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+}
+
+/* ── 暗色模式：提示栏/notice ── */
+[data-theme="dark"] .notice-bar {
+  background: rgba(250,219,20,0.08);
+  border-color: rgba(250,219,20,0.2);
+  color: #fbbf24;
+}
+
+/* ── 暗色模式：步骤/流程卡片 ── */
+[data-theme="dark"] .steps-card {
+  background: #161b22;
+}
+
+/* ── 暗色模式：微信盒子 ── */
+[data-theme="dark"] .wechat-box {
+  background: #1c2333;
+}
+[data-theme="dark"] .wechat-box:hover {
+  background: #252d3f;
+}
+
+/* ── 暗色模式：信息行边框 ── */
+[data-theme="dark"] .info-row {
+  border-color: #21262d;
+}
+
+/* ── 暗色模式：时间线备注 ── */
+[data-theme="dark"] .tl-remark {
+  background: #161b22;
+}
+
+/* ── 暗色模式：toast ── */
+[data-theme="dark"] .toast {
+  background: #e6edf3;
+  color: #0d1117;
+}
+
+/* ── 暗色模式：code 内联 ── */
+[data-theme="dark"] .post-content :deep(code) {
+  background: #1c2333;
+}
+
+/* ── 暗色模式：分页按钮 ── */
+[data-theme="dark"] .page-btn {
+  background: #161b22;
+  border-color: #30363d;
+  color: #8b949e;
+}
+
+/* ── 暗色模式：标签 tag 通用 ── */
+[data-theme="dark"] .tag-expired { background: rgba(255,255,255,0.06); color: #8b949e; }
+[data-theme="dark"] .tag-today   { background: rgba(250,140,22,0.12); color: #ffa940; }
+[data-theme="dark"] .tag-days    { background: rgba(19,194,194,0.12); color: #36cfc9; }
+
+/* ── 暗色模式：meta-type 标签 ── */
+[data-theme="dark"] .meta-type {
+  background: #1c2333;
+  color: #8b949e;
+}
+
+/* ── 暗色模式：order-no ── */
+[data-theme="dark"] .order-no {
+  color: #484f58;
+}
+
+/* ── 暗色模式：card-arrow ── */
+[data-theme="dark"] .card-arrow {
+  color: #484f58;
+}
+
+/* ── 暗色模式：divider ── */
+[data-theme="dark"] .divider {
+  border-color: #21262d;
+}
+
 /* ── 分割线 ── */
 .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 

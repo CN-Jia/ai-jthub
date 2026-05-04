@@ -328,4 +328,10 @@ async function submit() {
 .md-preview :deep(table) { border-collapse: collapse; width: 100%; margin: 8px 0; }
 .md-preview :deep(th), .md-preview :deep(td) { border: 1px solid var(--border); padding: 6px 12px; font-size: 13px; }
 .md-preview :deep(th) { background: var(--bg); font-weight: 600; }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .required { color: #ff7875; }
+[data-theme="dark"] .cover-error { color: #ff7875; }
+[data-theme="dark"] .md-preview :deep(code) { background: #1c2333; }
+[data-theme="dark"] .md-table code { background: #1c2333; }
 </style>

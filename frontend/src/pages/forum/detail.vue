@@ -170,4 +170,9 @@ onMounted(load)
 .comment-form { display: flex; flex-direction: column; gap: 10px; }
 .comment-login-hint { text-align: center; color: var(--text-3); font-size: 14px; padding: 16px; background: var(--bg); border-radius: 10px; }
 .auth-link { color: var(--primary); font-weight: 600; }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .post-content :deep(code) { background: #1c2333; }
+[data-theme="dark"] .comment-del-btn { color: #ff7875; }
+[data-theme="dark"] .comment-del-btn:hover { background: rgba(255,120,117,0.1); }
 </style>

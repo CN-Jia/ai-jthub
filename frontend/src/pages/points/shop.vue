@@ -66,7 +66,7 @@
       <div class="modal">
         <h3 class="modal-title">确认兑换</h3>
         <p>确定用 <strong>{{ confirmItem.pointsCost }}</strong> 积分兑换「{{ confirmItem.name }}」？</p>
-        <p class="modal-note">兑换后立即生效，请在有效期内使用。服务套餐30天，折扣券7天。</p>
+        <p class="modal-note">兑换后积分将被冻结，等待管理员审核。</p>
         <div class="modal-actions">
           <button class="btn btn-secondary" @click="confirmItem = null">取消</button>
           <button class="btn btn-primary" :disabled="submitting === confirmItem.id" @click="submitRedeem">
@@ -121,7 +121,7 @@ async function submitRedeem() {
     await loadBalance()
     await loadItems()
     confirmItem.value = null
-    alert('兑换成功！请在有效期内使用。')
+    alert('兑换申请已提交，积分已冻结，等待管理员审核。')
   } catch (err: any) {
     alert(err?.message ?? '兑换失败，请稍后重试')
   } finally {
@@ -177,4 +177,10 @@ onMounted(() => {
 .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: var(--text-primary); }
 .modal-note { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; }
 .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .type-service { background: rgba(37,99,235,0.15); color: #60a5fa; }
+[data-theme="dark"] .type-coupon { background: rgba(217,119,6,0.12); color: #fbbf24; }
+[data-theme="dark"] .shop-discount { color: #fbbf24; }
+[data-theme="dark"] .shop-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.3); }
 </style>

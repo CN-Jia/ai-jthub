@@ -128,4 +128,12 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .card-title { font-size: 17px; font-weight: 700; color: var(--text-1); line-height: 1.4; }
 .card-content { font-size: 13px; color: var(--text-2); line-height: 1.8; flex: 1; }
 .card-date { font-size: 12px; color: var(--text-3); }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .skeleton-card {
+  background: linear-gradient(90deg, #1c2333 25%, #252d3f 50%, #1c2333 75%);
+  background-size: 200% 100%;
+}
+[data-theme="dark"] .type-promo .card-badge { background: rgba(250,140,22,0.12); }
+[data-theme="dark"] .activity-card.expired { border-top-color: #30363d; }
 </style>

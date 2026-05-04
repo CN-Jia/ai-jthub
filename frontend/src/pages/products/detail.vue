@@ -261,4 +261,8 @@ function handlePaid() {
 @media (max-width: 768px) {
   .detail-layout { grid-template-columns: 1fr; }
 }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .product-img-wrap { background: #161b22; }
+[data-theme="dark"] .price-row.discount { color: #73d13d; }
 </style>

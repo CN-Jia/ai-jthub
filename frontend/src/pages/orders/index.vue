@@ -144,6 +144,13 @@ onMounted(loadOrders)
 .status-COMPLETED { background: #dcfce7; color: #166534; }
 .status-CANCELLED { background: #f1f5f9; color: #64748b; }
 
+/* ── 暗色模式 ── */
+[data-theme="dark"] .status-CREATED { background: rgba(234,179,8,0.12); color: #fbbf24; }
+[data-theme="dark"] .status-PAID { background: rgba(59,158,255,0.12); color: #3b9eff; }
+[data-theme="dark"] .status-COMPLETED { background: rgba(82,196,26,0.12); color: #73d13d; }
+[data-theme="dark"] .status-CANCELLED { background: rgba(255,255,255,0.06); color: #8b949e; }
+[data-theme="dark"] .order-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+
 .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 24px; }
 .pagination button { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 13px; }
 .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }

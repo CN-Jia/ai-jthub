@@ -137,4 +137,12 @@ onMounted(async () => {
   .products-grid { grid-template-columns: 1fr; gap: 14px; }
   .page-title { font-size: 20px; }
 }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .product-img-wrap { background: #161b22; }
+[data-theme="dark"] .product-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+[data-theme="dark"] .product-skeleton {
+  background: linear-gradient(90deg, #1c2333 25%, #252d3f 50%, #1c2333 75%);
+  background-size: 200% 100%;
+}
 </style>

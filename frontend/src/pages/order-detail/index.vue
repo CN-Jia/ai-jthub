@@ -217,4 +217,15 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 .loading-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 120px 0; color: var(--text-3); font-size: 15px; }
 .loader { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .PENDING.status-header  { background: rgba(250,140,22,0.1); }
+[data-theme="dark"] .ACCEPTED.status-header { background: rgba(59,158,255,0.1); }
+[data-theme="dark"] .IN_PROGRESS.status-header { background: rgba(19,194,194,0.1); }
+[data-theme="dark"] .COMPLETED.status-header { background: rgba(82,196,26,0.1); }
+[data-theme="dark"] .CLOSED.status-header    { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .info-row { border-bottom-color: #21262d; }
+[data-theme="dark"] .wechat-box { background: #1c2333; }
+[data-theme="dark"] .wechat-box:hover { background: #252d3f; }
+[data-theme="dark"] .tl-remark { background: #161b22; }
 </style>

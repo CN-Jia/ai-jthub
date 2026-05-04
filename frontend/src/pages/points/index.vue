@@ -231,4 +231,15 @@ onMounted(() => {
   .balance-cards { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .balance-value { font-size: 1.2rem; }
 }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .badge-green { background: rgba(82,196,26,0.12); color: #73d13d; }
+[data-theme="dark"] .badge-blue { background: rgba(22,119,255,0.12); color: #3b9eff; }
+[data-theme="dark"] .coupon-chip { background: rgba(234,179,8,0.1); color: #fbbf24; }
+[data-theme="dark"] .status-pending { background: rgba(250,140,22,0.12); color: #ffa940; }
+[data-theme="dark"] .status-success { background: rgba(82,196,26,0.12); color: #73d13d; }
+[data-theme="dark"] .status-danger { background: rgba(255,77,79,0.12); color: #ff7875; }
+[data-theme="dark"] .coupon-card { background: linear-gradient(135deg, rgba(234,179,8,0.06), rgba(250,140,22,0.04)); border-color: rgba(245,158,11,0.3); }
+[data-theme="dark"] .log-delta.positive { color: #73d13d; }
+[data-theme="dark"] .log-delta.negative { color: #ff7875; }
 </style>

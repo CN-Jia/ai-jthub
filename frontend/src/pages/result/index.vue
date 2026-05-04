@@ -111,4 +111,7 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 .btn-solid:hover { box-shadow: 0 10px 28px rgba(22,119,255,0.4); }
 .btn-outline { flex: 1; border: 1.5px solid var(--border); color: var(--text-2); border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 500; text-align: center; transition: border-color 0.15s, color 0.15s; }
 .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .steps-card { background: #161b22; }
 </style>

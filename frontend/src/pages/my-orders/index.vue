@@ -109,4 +109,15 @@ onMounted(async () => {
 .COMPLETED .order-status-badge { background: #f6ffed; color: #389e0d; }
 .CLOSED .order-status-badge    { background: #f5f5f5; color: #8c8c8c; }
 .card-arrow { font-size: 20px; color: #d0d7de; }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .order-card { background: var(--card-bg); }
+[data-theme="dark"] .PENDING .order-status-badge  { background: rgba(250,140,22,0.12); color: #ffa940; }
+[data-theme="dark"] .ACCEPTED .order-status-badge { background: rgba(59,158,255,0.12); color: #3b9eff; }
+[data-theme="dark"] .IN_PROGRESS .order-status-badge { background: rgba(19,194,194,0.12); color: #36cfc9; }
+[data-theme="dark"] .COMPLETED .order-status-badge { background: rgba(82,196,26,0.12); color: #73d13d; }
+[data-theme="dark"] .CLOSED .order-status-badge    { background: rgba(255,255,255,0.06); color: #8b949e; }
+[data-theme="dark"] .PENDING .order-status-bar  { background: #ffa940; }
+[data-theme="dark"] .IN_PROGRESS .order-status-bar { background: #36cfc9; }
+[data-theme="dark"] .CLOSED .order-status-bar    { background: #30363d; }
 </style>

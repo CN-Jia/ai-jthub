@@ -227,4 +227,8 @@ async function doVerifyCode() {
 @media (max-width: 768px) {
   .profile-layout { grid-template-columns: 1fr; }
 }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .feedback-msg.success { background: rgba(82,196,26,0.12); color: #73d13d; }
+[data-theme="dark"] .feedback-msg.error { background: rgba(255,77,79,0.12); color: #ff7875; }
 </style>

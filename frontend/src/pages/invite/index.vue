@@ -148,4 +148,10 @@ onMounted(async () => {
 .empty-state { text-align: center; padding: 48px; color: var(--text-muted); }
 
 .toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; z-index: 9999; }
+
+/* ── 暗色模式 ── */
+[data-theme="dark"] .badge-success { background: rgba(82,196,26,0.12); color: #73d13d; }
+[data-theme="dark"] .badge-pending { background: rgba(250,140,22,0.12); color: #ffa940; }
+[data-theme="dark"] .stat-item.success .stat-num { color: #73d13d; }
+[data-theme="dark"] .toast { background: #e6edf3; color: #0d1117; }
 </style>
