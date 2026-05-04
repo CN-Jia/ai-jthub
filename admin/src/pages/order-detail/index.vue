@@ -45,6 +45,14 @@
                 <span class="info-key">管理员报价</span>
                 <span class="info-val accent">{{ order.quotedPrice }}</span>
               </div>
+              <div v-if="order.estimatedDelivery" class="info-item">
+                <span class="info-key">预计交付时间</span>
+                <span class="info-val">{{ fmtDateTime(order.estimatedDelivery) }}</span>
+              </div>
+              <div v-if="order.rewardPoints" class="info-item">
+                <span class="info-key">奖励积分</span>
+                <span class="info-val accent">+{{ order.rewardPoints }} 积分</span>
+              </div>
             </div>
           </div>
         </div>
@@ -79,6 +87,21 @@
             <el-select v-model="newStatus" placeholder="选择新状态" style="width:100%;margin-bottom:10px">
               <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
             </el-select>
+
+            <!-- 进行中：填写交付时间 -->
+            <div v-if="newStatus === 'IN_PROGRESS'" style="margin-bottom:10px">
+              <el-date-picker v-model="estimatedDelivery" type="datetime" placeholder="预计交付时间 *"
+                style="width:100%" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DDTHH:mm" />
+            </div>
+
+            <!-- 结单：填写奖励积分 -->
+            <div v-if="newStatus === 'COMPLETED'" style="margin-bottom:10px">
+              <el-input v-model="rewardPoints" type="number" placeholder="奖励积分（留空自动计算）" />
+              <div style="font-size:11px;color:#4d6a82;margin-top:4px">
+                自动计算 = 订单报价 × 类型积分比例，可手动调整
+              </div>
+            </div>
+
             <el-input v-model="remark" placeholder="备注（可选）" style="margin-bottom:10px" />
             <el-button type="primary" style="width:100%" @click="doUpdateStatus" :loading="statusLoading">
               确认更新
@@ -134,18 +157,20 @@ const quotedPrice = ref('')
 const statusLoading = ref(false)
 const noteLoading = ref(false)
 const quoteLoading = ref(false)
+const estimatedDelivery = ref('')
+const rewardPoints = ref('')
 
 const statusOptions = [
-  { value: 'ACCEPTED',    label: '已接单' },
-  { value: 'IN_PROGRESS', label: '进行中' },
-  { value: 'COMPLETED',   label: '已完成' },
-  { value: 'CLOSED',      label: '已关闭' },
+  { value: 'PENDING',     label: '确认接单' },
+  { value: 'IN_PROGRESS', label: '开始处理' },
+  { value: 'COMPLETED',   label: '标记结单' },
+  { value: 'CANCELLED',   label: '取消订单' },
 ]
 const statusLabel = (s: string) => (
-  { PENDING: '待确认', ACCEPTED: '已接单', IN_PROGRESS: '进行中', COMPLETED: '已完成', CLOSED: '已关闭' } as any
+  { CREATED: '已创建', PENDING: '待接单', IN_PROGRESS: '进行中', COMPLETED: '已结单', CANCELLED: '已取消' } as any
 )[s] ?? s
 const statusTag = (s: string) => (
-  { PENDING: 'warning', ACCEPTED: 'primary', IN_PROGRESS: '', COMPLETED: 'success', CLOSED: 'info' } as any
+  { CREATED: 'info', PENDING: 'warning', IN_PROGRESS: '', COMPLETED: 'success', CANCELLED: 'info' } as any
 )[s] ?? ''
 const gradeLabel = (g: string) => ({ FRESHMAN: '大一', SOPHOMORE: '大二', JUNIOR: '大三' } as any)[g] ?? g
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('zh-CN') : '—'
@@ -163,13 +188,28 @@ async function loadOrder() {
 
 async function doUpdateStatus() {
   if (!newStatus.value) return ElMessage.warning('请选择状态')
+
+  // IN_PROGRESS 必须填写交付时间
+  if (newStatus.value === 'IN_PROGRESS' && !estimatedDelivery.value) {
+    return ElMessage.warning('请填写预计交付时间')
+  }
+
   statusLoading.value = true
   try {
-    await api.updateStatus(order.value.id, newStatus.value, remark.value || undefined)
+    const extra: any = {}
+    if (newStatus.value === 'IN_PROGRESS' && estimatedDelivery.value) {
+      extra.estimatedDelivery = new Date(estimatedDelivery.value).toISOString()
+    }
+    if (newStatus.value === 'COMPLETED' && rewardPoints.value) {
+      extra.rewardPoints = Number(rewardPoints.value)
+    }
+    await api.updateStatus(order.value.id, newStatus.value, remark.value || undefined, extra)
     ElMessage.success('状态已更新')
     await loadOrder()
     remark.value = ''
     newStatus.value = ''
+    estimatedDelivery.value = ''
+    rewardPoints.value = ''
   } catch (e: any) {
     ElMessage.error(e.message ?? '操作失败')
   } finally { statusLoading.value = false }

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "mcp__Claude_in_Chrome__navigate",
+      "WebFetch(domain:jthub.cc.cd)",
+      "Bash(git log *)",
+      "Bash(git fetch *)",
+      "Bash(sed -n '145,160p' frontend/src/App.vue)",
+      "Bash(sed -n '170,185p' frontend/src/App.vue)",
+      "Bash(sed -n '230,365p' frontend/src/App.vue)",
+      "Bash(git reset *)",
+      "Bash(git branch *)",
+      "Bash(npx tsc *)",
+      "Bash(pnpm --filter backend build)",
+      "Bash(sed -i 's|<router-link to=\"/products\" class=\"nav-link\" active-class=\"active\">立即选购</router-link>|<!-- <router-link to=\"/products\" class=\"nav-link\" active-class=\"active\">立即选购</router-link> -->|' frontend/src/App.vue)",
+      "Bash(sed -i 's|<router-link to=\"/products\" class=\"mobile-link\" @click=\"closeMobileMenu\">立即选购</router-link>|<!-- <router-link to=\"/products\" class=\"mobile-link\" @click=\"closeMobileMenu\">立即选购</router-link> -->|' frontend/src/App.vue)",
+      "Bash(sed -i 's|<span class=\"bn-submit-label\">选购</span>|<span class=\"bn-submit-label\">提交</span>|' frontend/src/App.vue)",
+      "Bash(sed -i \"s|store.isLoggedIn ? router.push\\('/products'\\) : router.push\\('/login'\\)|store.isLoggedIn ? router.push\\('/submit'\\) : router.push\\('/login'\\)|\" frontend/src/App.vue)"
+    ]
+  }
+}

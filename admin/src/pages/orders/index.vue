@@ -76,11 +76,11 @@ const filters = reactive({ status: '', keyword: '' })
 const orderStats = ref<Record<string, number>>({})
 
 const statusOptions = [
-  { value: 'PENDING',     label: '待确认', color: '#00d4ff' },
-  { value: 'ACCEPTED',    label: '已接单', color: '#00d4ff' },
+  { value: 'CREATED',     label: '已创建', color: '#00d4ff' },
+  { value: 'PENDING',     label: '待接单', color: '#00d4ff' },
   { value: 'IN_PROGRESS', label: '进行中', color: '#00d4ff' },
-  { value: 'COMPLETED',   label: '已完成', color: '#00d4ff' },
-  { value: 'CLOSED',      label: '已关闭', color: '#00d4ff' },
+  { value: 'COMPLETED',   label: '已结单', color: '#00d4ff' },
+  { value: 'CANCELLED',   label: '已取消', color: '#00d4ff' },
 ]
 
 function quickFilter(status: string) {
@@ -91,7 +91,7 @@ function quickFilter(status: string) {
 
 const statusLabel = (s: string) => statusOptions.find(o => o.value === s)?.label ?? s
 const statusTag = (s: string) => (
-  { PENDING: 'warning', ACCEPTED: 'primary', IN_PROGRESS: '', COMPLETED: 'success', CLOSED: 'info' } as any
+  { CREATED: 'info', PENDING: 'warning', IN_PROGRESS: '', COMPLETED: 'success', CANCELLED: 'info' } as any
 )[s] ?? ''
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('zh-CN') : '—'
 

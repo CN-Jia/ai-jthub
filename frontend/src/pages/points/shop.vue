@@ -66,7 +66,7 @@
       <div class="modal">
         <h3 class="modal-title">确认兑换</h3>
         <p>确定用 <strong>{{ confirmItem.pointsCost }}</strong> 积分兑换「{{ confirmItem.name }}」？</p>
-        <p class="modal-note">兑换后积分将被冻结，等待管理员审核。</p>
+        <p class="modal-note">兑换后立即生效，请在有效期内使用。服务套餐30天，折扣券7天。</p>
         <div class="modal-actions">
           <button class="btn btn-secondary" @click="confirmItem = null">取消</button>
           <button class="btn btn-primary" :disabled="submitting === confirmItem.id" @click="submitRedeem">
@@ -121,7 +121,7 @@ async function submitRedeem() {
     await loadBalance()
     await loadItems()
     confirmItem.value = null
-    alert('兑换申请已提交，积分已冻结，等待管理员审核。')
+    alert('兑换成功！请在有效期内使用。')
   } catch (err: any) {
     alert(err?.message ?? '兑换失败，请稍后重试')
   } finally {

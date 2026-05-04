@@ -1,12 +1,23 @@
 <template>
   <div class="page-container">
     <div class="forum-header">
-      <h1 class="forum-title">论坛 · 交流区</h1>
-      <p class="forum-sub">参与讨论，共建学习社区</p>
+      <h1 class="forum-title">论坛社区</h1>
+      <p class="forum-sub">公告、服务说明、常见问题、用户交流</p>
+    </div>
+
+    <!-- 板块 tab -->
+    <div class="board-tabs">
+      <button
+        v-for="b in boards" :key="b.key"
+        class="board-tab" :class="{ active: activeBoard === b.key }"
+        @click="switchBoard(b.key)"
+      >
+        {{ b.icon }} {{ b.label }}
+      </button>
     </div>
 
     <div class="filter-row">
-      <router-link v-if="store.isLoggedIn" to="/forum/new" class="btn btn-primary new-post-btn">+ 发帖</router-link>
+      <router-link v-if="store.isLoggedIn && activeBoard === 'exchange'" to="/forum/new" class="btn btn-primary new-post-btn">+ 发帖</router-link>
     </div>
 
     <div v-if="loading" class="loading-box">
@@ -15,7 +26,7 @@
 
     <div v-else-if="posts.length === 0" class="empty-state">
       <div class="empty-state-icon">💬</div>
-      <div class="empty-state-text">暂无帖子，来发第一篇吧</div>
+      <div class="empty-state-text">暂无帖子</div>
     </div>
 
     <div v-else class="post-list">
@@ -38,19 +49,10 @@
       </router-link>
     </div>
 
-    <!-- 广告板块（预留） -->
-    <div class="ad-banner">
-      <div class="ad-inner">
-        <span class="ad-label">广告</span>
-        <span class="ad-text">广告位招租 · 欢迎合作</span>
-      </div>
-    </div>
-
-    <!-- 分页 -->
-    <div v-if="total > pageSize" class="pagination">
-      <button class="page-btn" :disabled="page <= 1" @click="changePage(page - 1)">上一页</button>
-      <span class="page-info">第 {{ page }} / {{ Math.ceil(total / pageSize) }} 页</span>
-      <button class="page-btn" :disabled="page >= Math.ceil(total / pageSize)" @click="changePage(page + 1)">下一页</button>
+    <div v-if="total > pageSize" class="load-more">
+      <button class="btn btn-outline" @click="loadMore" :disabled="loading">
+        {{ loading ? '加载中...' : '加载更多' }}
+      </button>
     </div>
   </div>
 </template>
@@ -63,94 +65,103 @@ import { api } from '../../api'
 const store = useUserStore()
 const posts = ref<any[]>([])
 const loading = ref(false)
-const total = ref(0)
 const page = ref(1)
-const pageSize = 10
+const pageSize = 20
+const total = ref(0)
+const activeBoard = ref('')
 
-const fmt = (d: string) => {
+const boards = [
+  { key: '', label: '全部', icon: '📋' },
+  { key: 'announcement', label: '公告通知', icon: '📢' },
+  { key: 'service', label: '服务说明', icon: '📋' },
+  { key: 'faq', label: '常见问题', icon: '❓' },
+  { key: 'exchange', label: '用户交流', icon: '💬' },
+]
+
+function fmt(d: string) {
   const date = new Date(d)
   const now = new Date()
-  const diff = (now.getTime() - date.getTime()) / 1000
-  if (diff < 60) return '刚刚'
-  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
+  const diff = now.getTime() - date.getTime()
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
   return `${date.getMonth() + 1}月${date.getDate()}日`
 }
 
-async function load() {
+async function fetchPosts(reset = false) {
+  if (reset) { page.value = 1; posts.value = [] }
   loading.value = true
   try {
-    const res: any = await api.getPosts({ page: page.value, pageSize })
-    posts.value = res.data.list
-    total.value = res.data.total
+    const params: any = { page: page.value, pageSize }
+    if (activeBoard.value) params.board = activeBoard.value
+    const res: any = await api.getPosts(params)
+    const list = res.data?.list ?? []
+    if (reset) posts.value = list
+    else posts.value.push(...list)
+    total.value = res.data?.total ?? 0
   } finally { loading.value = false }
 }
 
-function changePage(p: number) { page.value = p; load() }
+function switchBoard(key: string) {
+  activeBoard.value = key
+  fetchPosts(true)
+}
 
-onMounted(load)
+function loadMore() {
+  page.value++
+  fetchPosts()
+}
+
+onMounted(() => fetchPosts(true))
 </script>
 
 <style scoped>
-.forum-header { text-align: center; padding: 32px 0 16px; }
-.forum-title { font-size: 28px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
-.forum-sub { color: var(--text-3); font-size: 15px; }
+.forum-header { margin-bottom: 24px; }
+.forum-title { font-size: 26px; font-weight: 800; color: var(--text-1); margin-bottom: 4px; }
+.forum-sub { font-size: 14px; color: var(--text-3); }
 
-.filter-row {
-  display: flex; align-items: center; justify-content: flex-end;
-  margin-bottom: 20px;
+/* 板块 tabs */
+.board-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.board-tab {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 8px 18px; font-size: 14px;
+  color: var(--text-2); cursor: pointer;
+  transition: all 0.15s;
 }
-.new-post-btn { padding: 8px 20px; font-size: 13px; }
+.board-tab:hover { border-color: var(--primary); color: var(--primary); }
+.board-tab.active {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+}
 
-.loading-box { display: flex; justify-content: center; padding: 40px; }
+.filter-row { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+.new-post-btn { font-size: 14px; padding: 8px 16px; }
+
+.loading-box { display: flex; justify-content: center; padding: 48px; }
 
 .post-list { display: flex; flex-direction: column; gap: 12px; }
+
 .post-card {
-  display: block; background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 18px 20px;
-  transition: box-shadow 0.15s, border-color 0.15s; cursor: pointer;
-  color: inherit;
+  display: block; background: var(--card); border-radius: 12px;
+  padding: 20px 24px; text-decoration: none; color: inherit;
+  border: 1px solid var(--border); transition: all 0.15s;
+  box-shadow: var(--shadow-sm);
 }
-.post-card:hover { box-shadow: var(--shadow); border-color: var(--primary); }
-.post-card.pinned {
-  border-left: 3px solid var(--primary);
-  background: var(--primary-light);
-}
-[data-theme="dark"] .post-card.pinned { background: rgba(59,158,255,0.05); }
+.post-card:hover { border-color: var(--primary); box-shadow: var(--shadow); transform: translateY(-1px); }
+.post-card.pinned { border-left: 3px solid var(--primary); }
 
 .post-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.pin-badge { font-size: 12px; background: var(--primary-light); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
 .post-date { font-size: 12px; color: var(--text-3); }
 
-.pin-badge {
-  display: inline-flex; align-items: center;
-  font-size: 11px; font-weight: 700; color: var(--primary);
-  background: var(--primary-light); padding: 2px 8px; border-radius: 100px;
-}
+.post-title { font-size: 17px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; line-height: 1.4; }
+.post-summary { font-size: 14px; color: var(--text-2); margin-bottom: 10px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-.post-title { font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; line-height: 1.4; }
-.post-summary { font-size: 13px; color: var(--text-2); margin-bottom: 10px; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.post-footer { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-3); }
-.post-author::before { content: '👤 '; }
-.post-comments { color: var(--text-3); }
+.post-footer { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-3); }
+.post-author { font-weight: 500; }
 
-.pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 24px 0; }
-.page-btn { padding: 8px 20px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--white); color: var(--text-2); font-size: 14px; cursor: pointer; }
-.page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
-.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.page-info { font-size: 14px; color: var(--text-3); }
+.load-more { display: flex; justify-content: center; padding: 24px 0; }
 
-.ad-banner {
-  margin: 20px 0 4px;
-  border: 1.5px dashed var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  padding: 14px 20px;
+@media (max-width: 640px) {
+  .board-tabs { gap: 6px; }
+  .board-tab { padding: 6px 14px; font-size: 13px; }
 }
-.ad-inner { display: flex; align-items: center; gap: 10px; }
-.ad-label {
-  font-size: 11px; font-weight: 700; color: var(--text-3);
-  border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
-  letter-spacing: 1px;
-}
-.ad-text { font-size: 13px; color: var(--text-3); }
 </style>

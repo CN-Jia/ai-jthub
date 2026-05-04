@@ -7,8 +7,11 @@ import { verifyJWT } from '../middlewares/auth.middleware.js'
 export async function postRoutes(fastify: FastifyInstance) {
 
   fastify.get('/posts', async (request, reply) => {
-    const { page = '1', pageSize = '10' } = request.query as Record<string, string>
+    const { page = '1', pageSize = '10', board } = request.query as Record<string, string>
     const where: any = { status: 'APPROVED' }
+    if (board && ['announcement', 'service', 'faq', 'exchange'].includes(board)) {
+      where.board = board
+    }
 
     const [list, total] = await Promise.all([
       prisma.post.findMany({
@@ -68,7 +71,7 @@ export async function postRoutes(fastify: FastifyInstance) {
     if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, parse.error.errors[0]?.message ?? '参数错误'))
 
     const post = await prisma.post.create({
-      data: { ...parse.data, type: 'DISCUSSION', status: 'PENDING', authorId: userId },
+      data: { ...parse.data, type: 'DISCUSSION', status: 'PENDING', board: 'exchange', authorId: userId },
     })
     return reply.code(201).send(successResponse({ id: post.id, message: '发布成功，等待管理员审核' }))
   })

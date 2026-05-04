@@ -35,8 +35,8 @@ export const api = {
   // 订单
   getOrders: (params?: Record<string, any>) => http.get('/admin/orders', { params }),
   getOrder: (id: string) => http.get(`/admin/orders/${id}`),
-  updateStatus: (id: string, status: string, remark?: string) =>
-    http.patch(`/admin/orders/${id}/status`, { status, remark }),
+  updateStatus: (id: string, status: string, remark?: string, extra?: { estimatedDelivery?: string; rewardPoints?: number }) =>
+    http.patch(`/admin/orders/${id}/status`, { status, remark, ...extra }),
   addNote: (id: string, note: string) => http.post(`/admin/orders/${id}/note`, { note }),
   setQuote: (id: string, price: string) => http.post(`/admin/orders/${id}/quote`, { price }),
 
