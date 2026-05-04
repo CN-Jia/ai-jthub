@@ -89,4 +89,5 @@ export const api = {
   getShopItems: (params?: any) => http.get('/shop/items', { params }),
   submitRedeem: (shopItemId: string) => http.post('/shop/redeem', { shopItemId }),
   getMyRedeems: () => http.get('/shop/redeem/my'),
+  getAvailableRedeems: () => http.get('/redeem/available'),
 }

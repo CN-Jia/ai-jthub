@@ -113,7 +113,7 @@ export async function pointsRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({ list }))
   })
 
-  // ── 提交兑换申请 ────────────────────────────────────────────────
+  // ── 提交兑换申请（自动生效，无需审核）───────────────────────────
   fastify.post('/shop/redeem', { preHandler: [verifyJWT] }, async (request, reply) => {
     const { userId } = request.user as { userId: string }
     const schema = z.object({ shopItemId: z.string().min(1) })
@@ -126,21 +126,19 @@ export async function pointsRoutes(fastify: FastifyInstance) {
     if (!item || !item.isActive) return reply.code(404).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '商品不存在或已下架'))
     if (item.stock === 0) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '商品库存不足'))
 
-    // 检查是否已有待审核订单
-    const pending = await prisma.redeemOrder.findFirst({
-      where: { userId, shopItemId, status: 'PENDING' },
-    })
-    if (pending) return reply.code(409).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '该商品已有待审核的兑换申请'))
-
     // 检查积分余额
     const balance = await prisma.pointBalance.findUnique({ where: { userId } })
     if (!balance || balance.totalPoints < item.pointsCost) {
       return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '积分不足'))
     }
 
-    // 创建兑换订单并冻结积分
+    // 计算有效期：服务套餐30天，折扣券7天
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + (item.type === 'SERVICE' ? 30 : 7))
+
+    // 创建兑换订单，自动生效（状态 COMPLETED）
     const redeemOrder = await prisma.redeemOrder.create({
-      data: { userId, shopItemId, pointsCost: item.pointsCost },
+      data: { userId, shopItemId, pointsCost: item.pointsCost, status: 'COMPLETED', expiresAt },
     })
 
     await freezePoints(userId, item.pointsCost, redeemOrder.id)
@@ -152,10 +150,46 @@ export async function pointsRoutes(fastify: FastifyInstance) {
 
     return reply.code(201).send(successResponse({
       redeemOrderId: redeemOrder.id,
-      status: 'PENDING',
+      status: 'COMPLETED',
+      expiresAt,
       frozenPoints: item.pointsCost,
-      message: '兑换申请已提交，积分已冻结，等待管理员审核',
+      message: '兑换成功！请在有效期内使用',
     }))
+  })
+
+  // ── 获取用户可用的兑换项（提交需求时选择）──────────────────────
+  fastify.get('/redeem/available', { preHandler: [verifyJWT] }, async (request, reply) => {
+    const { userId } = request.user as { userId: string }
+    const now = new Date()
+
+    const items = await prisma.redeemOrder.findMany({
+      where: {
+        userId,
+        status: 'COMPLETED',
+        usedAt: null,
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: now } },
+        ],
+      },
+      include: {
+        shopItem: { select: { id: true, name: true, type: true, discountAmt: true, description: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const formatted = items.map(r => ({
+      id: r.id,
+      shopItemId: r.shopItemId,
+      name: r.shopItem.name,
+      type: r.shopItem.type,
+      discountAmt: r.shopItem.discountAmt,
+      description: r.shopItem.description,
+      expiresAt: r.expiresAt,
+      pointsCost: r.pointsCost,
+    }))
+
+    return reply.send(successResponse(formatted))
   })
 
   // ── 我的兑换记录 ────────────────────────────────────────────────
