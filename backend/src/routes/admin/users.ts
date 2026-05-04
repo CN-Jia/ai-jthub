@@ -8,7 +8,7 @@ export async function adminUserRoutes(fastify: FastifyInstance) {
   fastify.get('/admin/users', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { page = '1', pageSize = '20', keyword } = request.query as Record<string, string>
     const where: any = keyword
-      ? { OR: [{ nickname: { contains: keyword, mode: 'insensitive' } }, { username: { contains: keyword, mode: 'insensitive' } }, { email: { contains: keyword, mode: 'insensitive' } }] }
+      ? { OR: [{ nickname: { contains: keyword, mode: 'insensitive' as const } }, { username: { contains: keyword, mode: 'insensitive' as const } }, { email: { contains: keyword, mode: 'insensitive' as const } }] }
       : {}
 
     const [list, total] = await Promise.all([
