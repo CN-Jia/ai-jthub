@@ -63,15 +63,15 @@ model EmailVerification {
 
 // ==================== 需求类型 ====================
 model OrderType {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  price       String
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  pointRewardRate Decimal  @default(0.05) @db.Decimal(5,4)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String   @unique
+  description     String?
+  price           String
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  pointRewardRate Decimal? @db.Decimal(5, 4)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   orders Order[]
 
@@ -109,14 +109,14 @@ model Order {
   orderType     OrderType   @relation(fields: [orderTypeId], references: [id])
   deadline      DateTime
   contactWechat String
-  status        OrderStatus @default(CREATED)
+  status        OrderStatus @default(PENDING)
   source        OrderSource @default(PC)
 
   userId String?
   user   User?   @relation(fields: [userId], references: [id])
 
-  adminNote   String? @db.Text
-  quotedPrice String?
+  adminNote        String?    @db.Text
+  quotedPrice      String?
   estimatedDelivery DateTime?
   rewardPoints     Int?
   redeemItemId     String?
@@ -142,8 +142,10 @@ enum Grade {
 enum OrderStatus {
   CREATED
   PENDING
+  ACCEPTED
   IN_PROGRESS
   COMPLETED
+  CLOSED
   CANCELLED
 }
 
@@ -186,7 +188,8 @@ model Post {
 
   comments Comment[]
 
-  @@index([board, status, isPinned, createdAt])
+  @@index([status, isPinned, createdAt])
+  @@index([board, status, createdAt])
   @@map("posts")
 }
 
@@ -355,12 +358,12 @@ model RedeemOrder {
   user       User         @relation(fields: [userId], references: [id])
   shopItemId String
   shopItem   ShopItem     @relation(fields: [shopItemId], references: [id])
-  pointsCost Int
-  status     RedeemStatus @default(COMPLETED)
-  adminNote  String?
-  usedAt     DateTime?
+  pointsCost  Int
+  status      RedeemStatus @default(PENDING)
+  adminNote   String?
+  usedAt      DateTime?
   usedOrderId String?
-  expiresAt  DateTime?
+  expiresAt   DateTime?
 
   coupon Coupon?
 
