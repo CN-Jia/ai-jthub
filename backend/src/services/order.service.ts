@@ -12,6 +12,7 @@ export interface CreateOrderInput {
   contactWechat: string
   source: OrderSource
   userId?: string
+  redeemItemId?: string
 }
 
 /** 创建订单 */
