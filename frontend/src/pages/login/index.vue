@@ -14,10 +14,10 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">
-            密码
-            <!-- <a href="#" class="forgot-link">忘记密码？</a> -->
-          </label>
+          <div class="label-row">
+            <label class="form-label">密码</label>
+            <router-link to="/forgot-password" class="forgot-link">忘记密码？</router-link>
+          </div>
           <div class="input-eye">
             <input v-model="form.password" :type="showPwd ? 'text' : 'password'" class="form-input" placeholder="输入密码" autocomplete="current-password" />
             <button type="button" class="eye-btn" @click="showPwd = !showPwd">{{ showPwd ? '🙈' : '👁️' }}</button>
@@ -93,7 +93,8 @@ async function handleLogin() {
 .auth-title { font-size: 22px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
 .auth-sub { font-size: 14px; color: var(--text-3); }
 .auth-form { display: flex; flex-direction: column; gap: 16px; }
-.forgot-link { float: right; font-weight: 400; color: var(--primary); font-size: 12px; }
+.label-row { display: flex; justify-content: space-between; align-items: center; }
+.forgot-link { font-weight: 400; color: var(--primary); font-size: 12px; }
 .input-eye { position: relative; }
 .input-eye .form-input { padding-right: 40px; }
 .eye-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; }

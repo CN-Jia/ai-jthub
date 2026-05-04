@@ -1,6 +1,3 @@
-self.options = {
-    "domain": "jthub.cc.cd",
-    "zoneId": 10935957
-}
-self.lary = ""
-importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw')
+// Service Worker placeholder — 无第三方脚本引用
+self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))

@@ -146,7 +146,7 @@
       <div class="footer-inner">
         <div class="footer-logo"><JtLogo :size="22" style="display:inline-block;vertical-align:middle;margin-right:6px"/> JT-Hub</div>
         <div class="footer-info">
-          <span>商务合作微信：<strong>Jt--04</strong>（备注来意）</span>
+          <span>商务合作微信：<strong>{{ adminWechat }}</strong>（备注来意）</span>
         </div>
         <div class="footer-copy">© 2026 JT-Hub. All rights reserved.</div>
       </div>
@@ -168,6 +168,7 @@ const scrollY = ref(0)
 const mobileOpen = ref(false)
 const uptimeStr = ref('')
 const cursorCvs = ref<HTMLCanvasElement | null>(null)
+const adminWechat = ref('Jt--04')
 
 /* ── 主题管理 ── */
 const isDark = ref(false)
@@ -251,7 +252,6 @@ function initCursorParticles() {
     isTouch = false
     mouse.x = e.clientX
     mouse.y = e.clientY
-    // 每次移动喷出 2-3 个粒子
     const count = Math.random() < 0.5 ? 2 : 3
     for (let i = 0; i < count; i++) spawnParticle(mouse.x, mouse.y)
   }
@@ -267,12 +267,10 @@ function initCursorParticles() {
       life: 1,
       maxLife: 1,
       r: Math.random() * 3 + 1.5,
-      // 亮色模式用蓝紫色，暗色模式用青蓝色
       hue: dark
-        ? 190 + Math.random() * 60   // 青到蓝 190~250
-        : 210 + Math.random() * 50,  // 蓝到紫 210~260
+        ? 190 + Math.random() * 60
+        : 210 + Math.random() * 50,
     })
-    // 控制粒子总数
     if (particles.length > 120) particles.splice(0, particles.length - 120)
   }
 
@@ -287,14 +285,13 @@ function initCursorParticles() {
 
       p.x += p.vx
       p.y += p.vy
-      p.vy += 0.04  // 轻微重力
-      p.vx *= 0.97  // 阻尼
+      p.vy += 0.04
+      p.vx *= 0.97
 
       const alpha = p.life * (dark ? 0.85 : 0.6)
       const sat = dark ? '90%' : '80%'
       const lgt = dark ? '70%' : '55%'
 
-      // 外发光
       const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3)
       glow.addColorStop(0, `hsla(${p.hue},${sat},${lgt},${alpha})`)
       glow.addColorStop(1, `hsla(${p.hue},${sat},${lgt},0)`)
@@ -303,7 +300,6 @@ function initCursorParticles() {
       ctx.fillStyle = glow
       ctx.fill()
 
-      // 核心亮点
       ctx.beginPath()
       ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2)
       ctx.fillStyle = `hsla(${p.hue},${sat},${dark ? '92%' : '75%'},${alpha})`
@@ -330,6 +326,12 @@ onMounted(() => {
   fetchUptime()
   uptimeTimer = setInterval(fetchUptime, 60_000)
   cleanupCursor = initCursorParticles()
+  // 获取动态管理员微信号
+  import('./api').then(({ api }) => {
+    api.getConfig().then((res: any) => {
+      if (res.data?.adminWechatId) adminWechat.value = res.data.adminWechatId
+    }).catch(() => {})
+  })
 })
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)

@@ -220,12 +220,163 @@ export async function authRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({ message: '密码修改成功' }))
   })
 
-  // ── 管理员登录 ───────────────────────────────────────────────
+  // ── 忘记密码：发送重置验证码 ─────────────────────────────────
+  fastify.post('/auth/forgot-password', async (request, reply) => {
+    const schema = z.object({ email: z.string().email() })
+    const parse = schema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '邮箱格式不正确'))
+
+    const { email } = parse.data
+
+    const user = await prisma.user.findUnique({ where: { email } })
+    // 不泄露邮箱是否注册，统一返回成功
+    if (!user) return reply.send(successResponse({ message: '如果该邮箱已注册，验证码将发送到您的邮箱' }))
+
+    // 60s 冷却
+    const recent = await prisma.emailVerification.findFirst({
+      where: { email, usedAt: null },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (recent && Date.now() - recent.createdAt.getTime() < 60_000) {
+      return reply.code(429).send(errorResponse(ERROR_CODES.RATE_LIMITED, '请等待60秒后再次发送'))
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10分钟有效
+
+    await prisma.emailVerification.create({ data: { email, code, expiresAt } })
+
+    try {
+      await sendVerifyCode(email, code)
+    } catch {
+      return reply.code(500).send(errorResponse(ERROR_CODES.INTERNAL_ERROR, '邮件发送失败，请稍后重试'))
+    }
+
+    return reply.send(successResponse({ message: '如果该邮箱已注册，验证码将发送到您的邮箱' }))
+  })
+
+  // ── 忘记密码：重置密码 ─────────────────────────────────────
+  fastify.post('/auth/reset-password', async (request, reply) => {
+    const schema = z.object({
+      email: z.string().email(),
+      code: z.string().length(6),
+      newPassword: z.string().min(8).regex(/(?=.*[a-zA-Z])(?=.*[0-9])/, '密码需包含字母和数字'),
+    })
+    const parse = schema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, parse.error.errors[0]?.message ?? '参数错误'))
+
+    const { email, code, newPassword } = parse.data
+
+    const verification = await prisma.emailVerification.findFirst({
+      where: { email, code, usedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (!verification) {
+      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '验证码无效或已过期'))
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } })
+    if (!user) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '该邮箱未注册'))
+
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, loginAttempts: 0, lockUntil: null },
+    })
+    await prisma.emailVerification.update({ where: { id: verification.id }, data: { usedAt: new Date() } })
+
+    return reply.send(successResponse({ message: '密码重置成功，请使用新密码登录' }))
+  })
+
+  // ── 重新发送邮箱验证（已登录用户）────────────────────────────
+  fastify.post('/auth/resend-verification', { preHandler: [verifyJWT] }, async (request, reply) => {
+    const { userId } = request.user as { userId: string }
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return reply.code(404).send(errorResponse(ERROR_CODES.UNAUTHORIZED, '用户不存在'))
+    if (user.emailVerified) return reply.send(successResponse({ message: '邮箱已验证' }))
+
+    const email = user.email
+
+    // 60s 冷却
+    const recent = await prisma.emailVerification.findFirst({
+      where: { email, usedAt: null },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (recent && Date.now() - recent.createdAt.getTime() < 60_000) {
+      return reply.code(429).send(errorResponse(ERROR_CODES.RATE_LIMITED, '请等待60秒后再次发送'))
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+    await prisma.emailVerification.create({ data: { email, code, expiresAt } })
+
+    try {
+      await sendVerifyCode(email, code)
+    } catch {
+      return reply.code(500).send(errorResponse(ERROR_CODES.INTERNAL_ERROR, '邮件发送失败，请稍后重试'))
+    }
+
+    return reply.send(successResponse({ message: '验证码已发送' }))
+  })
+
+  // ── 验证邮箱（已登录用户输入验证码）──────────────────────────
+  fastify.post('/auth/verify-email', { preHandler: [verifyJWT] }, async (request, reply) => {
+    const { userId } = request.user as { userId: string }
+    const schema = z.object({ code: z.string().length(6) })
+    const parse = schema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '验证码格式不正确'))
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return reply.code(404).send(errorResponse(ERROR_CODES.UNAUTHORIZED, '用户不存在'))
+    if (user.emailVerified) return reply.send(successResponse({ message: '邮箱已验证' }))
+
+    const verification = await prisma.emailVerification.findFirst({
+      where: { email: user.email, code: parse.data.code, usedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (!verification) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '验证码无效或已过期'))
+
+    await prisma.user.update({ where: { id: userId }, data: { emailVerified: true } })
+    await prisma.emailVerification.update({ where: { id: verification.id }, data: { usedAt: new Date() } })
+
+    return reply.send(successResponse({ message: '邮箱验证成功' }))
+  })
+
+  // ── 管理员登录（带速率限制）─────────────────────────────────
+  const adminLoginAttempts = new Map<string, { count: number; resetAt: number }>()
+  const ADMIN_WINDOW_MS = 15 * 60_000 // 15 分钟
+  const ADMIN_MAX_ATTEMPTS = 5
+
   fastify.post('/auth/admin-login', async (request, reply) => {
+    const ip = request.ip
+    const now = Date.now()
+    const entry = adminLoginAttempts.get(ip)
+
+    if (entry && now < entry.resetAt && entry.count >= ADMIN_MAX_ATTEMPTS) {
+      const seconds = Math.ceil((entry.resetAt - now) / 1000)
+      return reply.code(429).send(errorResponse(ERROR_CODES.RATE_LIMITED, `登录尝试过多，请 ${seconds} 秒后重试`))
+    }
+
     const { username, password } = request.body as { username: string; password: string }
     const ok = await adminLogin(username, password)
-    if (!ok) return reply.code(401).send(errorResponse(ERROR_CODES.UNAUTHORIZED, '用户名或密码错误'))
+
+    if (!ok) {
+      const attempts = (entry && now < entry.resetAt) ? entry.count + 1 : 1
+      adminLoginAttempts.set(ip, { count: attempts, resetAt: now + ADMIN_WINDOW_MS })
+      return reply.code(401).send(errorResponse(ERROR_CODES.UNAUTHORIZED, '用户名或密码错误'))
+    }
+
+    // 登录成功，清除计数
+    adminLoginAttempts.delete(ip)
     const token = fastify.jwt.sign({ role: 'admin' }, { expiresIn: env.JWT_EXPIRES_IN })
     return reply.send(successResponse({ token }))
   })
+
+  // 定期清理过期的管理员登录计数
+  setInterval(() => {
+    const now = Date.now()
+    for (const [ip, entry] of adminLoginAttempts) {
+      if (now > entry.resetAt) adminLoginAttempts.delete(ip)
+    }
+  }, 5 * 60_000)
 }

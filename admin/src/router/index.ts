@@ -29,6 +29,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const store = useAdminStore()
   if (to.meta.requiresAuth && !store.isLoggedIn) return '/login'
+  if (to.path === '/login' && store.isLoggedIn) return '/'
 })
 
 export default router

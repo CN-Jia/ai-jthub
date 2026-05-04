@@ -29,6 +29,31 @@ export async function sendVerifyCode(email: string, code: string): Promise<void>
   })
 }
 
+/** 发送密码重置验证码 */
+export async function sendResetCode(email: string, code: string): Promise<void> {
+  if (!resend) {
+    console.log(`[DEV] 密码重置验证码 → ${email}: ${code}`)
+    return
+  }
+
+  await resend.emails.send({
+    from: env.MAIL_FROM,
+    to: email,
+    subject: '【JT-Hub】密码重置验证码',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e8edf2">
+        <h2 style="color:#1677ff;margin-bottom:8px">JT-Hub 密码重置</h2>
+        <p style="color:#666;margin-bottom:24px">您正在重置密码，请使用以下验证码完成验证：</p>
+        <div style="background:#f0f6ff;border-radius:8px;padding:20px;text-align:center;margin-bottom:24px">
+          <span style="font-size:36px;font-weight:bold;letter-spacing:12px;color:#1677ff">${code}</span>
+        </div>
+        <p style="color:#999;font-size:13px">验证码 10 分钟内有效，请勿泄露给他人。</p>
+        <p style="color:#ccc;font-size:12px;margin-top:16px">如非本人操作，请忽略此邮件。</p>
+      </div>
+    `,
+  })
+}
+
 /** 发送管理员回复反馈通知 */
 export async function sendFeedbackReply(email: string, title: string, reply: string): Promise<void> {
   if (!resend) {
