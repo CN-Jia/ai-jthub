@@ -130,15 +130,6 @@ const navGroups = [
     ],
   },
   {
-    label: '商品与订单',
-    items: [
-      { path: '/products',        label: '商品管理',  icon: 'Goods' },
-      { path: '/product-orders',  label: '商品订单',  icon: 'List' },
-      { path: '/promo-coupons',   label: '优惠码',    icon: 'Ticket' },
-      { path: '/payment-config',  label: '收款码配置', icon: 'CreditCard' },
-    ],
-  },
-  {
     label: '内容管理',
     items: [
       { path: '/posts',    label: '论坛管理', icon: 'ChatDotRound' },
@@ -166,10 +157,6 @@ const titleMap: Record<string, string> = {
   '/': '监控大屏',
   '/order-types': '需求类型',
   '/activities': '活动公告',
-  '/products': '商品管理',
-  '/product-orders': '商品订单',
-  '/promo-coupons': '优惠码管理',
-  '/payment-config': '收款码配置',
   '/posts': '论坛管理',
   '/carousel': '作品轮播',
   '/feedback': '用户反馈',
