@@ -59,7 +59,7 @@
     </div>
 
     <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="订单详情" width="680px" destroy-on-close>
+    <el-dialog v-model="detailVisible" title="订单详情" width="680px" destroy-on-close append-to-body>
       <template v-if="current">
         <el-descriptions :column="2" border size="small">
           <el-descriptions-item label="订单号">{{ current.orderNo }}</el-descriptions-item>
@@ -85,7 +85,7 @@
         <div class="sec-title">状态变更</div>
         <div class="status-actions">
           <template v-for="next in allowedTransitions(current.status)" :key="next">
-            <el-button size="small" :type="statusBtnType(next)" @click="doUpdateStatus(next)">{{ statusLabel(next) }}</el-button>
+            <el-button size="small" :type="statusBtnType(next)" @click="openStatusDialog(next)">{{ statusLabel(next) }}</el-button>
           </template>
           <span v-if="!allowedTransitions(current.status).length" style="color:var(--text-lo);font-size:13px">已是终态</span>
         </div>
@@ -104,6 +104,27 @@
             <span style="color:var(--text-lo);margin-left:8px;font-size:12px">by {{ h.operator }}</span>
           </el-timeline-item>
         </el-timeline>
+      </template>
+    </el-dialog>
+
+    <!-- 状态变更弹窗 -->
+    <el-dialog v-model="statusDialogVisible" :title="`变更为「${statusLabel(statusTarget)}」`" width="460px" append-to-body>
+      <el-form label-position="top">
+        <el-form-item label="备注（可选）">
+          <el-input v-model="statusRemark" type="textarea" :rows="2" placeholder="变更原因或说明" />
+        </el-form-item>
+        <template v-if="statusTarget === 'IN_PROGRESS'">
+          <el-form-item label="预计完成日期 *">
+            <el-date-picker v-model="estimatedDelivery" type="datetime" placeholder="选择预计完成时间" style="width:100%" />
+          </el-form-item>
+          <el-form-item label="奖励积分（可选）">
+            <el-input-number v-model="rewardPoints" :min="0" :max="9999" placeholder="完成后发放" style="width:100%" />
+          </el-form-item>
+        </template>
+      </el-form>
+      <template #footer>
+        <el-button @click="statusDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="statusLoading" @click="confirmStatusChange">确认变更</el-button>
       </template>
     </el-dialog>
 
@@ -136,6 +157,13 @@ const noteLoading = ref(false)
 const showQuoteDialog = ref(false)
 const quotePrice = ref('')
 const quoteLoading = ref(false)
+
+const statusDialogVisible = ref(false)
+const statusTarget = ref('')
+const statusRemark = ref('')
+const statusLoading = ref(false)
+const estimatedDelivery = ref<Date | null>(null)
+const rewardPoints = ref<number>(0)
 
 const statusOptions = [
   { value: 'CREATED', label: '已创建', color: '#60a5fa' },
@@ -182,14 +210,37 @@ async function openDetail(row: any) {
   } catch (e: any) { ElMessage.error(e.message ?? '加载详情失败') }
 }
 
-async function doUpdateStatus(status: string) {
-  await ElMessageBox.confirm(`确认将状态变更为「${statusLabel(status)}」？`, '状态变更', { type: 'warning' })
+function openStatusDialog(status: string) {
+  statusTarget.value = status
+  statusRemark.value = ''
+  estimatedDelivery.value = null
+  rewardPoints.value = 0
+  statusDialogVisible.value = true
+}
+
+async function confirmStatusChange() {
+  if (statusTarget.value === 'IN_PROGRESS' && !estimatedDelivery.value) {
+    return ElMessage.warning('请选择预计完成日期')
+  }
+  statusLoading.value = true
   try {
-    await api.updateStatus(current.value.id, status, status === 'CANCELLED' ? '管理员取消' : undefined)
-    ElMessage.success(`已变更为 ${statusLabel(status)}`)
+    const extra: any = {}
+    if (statusTarget.value === 'IN_PROGRESS') {
+      extra.estimatedDelivery = estimatedDelivery.value!.toISOString()
+      if (rewardPoints.value > 0) extra.rewardPoints = rewardPoints.value
+    }
+    await api.updateStatus(
+      current.value.id,
+      statusTarget.value,
+      statusRemark.value || (statusTarget.value === 'CANCELLED' ? '管理员取消' : undefined),
+      Object.keys(extra).length ? extra : undefined,
+    )
+    ElMessage.success(`已变更为 ${statusLabel(statusTarget.value)}`)
+    statusDialogVisible.value = false
     openDetail(current.value)
     loadOrders()
   } catch (e: any) { ElMessage.error(e.message ?? '操作失败') }
+  finally { statusLoading.value = false }
 }
 
 async function doSetQuote() {
