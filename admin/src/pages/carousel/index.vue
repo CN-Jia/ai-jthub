@@ -96,14 +96,16 @@ async function submit() {
     ElMessage.success('保存成功')
     dialogVisible.value = false
     load()
-  } catch { ElMessage.error('保存失败') } finally { submitting.value = false }
+  } catch (e: any) { ElMessage.error(e.message ?? '保存失败') } finally { submitting.value = false }
 }
 
 async function del(id: string) {
-  await ElMessageBox.confirm('确认删除此轮播项？', '提示', { type: 'warning' })
-  await api.deleteCarouselItem(id)
-  ElMessage.success('已删除')
-  load()
+  await ElMessageBox.confirm('确认删除此轮播项？', '确认删除', { type: 'warning' })
+  try {
+    await api.deleteCarouselItem(id)
+    ElMessage.success('已删除')
+    load()
+  } catch (e: any) { ElMessage.error(e.message ?? '删除失败') }
 }
 
 onMounted(load)

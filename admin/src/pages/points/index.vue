@@ -133,7 +133,7 @@ async function saveRule(row: any) {
   try {
     await api.updatePointRule(row.eventType, { points: row.points, enabled: row.enabled })
     ElMessage.success('规则已保存')
-  } catch { ElMessage.error('保存失败') }
+  } catch (e: any) { ElMessage.error(e.message ?? '保存失败') }
 }
 
 async function loadUsers() {

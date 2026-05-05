@@ -20,12 +20,13 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160">
+        <el-table-column label="操作" width="200">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
             <el-button size="small" :type="row.isActive ? 'warning' : 'success'" @click="toggleActive(row)">
               {{ row.isActive ? '下架' : '上架' }}
             </el-button>
+            <el-button size="small" type="danger" plain @click="doDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -57,7 +58,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
 
 const types = ref<any[]>([])
@@ -105,7 +106,16 @@ async function toggleActive(row: any) {
     await api.updateOrderType(row.id, { isActive: !row.isActive })
     ElMessage.success(row.isActive ? '已下架' : '已上架')
     await loadTypes()
-  } catch { ElMessage.error('操作失败') }
+  } catch (e: any) { ElMessage.error(e.message ?? '操作失败') }
+}
+
+async function doDelete(row: any) {
+  await ElMessageBox.confirm(`确定删除需求类型「${row.name}」？`, '确认删除', { type: 'warning' })
+  try {
+    await api.deleteOrderType(row.id)
+    ElMessage.success('已删除')
+    await loadTypes()
+  } catch (e: any) { ElMessage.error(e.message ?? '删除失败') }
 }
 
 onMounted(loadTypes)

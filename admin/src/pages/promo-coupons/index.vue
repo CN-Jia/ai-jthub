@@ -29,7 +29,9 @@
           <template #default="{ row }">
             <el-button v-if="row.isActive" size="small" plain @click="handleDeactivate(row)">停用</el-button>
             <el-button v-else size="small" type="success" plain @click="handleActivate(row)">启用</el-button>
-            <el-button size="small" type="danger" plain @click="handleDelete(row)" :disabled="row.usedCount > 0">删除</el-button>
+            <el-tooltip :content="row.usedCount > 0 ? '已有使用记录，无法删除' : ''" :disabled="row.usedCount === 0">
+              <el-button size="small" type="danger" plain @click="handleDelete(row)" :disabled="row.usedCount > 0">删除</el-button>
+            </el-tooltip>
           </template>
         </el-table-column>
       </el-table>

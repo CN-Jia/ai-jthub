@@ -66,7 +66,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="doSave" :loading="saving">发布</el-button>
+        <el-button type="primary" @click="doSave" :loading="saving">{{ editId ? '保存' : '发布' }}</el-button>
       </template>
     </el-dialog>
   </div>

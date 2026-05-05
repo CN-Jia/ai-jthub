@@ -135,7 +135,7 @@ async function submitReply() {
     ElMessage.success('回复成功')
     detailVisible.value = false
     load()
-  } catch { ElMessage.error('操作失败') } finally { submitting.value = false }
+  } catch (e: any) { ElMessage.error(e.message ?? '操作失败') } finally { submitting.value = false }
 }
 
 onMounted(load)

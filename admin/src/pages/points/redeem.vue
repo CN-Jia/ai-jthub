@@ -40,7 +40,7 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <template v-if="row.status === 'PENDING'">
-              <el-button type="success" size="small" @click="handleApprove(row)">通过</el-button>
+              <el-button type="success" size="small" @click="openApprove(row)">通过</el-button>
               <el-button type="danger" size="small" @click="openReject(row)">拒绝</el-button>
             </template>
             <span v-else class="handled">已处理</span>
@@ -53,6 +53,15 @@
           :total="total" :page-size="pageSize" v-model:current-page="currentPage" @current-change="loadOrders" />
       </div>
     </div>
+
+    <el-dialog v-model="approveDialog" title="审核通过" width="420px">
+      <p style="margin-bottom:12px;color:var(--text-2)">确认通过该兑换申请？积分将自动扣减。</p>
+      <el-input v-model="approveNote" type="textarea" :rows="3" placeholder="备注（可选）" />
+      <template #footer>
+        <el-button @click="approveDialog = false">取消</el-button>
+        <el-button type="success" :loading="operating" @click="submitApprove">确认通过</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="rejectDialog" title="填写拒绝原因" width="420px">
       <el-input v-model="rejectNote" type="textarea" :rows="4" placeholder="请填写拒绝原因（必填）" />
@@ -76,6 +85,9 @@ const currentPage = ref(1)
 const pageSize = 20
 const statusFilter = ref('')
 const operating = ref(false)
+const approveDialog = ref(false)
+const approveTarget = ref<any>(null)
+const approveNote = ref('')
 const rejectDialog = ref(false)
 const rejectTarget = ref<any>(null)
 const rejectNote = ref('')
@@ -95,11 +107,15 @@ async function loadOrders() {
   } finally { loading.value = false }
 }
 
-async function handleApprove(row: any) {
+function openApprove(row: any) { approveTarget.value = row; approveNote.value = ''; approveDialog.value = true }
+
+async function submitApprove() {
+  if (!approveTarget.value) return
   operating.value = true
   try {
-    await api.approveRedeem(row.id)
+    await api.approveRedeem(approveTarget.value.id, approveNote.value || undefined)
     ElMessage.success('已通过，积分已扣减')
+    approveDialog.value = false
     loadOrders()
   } catch (err: any) {
     ElMessage.error(err?.message ?? '操作失败')

@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
 import { format } from 'date-fns'
 
@@ -83,9 +83,13 @@ async function load() {
 }
 
 async function toggle(row: any) {
-  await api.toggleUser(row.id, !row.isActive)
-  ElMessage.success(`已${row.isActive ? '禁用' : '启用'}该用户`)
-  load()
+  const action = row.isActive ? '禁用' : '启用'
+  await ElMessageBox.confirm(`确定${action}用户「${row.nickname}」？`, '确认操作', { type: 'warning' })
+  try {
+    await api.toggleUser(row.id, !row.isActive)
+    ElMessage.success(`已${action}该用户`)
+    load()
+  } catch (e: any) { ElMessage.error(e.message ?? '操作失败') }
 }
 
 onMounted(load)

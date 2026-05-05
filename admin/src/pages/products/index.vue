@@ -117,10 +117,12 @@ async function handleSave() {
 }
 
 async function toggleActive(row: any) {
+  const prev = row.isActive
+  row.isActive = !prev
   try {
     await api.toggleProduct(row.id)
-    row.isActive = !row.isActive
   } catch (err: any) {
+    row.isActive = prev
     ElMessage.error(err?.message ?? '操作失败')
   }
 }
