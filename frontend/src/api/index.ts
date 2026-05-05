@@ -11,11 +11,7 @@ http.interceptors.request.use((config) => {
 })
 
 const FRIENDLY_ERRORS: Record<string, string> = {
-  COUPON_INVALID: '优惠码无效',
-  COUPON_EXPIRED: '优惠码已过期',
-  COUPON_USED_UP: '优惠码已使用完毕',
   ORDER_STATUS_INVALID: '订单状态不允许此操作',
-  PRODUCT_NOT_FOUND: '商品不存在或已下架',
 }
 
 http.interceptors.response.use(
@@ -62,18 +58,7 @@ export const api = {
   createComment: (postId: string, content: string) => http.post(`/posts/${postId}/comments`, { content }),
   deleteMyComment: (postId: string, commentId: string) => http.delete(`/posts/${postId}/comments/${commentId}`),
 
-  // 商品与新版订单
-  getProducts: () => http.get('/products'),
-  getProduct: (id: string) => http.get(`/products/${id}`),
-  getPaymentConfig: () => http.get('/payment-config'),
-  createProductOrder: (data: any) => http.post('/product-orders', data),
-  getMyProductOrders: (params?: any) => http.get('/product-orders/my', { params }),
-  getProductOrder: (id: string) => http.get(`/product-orders/${id}`),
-  payProductOrder: (id: string) => http.post(`/product-orders/${id}/pay`),
-  cancelProductOrder: (id: string) => http.post(`/product-orders/${id}/cancel`),
-  validateCoupon: (code: string, productId: string) => http.post('/promo-coupons/validate', { code, productId }),
-
-  // 旧版订单（兼容旧页面）
+  // 需求订单
   createOrder: (data: any) => http.post('/orders', data),
   getMyOrders: () => http.get('/orders/my'),
   getOrder: (id: string) => http.get(`/orders/${id}`),
@@ -89,5 +74,4 @@ export const api = {
   getShopItems: (params?: any) => http.get('/shop/items', { params }),
   submitRedeem: (shopItemId: string) => http.post('/shop/redeem', { shopItemId }),
   getMyRedeems: () => http.get('/shop/redeem/my'),
-  getAvailableRedeems: () => http.get('/redeem/available'),
 }
