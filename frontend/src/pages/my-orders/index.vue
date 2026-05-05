@@ -19,7 +19,7 @@
         <router-link
           v-for="o in orders"
           :key="o.id"
-          :to="`/orders/${o.id}`"
+          :to="`/my-orders/${o.id}`"
           class="order-card"
         >
           <div class="card-left">
@@ -51,7 +51,7 @@ import { api } from '../../api'
 
 const orders = ref<any[]>([])
 const loading = ref(true)
-const statusLabels: Record<string,string> = { PENDING:'待处理', ACCEPTED:'已接单', IN_PROGRESS:'进行中', COMPLETED:'已完成', CLOSED:'已关闭' }
+const statusLabels: Record<string,string> = { CREATED:'已创建', PENDING:'待处理', ACCEPTED:'已接单', IN_PROGRESS:'进行中', COMPLETED:'已完成', CLOSED:'已关闭', CANCELLED:'已取消' }
 const statusLabel = (s: string) => statusLabels[s] ?? s
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('zh-CN')
 

@@ -111,9 +111,10 @@ const route = useRoute()
 const order = ref<any>(null)
 const adminWechat = ref('Jt--04')
 
-const statusLabels: Record<string,string> = { PENDING:'待处理', ACCEPTED:'已接单', IN_PROGRESS:'进行中', COMPLETED:'已完成', CLOSED:'已关闭' }
+const statusLabels: Record<string,string> = { CREATED:'已创建', PENDING:'待处理', ACCEPTED:'已接单', IN_PROGRESS:'进行中', COMPLETED:'已完成', CLOSED:'已关闭', CANCELLED:'已取消' }
 const gradeLabels: Record<string,string> = { FRESHMAN:'大一', SOPHOMORE:'大二', JUNIOR:'大三' }
 const statusFlow = [
+  { key: 'CREATED', label: '已创建' },
   { key: 'PENDING', label: '待处理' },
   { key: 'ACCEPTED', label: '已接单' },
   { key: 'IN_PROGRESS', label: '进行中' },
@@ -125,7 +126,7 @@ const statusLabel = (s: string) => statusLabels[s] ?? s
 const gradeLabel = (g: string) => gradeLabels[g] ?? g
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('zh-CN')
 const fmtDateTime = (d: string) => new Date(d).toLocaleString('zh-CN')
-const statusIcon = (s: string) => ({ PENDING:'⏳', ACCEPTED:'✅', IN_PROGRESS:'🔨', COMPLETED:'🎉', CLOSED:'🔒' }[s] ?? '📋')
+const statusIcon = (s: string) => ({ CREATED:'📝', PENDING:'⏳', ACCEPTED:'✅', IN_PROGRESS:'🔨', COMPLETED:'🎉', CLOSED:'🔒', CANCELLED:'❌' }[s] ?? '📋')
 const isPassed = (key: string, current: string) => flowOrder.indexOf(key) < flowOrder.indexOf(current)
 
 onMounted(async () => {
