@@ -125,6 +125,7 @@ const navGroups = [
   {
     label: '需求管理',
     items: [
+      { path: '/orders',      label: '订单管理', icon: 'List' },
       { path: '/order-types', label: '需求类型', icon: 'Document' },
       { path: '/activities',  label: '活动公告', icon: 'Bell' },
     ],
@@ -155,6 +156,7 @@ const navGroups = [
 
 const titleMap: Record<string, string> = {
   '/': '监控大屏',
+  '/orders': '订单管理',
   '/order-types': '需求类型',
   '/activities': '活动公告',
   '/posts': '论坛管理',
