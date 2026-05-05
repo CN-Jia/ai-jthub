@@ -135,18 +135,19 @@ async function submit() {
     ElMessage.success('操作成功')
     dialogVisible.value = false
     load()
-  } catch (e: any) { ElMessage.error(e.message ?? '操作失败') } finally { submitting.value = false }
+  } catch { ElMessage.error('操作失败') } finally { submitting.value = false }
 }
 
 async function review(id: string, status: 'APPROVED' | 'REJECTED') {
   await ElMessageBox.confirm(
     status === 'APPROVED' ? '确认通过该帖子？' : '确认拒绝该帖子？',
-    '审核确认',
-    { type: 'warning' }
+    '审核确认', { type: 'warning' }
   )
-  await api.reviewPost(id, status)
-  ElMessage.success(status === 'APPROVED' ? '已通过' : '已拒绝')
-  load()
+  try {
+    await api.reviewPost(id, status)
+    ElMessage.success(status === 'APPROVED' ? '已通过' : '已拒绝')
+    load()
+  } catch (e: any) { ElMessage.error(e.message ?? '操作失败') }
 }
 
 async function togglePin(row: any) {
@@ -154,16 +155,14 @@ async function togglePin(row: any) {
     await api.pinPost(row.id)
     row.isPinned = !row.isPinned
     ElMessage.success(row.isPinned ? '已置顶' : '已取消置顶')
-  } catch (e: any) { ElMessage.error(e.message ?? '操作失败') }
+  } catch { ElMessage.error('操作失败') }
 }
 
 async function del(id: string) {
-  await ElMessageBox.confirm('确认删除此帖子？', '确认删除', { type: 'warning' })
-  try {
-    await api.deletePost(id)
-    ElMessage.success('已删除')
-    load()
-  } catch (e: any) { ElMessage.error(e.message ?? '删除失败') }
+  await ElMessageBox.confirm('确认删除此帖子？', '警告', { type: 'warning' })
+  await api.deletePost(id)
+  ElMessage.success('已删除')
+  load()
 }
 
 onMounted(load)
