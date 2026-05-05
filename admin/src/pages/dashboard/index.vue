@@ -192,11 +192,11 @@ const statusCards = [
 
 const quickActions = [
   { label: '商品订单', path: '/product-orders', icon: 'Goods', color: '#00d4ff' },
-  { label: '处理待确认', path: '/orders?status=PENDING', icon: 'Warning', color: '#f59e0b' },
-  { label: '旧版订单', path: '/orders', icon: 'List', color: '#94a3b8' },
   { label: '需求类型', path: '/order-types', icon: 'Grid', color: '#a855f7' },
   { label: '兑换审核', path: '/points/redeem', icon: 'Tickets', color: '#f472b6' },
   { label: '用户管理', path: '/users', icon: 'User', color: '#60a5fa' },
+  { label: '积分规则', path: '/points', icon: 'Coin', color: '#f59e0b' },
+  { label: '论坛管理', path: '/posts', icon: 'ChatDotRound', color: '#10d98a' },
 ]
 
 const STATUS_LABELS: Record<string, string> = {

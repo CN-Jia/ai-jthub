@@ -25,7 +25,7 @@
         </el-table-column>
         <el-table-column label="消耗积分" width="90">
           <template #default="{ row }">
-            <span style="color:#a855f7;font-weight:700">{{ row.pointsCost }}</span>
+            <span style="color:var(--purple);font-weight:700">{{ row.pointsCost }}</span>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100">
@@ -141,5 +141,5 @@ onMounted(loadOrders)
 </script>
 
 <style scoped>
-.handled { font-size: 12px; color: #3d5a70; }
+.handled { font-size: 12px; color: var(--text-lo); }
 </style>

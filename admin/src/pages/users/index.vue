@@ -96,5 +96,5 @@ onMounted(load)
 </script>
 
 <style scoped>
-.hd-total { font-size: 12px; color: #4d6a82; }
+.hd-total { font-size: 12px; color: var(--text-lo); }
 </style>

@@ -190,14 +190,13 @@ onMounted(() => { loadOrders(); loadStats() })
 .status-bar { display: flex; gap: 12px; flex-wrap: wrap; }
 .sbar-item {
   flex: 1; min-width: 100px; padding: 14px 16px; border-radius: 10px;
-  border: 1px solid var(--border, #e2e8f0); background: var(--bg-card, #fff);
+  border: 1px solid var(--border); background: var(--bg-panel);
   cursor: pointer; transition: all 0.15s; text-align: center;
 }
-.sbar-item:hover, .sbar-item.active { border-color: #00d4ff; background: rgba(0,212,255,0.06); }
-.sbar-num { display: block; font-size: 22px; font-weight: 800; color: #00d4ff; margin-bottom: 4px; }
-.sbar-label { font-size: 12px; color: var(--text-3, #94a3b8); }
-.sf-panel { background: var(--bg-card, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; overflow: hidden; }
-.sf-panel-hd { padding: 16px; border-bottom: 1px solid var(--border, #e2e8f0); }
+.sbar-item:hover, .sbar-item.active { border-color: var(--accent); background: var(--accent-dim); }
+.sbar-num { display: block; font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+.sbar-label { font-size: 12px; color: var(--text-lo); }
+.sf-panel-hd { padding: 16px; border-bottom: 1px solid var(--border); }
 .sf-toolbar-left { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .pagination { padding: 12px 16px; display: flex; justify-content: flex-end; }
 </style>

@@ -143,37 +143,37 @@ onMounted(load)
 
 <style scoped>
 .fb-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.fb-time { color: #4d6a82; font-size: 12px; margin-left: auto; }
-.fb-title { font-size: 16px; font-weight: 600; color: #e8f0fe; margin-bottom: 10px; }
+.fb-time { color: var(--text-lo); font-size: 12px; margin-left: auto; }
+.fb-title { font-size: 16px; font-weight: 600; color: var(--text-hi); margin-bottom: 10px; }
 .fb-content {
-  background: rgba(0,212,255,0.04);
-  border: 1px solid rgba(0,212,255,0.1);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
-  color: #7fa5c0;
+  color: var(--text-md);
   line-height: 1.7;
   white-space: pre-wrap;
   font-size: 13px;
 }
 .reply-section { margin-top: 16px; }
 .admin-reply {
-  background: rgba(0,212,255,0.08);
-  border: 1px solid rgba(0,212,255,0.2);
-  border-left: 3px solid #00d4ff;
+  background: var(--accent-dim);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: 8px;
   padding: 10px 14px;
-  color: #7fa5c0;
+  color: var(--text-md);
   font-size: 13px;
   line-height: 1.6;
 }
 .reply-label {
   display: block;
   font-size: 10px;
-  color: #00d4ff;
+  color: var(--accent);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
 .reply-status-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-.tip { color: #4d6a82; font-size: 13px; }
+.tip { color: var(--text-lo); font-size: 13px; }
 </style>

@@ -11,7 +11,7 @@
       <el-table :data="list" v-loading="loading" style="width:100%">
         <el-table-column label="预览" width="90">
           <template #default="{ row }">
-            <el-image :src="row.imageUrl" style="width:64px;height:42px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,212,255,0.15)" fit="cover" />
+            <el-image :src="row.imageUrl" style="width:64px;height:42px;border-radius:6px;object-fit:cover;border:1px solid var(--border)" fit="cover" />
           </template>
         </el-table-column>
         <el-table-column label="课程名" prop="courseName" min-width="160" />
@@ -112,5 +112,5 @@ onMounted(load)
 </script>
 
 <style scoped>
-.hd-sub { font-size: 12px; color: #4d6a82; font-weight: 400; }
+.hd-sub { font-size: 12px; color: var(--text-lo); font-weight: 400; }
 </style>

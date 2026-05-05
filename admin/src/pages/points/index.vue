@@ -167,13 +167,13 @@ onMounted(() => { loadRules(); loadUsers() })
 
 <style scoped>
 .pts-val { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 14px; }
-.pts-val.cyan   { color: #00d4ff; }
-.pts-val.orange { color: #f59e0b; }
-.pts-val.purple { color: #a855f7; }
+.pts-val.cyan   { color: var(--accent); }
+.pts-val.orange { color: var(--warning); }
+.pts-val.purple { color: var(--purple); }
 
-.adj-info { display: flex; flex-direction: column; gap: 4px; background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.1); border-radius: 8px; padding: 14px 16px; }
-.adj-name { font-size: 15px; font-weight: 600; color: #e8f0fe; }
-.adj-sub  { font-size: 12px; color: #4d6a82; }
-.adj-pts  { font-size: 13px; color: #7fa5c0; margin-top: 4px; }
-.cyan { color: #00d4ff; }
+.adj-info { display: flex; flex-direction: column; gap: 4px; background: var(--accent-dim); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.adj-name { font-size: 15px; font-weight: 600; color: var(--text-hi); }
+.adj-sub  { font-size: 12px; color: var(--text-lo); }
+.adj-pts  { font-size: 13px; color: var(--text-md); margin-top: 4px; }
+.cyan { color: var(--accent); }
 </style>

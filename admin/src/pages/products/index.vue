@@ -9,7 +9,7 @@
         <el-table-column label="图片" width="80">
           <template #default="{ row }">
             <img v-if="row.imageUrl" :src="row.imageUrl" style="width:48px;height:36px;object-fit:cover;border-radius:4px;" />
-            <div v-else style="width:48px;height:36px;background:#f1f5f9;border-radius:4px;" />
+            <div v-else style="width:48px;height:36px;background:var(--bg-hover);border-radius:4px;" />
           </template>
         </el-table-column>
         <el-table-column prop="name" label="商品名称" min-width="160" />

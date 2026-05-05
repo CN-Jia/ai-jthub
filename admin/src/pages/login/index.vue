@@ -259,10 +259,35 @@ async function handleLogin() {
 .footer-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: #10d98a;
-  box-shadow: 0 0 6px #10d98a;
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
   animation: pulse 2s ease-in-out infinite;
   flex-shrink: 0;
 }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ── 亮色模式适配 ── */
+html:not(.dark) .lp-grid {
+  background-image: radial-gradient(circle at 1.5px 1.5px, rgba(37,99,235,0.06) 1.5px, transparent 0);
+}
+html:not(.dark) .glow-1 { background: radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%); }
+html:not(.dark) .glow-2 { background: radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%); }
+html:not(.dark) .card-scanline { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+html:not(.dark) .div-line { background: var(--border); }
+html:not(.dark) .div-text { color: var(--text-lo); }
+html:not(.dark) .field-icon { color: var(--text-lo); }
+html:not(.dark) .lp-footer { color: var(--text-lo); }
+html:not(.dark) .sf-input :deep(.el-input__wrapper) {
+  background: #f8fafc !important;
+  box-shadow: 0 0 0 1px #e2e8f0 inset !important;
+}
+html:not(.dark) .sf-input :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #94a3b8 inset !important;
+}
+html:not(.dark) .sf-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px #2563eb inset !important;
+}
+html:not(.dark) .sf-input :deep(.el-input__inner) { color: #1e293b; }
+html:not(.dark) .spinner { border-color: rgba(37,99,235,0.3); border-top-color: #2563eb; }
+html:not(.dark) .btn-glow { background: radial-gradient(ellipse at 50% 0%, rgba(37,99,235,0.08) 0%, transparent 60%); }
 </style>

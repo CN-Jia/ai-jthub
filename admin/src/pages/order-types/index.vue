@@ -122,5 +122,5 @@ onMounted(loadTypes)
 </script>
 
 <style scoped>
-.tip { margin-left: 8px; color: #4d6a82; font-size: 12px; }
+.tip { margin-left: 8px; color: var(--text-lo); font-size: 12px; }
 </style>
