@@ -18,74 +18,37 @@
       <h1 class="wheel-title"><span class="title-glow">幸</span>运转盘</h1>
       <p class="wheel-subtitle">邀请好友越多，机会越多！</p>
 
-      <!-- ═══ 转盘区域 ═══ -->
-      <div class="wheel-wrapper">
-        <div class="wheel-ring"></div>
-
-        <div class="wheel-disc" ref="wheelRef">
-          <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-            <!-- 扇区 -->
-            <g v-for="(seg, i) in segments" :key="i">
-              <path :d="seg.path" :fill="seg.fill" stroke="#0d1117" stroke-width="2" />
-              <!-- 文字组：旋转到扇区中心 -->
-              <g :transform="seg.textTransform">
-                <text x="165" y="0" text-anchor="middle" dominant-baseline="middle"
-                  :font-size="seg.iconSize" fill="#fff" filter="url(#shadow)">
-                  {{ seg.icon }}
-                </text>
-                <text x="165" y="22" text-anchor="middle" dominant-baseline="middle"
-                  font-size="11" font-weight="700" fill="#fff"
-                  filter="url(#shadow)" :style="{ letterSpacing: '0.5px' }">
-                  {{ seg.label }}
-                </text>
-              </g>
-            </g>
-            <!-- 阴影滤镜 -->
-            <defs>
-              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.6" />
-              </filter>
-            </defs>
-            <!-- 中心圆装饰 -->
-            <circle cx="200" cy="200" r="44" fill="#0d1117" stroke="rgba(0,212,255,0.3)" stroke-width="2" />
-            <circle cx="200" cy="200" r="38" fill="url(#centerGrad)" />
-            <defs>
-              <radialGradient id="centerGrad">
-                <stop offset="0%" stop-color="#1a2744" />
-                <stop offset="100%" stop-color="#0d1117" />
-              </radialGradient>
-            </defs>
-          </svg>
+      <!-- ═══ 横向滚轮区域 ═══ -->
+      <div class="slot-wrapper">
+        <div class="slot-mask">
+          <div class="slot-pointer-left"></div>
+          <div class="slot-pointer-right"></div>
+          <div class="slot-track" ref="trackRef">
+            <div
+              v-for="(item, i) in slotItems"
+              :key="i"
+              class="slot-item"
+              :class="{ 'is-cash': item.type === 'CASH_REDEEM', 'is-discount': item.type === 'ORDER_DISCOUNT', 'is-none': item.type === 'NONE' }"
+              :style="{ '--item-color': item.color || '#00d4ff' }"
+            >
+              <div class="slot-item-inner">
+                <span class="slot-icon">{{ item.icon }}</span>
+                <span class="slot-label">{{ item.label.replace(/^[^\s]+\s/, '') }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="slot-center-marker">
+            <div class="marker-arrow">▼</div>
+          </div>
         </div>
 
-        <!-- 指针 -->
-        <div class="wheel-pointer">
-          <svg width="40" height="50" viewBox="0 0 40 50">
-            <defs>
-              <linearGradient id="ptrGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#00d4ff" />
-                <stop offset="100%" stop-color="#0088aa" />
-              </linearGradient>
-              <filter id="ptrGlow">
-                <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#00d4ff" flood-opacity="0.6" />
-              </filter>
-            </defs>
-            <polygon points="20,0 6,44 34,44" fill="url(#ptrGrad)" filter="url(#ptrGlow)" />
-            <polygon points="20,4 12,40 28,40" fill="#fff" opacity="0.3" />
-          </svg>
-        </div>
-
-        <!-- 中心按钮 -->
-        <button class="spin-btn" @click="spin" :disabled="isSpinning || remainingSpins <= 0">
-          <span class="spin-btn-text">{{ isSpinning ? '...' : '抽奖' }}</span>
-          <span class="spin-btn-glow"></span>
-        </button>
-
-        <!-- 外圈灯珠 -->
-        <div class="wheel-dots">
-          <span v-for="i in 24" :key="i" class="dot" :style="getDotStyle(i)"></span>
-        </div>
+        <div class="slot-glow"></div>
       </div>
+
+      <button class="spin-btn" @click="spin" :disabled="isSpinning || remainingSpins <= 0">
+        <span class="spin-btn-text">{{ isSpinning ? '抽奖中...' : '开始抽奖' }}</span>
+        <span class="spin-btn-glow" v-if="!isSpinning && remainingSpins > 0"></span>
+      </button>
 
       <p class="spin-hint" v-if="remainingSpins <= 0">抽奖次数已用完，邀请好友可获得更多机会</p>
       <p class="spin-hint" v-else-if="remainingSpins < 3">邀请好友可获得更多抽奖机会（最多3次）</p>
@@ -159,55 +122,25 @@ const showResult = ref(false)
 const resultWon = ref(false)
 const resultPrize = ref<any>(null)
 const redeemCode = ref('')
-const wheelRef = ref<HTMLElement | null>(null)
+const trackRef = ref<HTMLElement | null>(null)
 
-const SEGMENT_COUNT = 8
-const DEG = 360 / SEGMENT_COUNT
+const ITEM_WIDTH = 120
+const ITEM_GAP = 12
+const ITEM_FULL = ITEM_WIDTH + ITEM_GAP
+const REPEAT = 8
+const VISIBLE_COUNT = 5
 
-// 扇区配色（交替彩色+深色）
-const FILLS = ['#FF6B6B', '#1C2333', '#4ECDC4', '#1C2333', '#45B7D1', '#1C2333', '#F472B6', '#1C2333']
-
-function polarToPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
-  const toRad = (d: number) => (d - 90) * Math.PI / 180
-  const x1 = cx + r * Math.cos(toRad(startDeg))
-  const y1 = cy + r * Math.sin(toRad(startDeg))
-  const x2 = cx + r * Math.cos(toRad(endDeg))
-  const y2 = cy + r * Math.sin(toRad(endDeg))
-  const large = endDeg - startDeg > 180 ? 1 : 0
-  return `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} Z`
-}
-
-const segments = computed(() => {
-  const cx = 200, cy = 200, r = 198
-  return prizes.value.map((prize, i) => {
-    const start = i * DEG
-    const end = start + DEG
-    const mid = start + DEG / 2
-    const shortLabel = prize.label.replace(/^[^\s]+\s/, '')
-    const iconSize = prize.icon.length > 2 ? 22 : 26
-    return {
-      path: polarToPath(cx, cy, r, start, end),
-      fill: FILLS[i % FILLS.length],
-      icon: prize.icon,
-      label: shortLabel,
-      iconSize,
-      textTransform: `rotate(${mid}, ${cx}, ${cy})`,
+// 重复奖品用于滚动
+const slotItems = computed(() => {
+  if (!prizes.value.length) return []
+  const items: any[] = []
+  for (let r = 0; r < REPEAT; r++) {
+    for (const p of prizes.value) {
+      items.push(p)
     }
-  })
-})
-
-function getDotStyle(i: number) {
-  const angle = (i - 1) * (360 / 24)
-  const rad = (angle - 90) * Math.PI / 180
-  const radius = 50 // percent
-  const x = 50 + radius * Math.cos(rad)
-  const y = 50 + radius * Math.sin(rad)
-  return {
-    left: `${x}%`,
-    top: `${y}%`,
-    animationDelay: `${(i % 2) * 0.5}s`,
   }
-}
+  return items
+})
 
 async function loadInfo() {
   try {
@@ -218,18 +151,34 @@ async function loadInfo() {
   } catch (err) { console.error(err) }
 }
 
-async function spin() {
+function spin() {
   if (isSpinning.value || remainingSpins.value <= 0) return
   isSpinning.value = true
-  try {
-    const res: any = await api.spinLuckyWheel()
+
+  // 先启动快速滚动动画
+  const track = trackRef.value
+  if (!track) { isSpinning.value = false; return }
+
+  // 快速滚动到中奖位置的动画
+  api.spinLuckyWheel().then((res: any) => {
     const { prizeIndex, prize, won, redeemCode: code, remainingSpins: remaining } = res.data
 
-    const targetAngle = 360 * 6 + (360 - prizeIndex * DEG - DEG / 2)
-    if (wheelRef.value) {
-      wheelRef.value.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)'
-      wheelRef.value.style.transform = `rotate(${targetAngle}deg)`
-    }
+    // 计算目标位置：最后一轮的中奖奖品居中
+    const wrapperWidth = track.parentElement?.clientWidth || 500
+    const centerOffset = wrapperWidth / 2 - ITEM_WIDTH / 2
+    const targetIndex = (REPEAT - 2) * prizes.value.length + prizeIndex
+    const targetPos = targetIndex * ITEM_FULL - centerOffset
+
+    // 设置起始位置（快速滚动几轮）
+    const startPos = prizes.value.length * ITEM_FULL * 2
+    track.style.transition = 'none'
+    track.style.transform = `translateX(-${startPos}px)`
+
+    requestAnimationFrame(() => {
+      track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.85, 0.2, 1)'
+      track.style.transform = `translateX(-${targetPos}px)`
+    })
+
     setTimeout(() => {
       isSpinning.value = false
       resultWon.value = won
@@ -238,11 +187,11 @@ async function spin() {
       remainingSpins.value = remaining
       showResult.value = true
       loadInfo()
-    }, 4200)
-  } catch (err: any) {
+    }, 3700)
+  }).catch((err: any) => {
     isSpinning.value = false
     alert(err?.message ?? '抽奖失败')
-  }
+  })
 }
 
 function copyCode() {
@@ -260,7 +209,7 @@ onMounted(loadInfo)
 .orb-1 { width: 400px; height: 400px; background: #00d4ff; top: -100px; right: -100px; }
 .orb-2 { width: 300px; height: 300px; background: #a855f7; bottom: -50px; left: -80px; }
 
-.wheel-container { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+.wheel-container { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 20px 16px; }
 .wheel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .back-btn { background: none; border: 1px solid var(--border); color: var(--text-2); padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
 .back-btn:hover { border-color: var(--primary); color: var(--primary); }
@@ -272,51 +221,194 @@ onMounted(loadInfo)
 .title-glow { color: #00d4ff; text-shadow: 0 0 20px rgba(0,212,255,0.5); }
 .wheel-subtitle { text-align: center; font-size: 14px; color: var(--text-3); margin-bottom: 32px; }
 
-/* ═══ 转盘 ═══ */
-.wheel-wrapper { position: relative; width: 340px; height: 340px; margin: 0 auto 32px; }
+/* ═══ 横向滚轮 ═══ */
+.slot-wrapper { position: relative; margin: 0 auto 32px; max-width: 100%; }
 
-.wheel-ring { position: absolute; inset: -14px; border-radius: 50%; border: 3px solid transparent;
-  background: conic-gradient(from 0deg, #00d4ff, #a855f7, #00d4ff, #a855f7, #00d4ff) border-box;
-  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: ring-rotate 8s linear infinite; }
-@keyframes ring-rotate { to { transform: rotate(360deg); } }
+.slot-mask {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(0,212,255,0.03) 0%, rgba(13,17,23,0.8) 50%, rgba(0,212,255,0.03) 100%);
+  border: 1px solid rgba(0,212,255,0.15);
+  padding: 16px 0;
+}
 
-.wheel-disc { width: 100%; height: 100%; position: relative; will-change: transform; }
-.wheel-disc svg { width: 100%; height: 100%; display: block;
-  filter: drop-shadow(0 0 20px rgba(0,212,255,0.15)); }
+.slot-track {
+  display: flex;
+  gap: 12px;
+  padding: 0 calc(50% - 60px);
+  will-change: transform;
+}
 
-/* 指针 */
-.wheel-pointer { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); z-index: 10; }
+.slot-item {
+  flex-shrink: 0;
+  width: 120px;
+  height: 100px;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.2s;
+}
 
-/* 中心按钮 */
-.spin-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 76px; height: 76px;
-  border-radius: 50%; border: 3px solid #00d4ff; background: linear-gradient(135deg,#0d1117,#16213e);
-  cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;
+.slot-item-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+/* 类型样式 */
+.slot-item.is-cash {
+  background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(255,107,107,0.05));
+  border: 1.5px solid rgba(255,107,107,0.4);
+  box-shadow: 0 0 20px rgba(255,107,107,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.slot-item.is-cash .slot-icon { filter: drop-shadow(0 0 8px rgba(255,107,107,0.5)); }
+
+.slot-item.is-discount {
+  background: linear-gradient(135deg, rgba(0,212,255,0.12), rgba(168,85,247,0.08));
+  border: 1.5px solid rgba(0,212,255,0.35);
+  box-shadow: 0 0 20px rgba(0,212,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.slot-item.is-discount .slot-icon { filter: drop-shadow(0 0 8px rgba(0,212,255,0.5)); }
+
+.slot-item.is-none {
+  background: linear-gradient(135deg, rgba(100,116,139,0.12), rgba(100,116,139,0.04));
+  border: 1.5px solid rgba(100,116,139,0.25);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.slot-icon {
+  font-size: 32px;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+.slot-item:hover .slot-icon { transform: scale(1.15); }
+
+.slot-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-1);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 中心指示器 */
+.slot-center-marker {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  z-index: 10;
+}
+.marker-arrow {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0,212,255,0.8);
+  animation: arrow-bounce 1s ease-in-out infinite;
+}
+@keyframes arrow-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(4px); }
+}
+
+/* 左右渐变遮罩 */
+.slot-pointer-left,
+.slot-pointer-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  z-index: 5;
+  pointer-events: none;
+}
+.slot-pointer-left {
+  left: 0;
+  background: linear-gradient(90deg, var(--bg) 0%, transparent 100%);
+}
+.slot-pointer-right {
+  right: 0;
+  background: linear-gradient(270deg, var(--bg) 0%, transparent 100%);
+}
+
+.slot-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══ 按钮 ═══ */
+.spin-btn {
+  display: block;
+  margin: 0 auto 16px;
+  padding: 16px 48px;
+  border-radius: 16px;
+  border: 2px solid #00d4ff;
+  background: linear-gradient(135deg, #0d1117 0%, #16213e 100%);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
   transition: all 0.3s;
-  box-shadow: 0 0 20px rgba(0,212,255,0.3), inset 0 0 20px rgba(0,212,255,0.1); }
-.spin-btn:hover:not(:disabled) { box-shadow: 0 0 30px rgba(0,212,255,0.5), inset 0 0 30px rgba(0,212,255,0.2); transform: translate(-50%,-50%) scale(1.05); }
-.spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.spin-btn-text { font-size: 18px; font-weight: 900; color: #00d4ff; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
-.spin-btn-glow { position: absolute; inset: -4px; border-radius: 50%; border: 2px solid rgba(0,212,255,0.2); animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
-
-/* 外圈灯珠 */
-.wheel-dots { position: absolute; inset: -6px; pointer-events: none; }
-.dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #00d4ff;
-  transform: translate(-50%,-50%); animation: dot-blink 1s ease-in-out infinite alternate; opacity: 0.7; }
-@keyframes dot-blink { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+  box-shadow: 0 0 20px rgba(0,212,255,0.25), inset 0 0 20px rgba(0,212,255,0.08);
+}
+.spin-btn:hover:not(:disabled) {
+  box-shadow: 0 0 35px rgba(0,212,255,0.45), inset 0 0 30px rgba(0,212,255,0.15);
+  transform: translateY(-2px);
+}
+.spin-btn:active:not(:disabled) { transform: translateY(0); }
+.spin-btn:disabled { opacity: 0.45; cursor: not-allowed; border-color: rgba(0,212,255,0.3); }
+.spin-btn-text { font-size: 18px; font-weight: 900; color: #00d4ff; letter-spacing: 4px; text-shadow: 0 0 12px rgba(0,212,255,0.5); position: relative; z-index: 1; }
+.spin-btn-glow {
+  position: absolute; inset: -2px; border-radius: 16px;
+  border: 2px solid rgba(0,212,255,0.3);
+  animation: btn-pulse 2s ease-in-out infinite;
+}
+@keyframes btn-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
 
 .spin-hint { text-align: center; font-size: 13px; color: var(--text-3); margin-bottom: 32px; }
 
 /* ═══ 弹窗 ═══ */
-.result-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-.result-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px;
-  padding: 40px 32px; max-width: 400px; width: 100%; text-align: center; position: relative; overflow: hidden; }
+.result-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+}
+.result-card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px;
+  padding: 40px 32px; max-width: 400px; width: 100%; text-align: center; position: relative; overflow: hidden;
+}
 .result-card.won { border-color: #00d4ff; box-shadow: 0 0 40px rgba(0,212,255,0.2); }
-.result-card.won::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg, #00d4ff, #a855f7, #00d4ff); }
+.result-card.won::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #00d4ff, #a855f7, #00d4ff);
+}
 .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--text-3); font-size: 18px; cursor: pointer; }
 .result-icon { font-size: 64px; margin-bottom: 16px; }
 .result-title { font-size: 24px; font-weight: 900; color: var(--text-1); margin-bottom: 8px; }
@@ -324,8 +416,14 @@ onMounted(loadInfo)
 .result-hint { font-size: 14px; color: var(--text-3); margin-bottom: 20px; }
 .redeem-code-box { background: rgba(0,212,255,0.05); border: 1px dashed #00d4ff; border-radius: 12px; padding: 20px; margin: 16px 0; }
 .redeem-label { display: block; font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
-.redeem-code { display: block; font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900; color: #00d4ff; letter-spacing: 4px; margin-bottom: 12px; text-shadow: 0 0 20px rgba(0,212,255,0.3); }
-.copy-btn { background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.redeem-code {
+  display: block; font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900;
+  color: #00d4ff; letter-spacing: 4px; margin-bottom: 12px; text-shadow: 0 0 20px rgba(0,212,255,0.3);
+}
+.copy-btn {
+  background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff;
+  padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
 .copy-btn:hover { background: #00d4ff; color: #0d1117; }
 .redeem-hint { font-size: 12px; color: var(--text-3); margin-top: 8px; }
 .result-actions { margin-top: 24px; }
@@ -353,9 +451,12 @@ onMounted(loadInfo)
 .rule-item strong { color: #00d4ff; }
 
 @media (max-width: 480px) {
-  .wheel-wrapper { width: 300px; height: 300px; }
-  .spin-btn { width: 64px; height: 64px; }
-  .spin-btn-text { font-size: 14px; }
+  .slot-item { width: 100px; height: 88px; }
+  .slot-icon { font-size: 28px; }
+  .slot-label { font-size: 11px; }
+  .slot-track { gap: 10px; padding: 0 calc(50% - 50px); }
   .wheel-title { font-size: 24px; }
+  .spin-btn { padding: 14px 36px; }
+  .spin-btn-text { font-size: 16px; letter-spacing: 2px; }
 }
 </style>
