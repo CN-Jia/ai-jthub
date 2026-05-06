@@ -52,13 +52,13 @@ export async function adminFeedbackRoutes(fastify: FastifyInstance) {
   })
 
   // 更新状态
+  const updateStatusSchema = z.object({ status: z.enum(['PENDING', 'REPLIED', 'RESOLVED']) })
+
   fastify.patch('/admin/feedback/:id/status', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { status } = request.body as { status: 'PENDING' | 'REPLIED' | 'RESOLVED' }
-    if (!['PENDING', 'REPLIED', 'RESOLVED'].includes(status)) {
-      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '状态值无效'))
-    }
-    const updated = await prisma.feedback.update({ where: { id }, data: { status } })
+    const parse = updateStatusSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '状态值无效'))
+    const updated = await prisma.feedback.update({ where: { id }, data: { status: parse.data.status } })
     return reply.send(successResponse(updated))
   })
 }

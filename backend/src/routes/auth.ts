@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import bcrypt from 'bcrypt'
+import crypto from 'crypto'
 import { prisma } from '../lib/prisma.js'
 import { adminLogin } from '../services/auth.service.js'
 import { sendVerifyCode } from '../services/email.service.js'
@@ -32,7 +33,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(429).send(errorResponse(ERROR_CODES.RATE_LIMITED, '请等待60秒后再次发送'))
     }
 
-    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const code = String(crypto.randomInt(100000, 999999))
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
 
     await prisma.emailVerification.create({ data: { email, code, expiresAt } })
@@ -241,7 +242,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(429).send(errorResponse(ERROR_CODES.RATE_LIMITED, '请等待60秒后再次发送'))
     }
 
-    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const code = String(crypto.randomInt(100000, 999999))
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10分钟有效
 
     await prisma.emailVerification.create({ data: { email, code, expiresAt } })
@@ -306,7 +307,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(429).send(errorResponse(ERROR_CODES.RATE_LIMITED, '请等待60秒后再次发送'))
     }
 
-    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const code = String(crypto.randomInt(100000, 999999))
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
     await prisma.emailVerification.create({ data: { email, code, expiresAt } })
 
@@ -347,6 +348,8 @@ export async function authRoutes(fastify: FastifyInstance) {
   const ADMIN_WINDOW_MS = 15 * 60_000 // 15 分钟
   const ADMIN_MAX_ATTEMPTS = 5
 
+  const adminLoginSchema = z.object({ username: z.string().min(1).max(100), password: z.string().min(1).max(200) })
+
   fastify.post('/auth/admin-login', async (request, reply) => {
     const ip = request.ip
     const now = Date.now()
@@ -357,7 +360,9 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(429).send(errorResponse(ERROR_CODES.RATE_LIMITED, `登录尝试过多，请 ${seconds} 秒后重试`))
     }
 
-    const { username, password } = request.body as { username: string; password: string }
+    const parse = adminLoginSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '参数错误'))
+    const { username, password } = parse.data
     const ok = await adminLogin(username, password)
 
     if (!ok) {

@@ -103,11 +103,20 @@ export async function adminProductOrderRoutes(fastify: FastifyInstance) {
     if (order.status === 'COMPLETED' || order.status === 'CANCELLED') {
       return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '已完成或已取消的订单无法操作'))
     }
-    const updated = await prisma.productOrder.update({
-      where: { id },
-      data: { status: 'CANCELLED', cancelledAt: new Date(), cancelReason: reason },
+    await prisma.$transaction(async (tx) => {
+      await tx.productOrder.update({
+        where: { id },
+        data: { status: 'CANCELLED', cancelledAt: new Date(), cancelReason: reason },
+      })
+      // 归还优惠券使用次数
+      if (order.couponId) {
+        await tx.promoCoupon.update({
+          where: { id: order.couponId },
+          data: { usedCount: { decrement: 1 } },
+        })
+      }
     })
     createAdminNotification({ type: 'ORDER_CANCELLED', summary: `订单 ${order.orderNo} 已被取消`, orderId: id }).catch(() => {})
-    return reply.send(successResponse({ status: updated.status }))
+    return reply.send(successResponse({ status: 'CANCELLED' }))
   })
 }

@@ -1,13 +1,15 @@
+import crypto from 'crypto'
 import { prisma } from '../lib/prisma.js'
 import { PointEventType } from '@prisma/client'
 
-// 生成6位大写字母+数字邀请码，碰撞时自动重试
+// 生成6位大写字母+数字邀请码（加密安全），碰撞时自动重试
 export async function generateInviteCode(): Promise<string> {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   for (let attempt = 0; attempt < 10; attempt++) {
+    const bytes = crypto.randomBytes(6)
     let code = ''
     for (let i = 0; i < 6; i++) {
-      code += chars[Math.floor(Math.random() * chars.length)]
+      code += chars[bytes[i] % chars.length]
     }
     const exists = await prisma.user.findUnique({ where: { inviteCode: code } })
     if (!exists) return code
@@ -82,8 +84,9 @@ export async function adjustPoints(
   if (delta === 0) throw new Error('Delta must be non-zero')
 
   return await prisma.$transaction(async (tx) => {
-    const current = await tx.pointBalance.findUnique({ where: { userId } })
-    const currentTotal = current?.totalPoints ?? 0
+    // 行锁防止并发
+    const rows = await tx.$queryRaw<Array<{ totalPoints: number }>>`SELECT "totalPoints" FROM "point_balances" WHERE "userId" = ${userId} FOR UPDATE`
+    const currentTotal = rows[0]?.totalPoints ?? 0
 
     if (delta < 0 && currentTotal + delta < 0) {
       throw new Error('INSUFFICIENT_POINTS')
@@ -123,8 +126,10 @@ export async function freezePoints(
   redeemOrderId: string,
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
-    const balance = await tx.pointBalance.findUnique({ where: { userId } })
-    if (!balance || balance.totalPoints < amount) {
+    // 行锁防止并发双花
+    const rows = await tx.$queryRaw<Array<{ totalPoints: number }>>`SELECT "totalPoints" FROM "point_balances" WHERE "userId" = ${userId} FOR UPDATE`
+    const totalPoints = rows[0]?.totalPoints ?? 0
+    if (totalPoints < amount) {
       throw new Error('INSUFFICIENT_POINTS')
     }
 
@@ -136,13 +141,12 @@ export async function freezePoints(
       },
     })
 
-    const updated = await tx.pointBalance.findUnique({ where: { userId } })
     await tx.pointLog.create({
       data: {
         userId,
         eventType: PointEventType.REDEEM_FREEZE,
         delta: -amount,
-        balance: updated!.totalPoints,
+        balance: totalPoints - amount,
         refId: redeemOrderId,
         remark: '兑换申请冻结积分',
       },
@@ -204,10 +208,9 @@ export async function unfreeze(
   })
 }
 
-/** 判断是否为用户第一次完成订单 */
 export async function isFirstCompletedOrder(userId: string): Promise<boolean> {
   const count = await prisma.order.count({
     where: { userId, status: 'COMPLETED' },
   })
-  return count <= 1 // 当前这条刚完成，所以 <= 1
+  return count <= 1
 }

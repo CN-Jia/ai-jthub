@@ -103,9 +103,18 @@ export async function productOrderRoutes(fastify: FastifyInstance) {
     if (order.status !== 'CREATED') {
       return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '只能取消"已创建"状态的订单'))
     }
-    await prisma.productOrder.update({
-      where: { id },
-      data: { status: 'CANCELLED', cancelledAt: new Date(), cancelReason: '用户主动取消' },
+    await prisma.$transaction(async (tx) => {
+      await tx.productOrder.update({
+        where: { id },
+        data: { status: 'CANCELLED', cancelledAt: new Date(), cancelReason: '用户主动取消' },
+      })
+      // 归还优惠券使用次数
+      if (order.couponId) {
+        await tx.promoCoupon.update({
+          where: { id: order.couponId },
+          data: { usedCount: { decrement: 1 } },
+        })
+      }
     })
     fastify.log.info({ event: 'product_order_cancelled', orderId: id, userId: user.userId })
     return reply.send(successResponse({ status: 'CANCELLED' }))

@@ -123,19 +123,11 @@ const navGroups = [
     ],
   },
   {
-    label: '商品与订单',
+    label: '需求管理',
     items: [
-      { path: '/products',        label: '商品管理',  icon: 'Goods' },
-      { path: '/product-orders',  label: '订单管理',  icon: 'List' },
-      { path: '/promo-coupons',   label: '优惠码',    icon: 'Ticket' },
-      { path: '/payment-config',  label: '收款码配置', icon: 'CreditCard' },
-    ],
-  },
-  {
-    label: '业务管理',
-    items: [
-      { path: '/orders',      label: '旧版订单',  icon: 'Document' },
-      { path: '/activities',  label: '活动公告',  icon: 'Bell' },
+      { path: '/orders',      label: '订单管理', icon: 'List' },
+      { path: '/order-types', label: '需求类型', icon: 'Document' },
+      { path: '/activities',  label: '活动公告', icon: 'Bell' },
     ],
   },
   {
@@ -147,12 +139,6 @@ const navGroups = [
     ],
   },
   {
-    label: '系统',
-    items: [
-      { path: '/users', label: '用户管理', icon: 'User' },
-    ],
-  },
-  {
     label: '积分系统',
     items: [
       { path: '/points',        label: '积分规则', icon: 'Coin' },
@@ -160,29 +146,29 @@ const navGroups = [
       { path: '/points/redeem', label: '兑换审核', icon: 'Tickets' },
     ],
   },
+  {
+    label: '系统',
+    items: [
+      { path: '/users', label: '用户管理', icon: 'User' },
+    ],
+  },
 ]
 
 const titleMap: Record<string, string> = {
   '/': '监控大屏',
-  '/products': '商品管理',
-  '/product-orders': '订单管理',
-  '/promo-coupons': '优惠码管理',
-  '/payment-config': '收款码配置',
-  '/orders': '旧版订单管理',
+  '/orders': '订单管理',
+  '/order-types': '需求类型',
   '/activities': '活动公告',
   '/posts': '论坛管理',
   '/carousel': '作品轮播',
   '/feedback': '用户反馈',
-  '/users': '用户管理',
-  '/points': '积分管理',
+  '/points': '积分规则',
   '/points/shop': '积分商城',
-  '/points/redeem': '兑换订单审核',
+  '/points/redeem': '兑换审核',
+  '/users': '用户管理',
 }
 
-const pageTitle = computed(() => {
-  if (route.path.startsWith('/orders/')) return '订单详情'
-  return titleMap[route.path] ?? 'JT-Hub 管理后台'
-})
+const pageTitle = computed(() => titleMap[route.path] ?? 'JT-Hub 管理后台')
 
 const isActive = (path: string) => {
   if (path === '/') return route.path === '/'

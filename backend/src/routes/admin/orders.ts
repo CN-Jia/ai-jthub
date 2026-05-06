@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify'
+import { z } from 'zod'
 import { verifyAdmin } from '../../middlewares/auth.middleware.js'
 import {
   adminListOrders, adminGetOrderDetail, updateOrderStatus,
@@ -38,11 +39,18 @@ export async function adminOrderRoutes(fastify: FastifyInstance) {
   })
 
   // 更新状态（同时 Server酱 推送管理员）
+  const updateStatusSchema = z.object({
+    status: z.enum(['CREATED', 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']),
+    remark: z.string().max(500).optional(),
+    estimatedDelivery: z.string().datetime().optional(),
+    rewardPoints: z.number().int().min(0).optional(),
+  })
+
   fastify.patch('/admin/orders/:id/status', { preHandler: verifyAdmin }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { status, remark, estimatedDelivery, rewardPoints } = request.body as {
-      status: OrderStatus; remark?: string; estimatedDelivery?: string; rewardPoints?: number
-    }
+    const parse = updateStatusSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '参数错误'))
+    const { status, remark, estimatedDelivery, rewardPoints } = parse.data
     try {
       // IN_PROGRESS 必须填写预计交付时间
       if (status === 'IN_PROGRESS' && !estimatedDelivery) {
@@ -111,20 +119,24 @@ export async function adminOrderRoutes(fastify: FastifyInstance) {
   })
 
   // 添加内部备注
+  const noteSchema = z.object({ note: z.string().min(1).max(1000) })
+
   fastify.post('/admin/orders/:id/note', { preHandler: verifyAdmin }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { note } = request.body as { note: string }
-    if (!note?.trim()) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '备注不能为空'))
-    const order = await addAdminNote(id, note.trim())
+    const parse = noteSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '备注不能为空'))
+    const order = await addAdminNote(id, parse.data.note.trim())
     return reply.send(successResponse({ adminNote: order.adminNote }))
   })
 
   // 设置报价
+  const quoteSchema = z.object({ price: z.string().min(1).max(100) })
+
   fastify.post('/admin/orders/:id/quote', { preHandler: verifyAdmin }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { price } = request.body as { price: string }
-    if (!price?.trim()) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '报价不能为空'))
-    const order = await setQuotedPrice(id, price.trim())
+    const parse = quoteSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '报价不能为空'))
+    const order = await setQuotedPrice(id, parse.data.price.trim())
     return reply.send(successResponse({ quotedPrice: order.quotedPrice }))
   })
 }
