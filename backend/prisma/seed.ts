@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, PrizeType } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -55,6 +55,45 @@ async function main() {
   })
 
   console.log('✅ Activities seeded')
+
+  // 转盘奖品配置
+  const wheelPrizes = [
+    { id: 'prize-88', label: '🏆 88元现金大奖', type: PrizeType.CASH_REDEEM, value: 88, totalStock: 1, remainStock: 1, color: '#FF6B6B', icon: '🏆', sortOrder: 1 },
+    { id: 'prize-none1', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 2 },
+    { id: 'prize-28', label: '🎁 28元现金奖', type: PrizeType.CASH_REDEEM, value: 28, totalStock: 1, remainStock: 1, color: '#4ECDC4', icon: '🎁', sortOrder: 3 },
+    { id: 'prize-none2', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 4 },
+    { id: 'prize-small', label: '📝 小作业9折券', type: PrizeType.ORDER_DISCOUNT, value: 0.9, totalStock: 20, remainStock: 20, color: '#45B7D1', icon: '📝', sortOrder: 5 },
+    { id: 'prize-none3', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 6 },
+    { id: 'prize-final', label: '📚 期末85折券', type: PrizeType.ORDER_DISCOUNT, value: 0.85, totalStock: 5, remainStock: 5, color: '#96CEB4', icon: '📚', sortOrder: 7 },
+    { id: 'prize-none4', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 8 },
+  ]
+
+  for (const prize of wheelPrizes) {
+    await prisma.wheelPrize.upsert({
+      where: { id: prize.id },
+      create: prize,
+      update: { label: prize.label, totalStock: prize.totalStock, remainStock: prize.remainStock },
+    })
+  }
+
+  console.log('✅ WheelPrizes seeded:', wheelPrizes.length, 'prizes')
+
+  // 活动浮窗默认配置
+  await prisma.activityPopup.upsert({
+    where: { id: 'singleton' },
+    create: {
+      id: 'singleton',
+      enabled: true,
+      title: '🎰 幸运转盘 限时活动',
+      description: '新用户注册送1次抽奖机会，邀请好友最多3次！',
+      buttonText: '✨ 立即抽奖 ✨',
+      linkUrl: '/lucky-wheel',
+      showCondition: 'all',
+    },
+    update: {},
+  })
+
+  console.log('✅ ActivityPopup seeded')
   console.log('🎉 Seed complete!')
 }
 

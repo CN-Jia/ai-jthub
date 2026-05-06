@@ -135,4 +135,15 @@ export const api = {
   getNotifications: (params?: Record<string, any>) => http.get('/admin/notifications', { params }),
   markNotificationRead: (id: string) => http.put(`/admin/notifications/${id}/read`),
   markAllNotificationsRead: () => http.put('/admin/notifications/read-all'),
+
+  // 幸运转盘管理
+  getWheelPrizes: () => http.get('/admin/wheel/prizes'),
+  updateWheelPrize: (id: string, data: any) => http.put(`/admin/wheel/prizes/${id}`, data),
+  getWheelResults: (params?: Record<string, any>) => http.get('/admin/wheel/results', { params }),
+  redeemWheelCode: (id: string) => http.post(`/admin/wheel/redeem/${id}`),
+  getWheelStats: () => http.get('/admin/wheel/stats'),
+
+  // 活动浮窗配置
+  getActivityPopup: () => http.get('/admin/activity-popup'),
+  updateActivityPopup: (data: any) => http.put('/admin/activity-popup', data),
 }

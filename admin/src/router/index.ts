@@ -16,6 +16,7 @@ const router = createRouter({
     { path: '/points', component: () => import('../pages/points/index.vue'), meta: { requiresAuth: true } },
     { path: '/points/shop', component: () => import('../pages/points/shop.vue'), meta: { requiresAuth: true } },
     { path: '/points/redeem', component: () => import('../pages/points/redeem.vue'), meta: { requiresAuth: true } },
+    { path: '/lucky-wheel', component: () => import('../pages/lucky-wheel/index.vue'), meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
