@@ -18,14 +18,14 @@ export async function adminLuckyWheelRoutes(fastify: FastifyInstance) {
   // ── 修改奖品 ──────────────────────────────────────────────────
   const updatePrizeSchema = z.object({
     label: z.string().min(1).max(50).optional(),
-    value: z.number().positive().optional().nullable(),
+    value: z.number().min(0).optional().nullable(),
     totalStock: z.number().int().min(-1).optional(),
     remainStock: z.number().int().min(-1).optional(),
     color: z.string().optional(),
     icon: z.string().optional(),
     sortOrder: z.number().int().optional(),
     isActive: z.boolean().optional(),
-  })
+  }).strip() // 忽略多余字段（如 type）
 
   fastify.put('/admin/wheel/prizes/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
