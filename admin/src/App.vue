@@ -147,6 +147,12 @@ const navGroups = [
     ],
   },
   {
+    label: '营销活动',
+    items: [
+      { path: '/lucky-wheel', label: '幸运转盘', icon: 'Present' },
+    ],
+  },
+  {
     label: '系统',
     items: [
       { path: '/users', label: '用户管理', icon: 'User' },
@@ -165,6 +171,7 @@ const titleMap: Record<string, string> = {
   '/points': '积分规则',
   '/points/shop': '积分商城',
   '/points/redeem': '兑换审核',
+  '/lucky-wheel': '幸运转盘',
   '/users': '用户管理',
 }
 

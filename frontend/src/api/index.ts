@@ -74,4 +74,10 @@ export const api = {
   getShopItems: (params?: any) => http.get('/shop/items', { params }),
   submitRedeem: (shopItemId: string) => http.post('/shop/redeem', { shopItemId }),
   getMyRedeems: () => http.get('/shop/redeem/my'),
+  getAvailableRedeems: () => http.get('/redeem/available'),
+
+  // 幸运转盘
+  getLuckyWheelInfo: () => http.get('/lucky-wheel/info'),
+  spinLuckyWheel: () => http.post('/lucky-wheel/spin'),
+  getActivityPopup: () => http.get('/activity-popup'),
 }

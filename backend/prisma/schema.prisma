@@ -41,6 +41,7 @@ model User {
   redeemOrders  RedeemOrder[]
   coupons       Coupon[]
   productOrders ProductOrder[]
+  spinResults   SpinResult[]
 
   @@index([email])
   @@index([username])
@@ -541,4 +542,65 @@ model AdminNotification {
 
   @@index([isRead, createdAt])
   @@map("admin_notifications")
+}
+
+// ==================== 转盘奖品配置 ====================
+model WheelPrize {
+  id          String   @id @default(cuid())
+  label       String
+  type        PrizeType
+  value       Decimal? @db.Decimal(10, 2)
+  totalStock  Int      @default(-1)
+  remainStock Int      @default(-1)
+  color       String   @default("#2D3748")
+  icon        String   @default("🎯")
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+
+  spinResults SpinResult[]
+
+  @@map("wheel_prizes")
+}
+
+enum PrizeType {
+  CASH_REDEEM
+  ORDER_DISCOUNT
+  NONE
+}
+
+// ==================== 用户抽奖记录 ====================
+model SpinResult {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id])
+  prizeId    String
+  prize      WheelPrize @relation(fields: [prizeId], references: [id])
+  spinRound  Int
+  redeemCode String?
+  isRedeemed Boolean    @default(false)
+
+  createdAt  DateTime   @default(now())
+
+  @@unique([userId, spinRound])
+  @@unique([redeemCode])
+  @@index([userId])
+  @@map("spin_results")
+}
+
+// ==================== 活动浮窗配置 ====================
+model ActivityPopup {
+  id            String   @id @default("singleton")
+  enabled       Boolean  @default(false)
+  title         String   @default("🎰 幸运转盘 限时活动")
+  description   String   @default("新用户注册送1次抽奖机会")
+  buttonText    String   @default("✨ 立即抽奖 ✨")
+  linkUrl       String   @default("/lucky-wheel")
+  imageUrl      String?
+  showCondition String   @default("all")
+
+  updatedAt     DateTime @updatedAt
+
+  @@map("activity_popup")
 }

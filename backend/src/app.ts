@@ -32,6 +32,8 @@ import { adminProductRoutes } from './routes/admin/products.js'
 import { adminProductOrderRoutes } from './routes/admin/productOrders.js'
 import { adminPromoCouponRoutes } from './routes/admin/promoCoupons.js'
 import { adminPaymentConfigRoutes } from './routes/admin/paymentConfig.js'
+import { luckyWheelRoutes } from './routes/luckyWheel.js'
+import { adminLuckyWheelRoutes } from './routes/admin/luckyWheel.js'
 import { rateLimitQuery } from './middlewares/ratelimit.middleware.js'
 
 export async function buildApp() {
@@ -87,6 +89,8 @@ export async function buildApp() {
   app.register(adminProductOrderRoutes, { prefix: '/api' })
   app.register(adminPromoCouponRoutes, { prefix: '/api' })
   app.register(adminPaymentConfigRoutes, { prefix: '/api' })
+  app.register(luckyWheelRoutes, { prefix: '/api' })
+  app.register(adminLuckyWheelRoutes, { prefix: '/api' })
 
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error)
