@@ -20,6 +20,10 @@
     <el-tabs v-model="activeTab" type="border-card">
       <!-- 奖品管理 -->
       <el-tab-pane label="奖品配置" name="prizes">
+        <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <el-button type="primary" @click="openAddPrize">+ 新增奖品</el-button>
+          <el-text type="info" size="small">权重越高，中奖概率越大</el-text>
+        </div>
         <el-table :data="prizes" v-loading="prizesLoading" style="width:100%">
           <el-table-column label="图标" width="60">
             <template #default="{ row }">{{ row.icon }}</template>
@@ -32,6 +36,11 @@
           </el-table-column>
           <el-table-column label="价值" width="100">
             <template #default="{ row }">{{ row.value ? `¥${row.value}` : '—' }}</template>
+          </el-table-column>
+          <el-table-column label="权重" width="80">
+            <template #default="{ row }">
+              <el-tag type="warning" size="small">{{ row.weight }}</el-tag>
+            </template>
           </el-table-column>
           <el-table-column label="库存" width="100">
             <template #default="{ row }">
@@ -48,9 +57,10 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column label="操作" width="160" fixed="right">
             <template #default="{ row }">
               <el-button size="small" @click="openEditPrize(row)">编辑</el-button>
+              <el-button size="small" type="danger" @click="handleDeletePrize(row)" :disabled="row._count?.spinResults > 0">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -110,6 +120,71 @@
         </div>
       </el-tab-pane>
 
+      <!-- 发放抽奖次数 -->
+      <el-tab-pane label="发放抽奖次数" name="grant">
+        <el-form :inline="true" style="margin-bottom: 20px;">
+          <el-form-item label="用户ID">
+            <el-input v-model="grantForm.userId" placeholder="输入用户ID" style="width: 300px" />
+          </el-form-item>
+          <el-form-item label="次数">
+            <el-input-number v-model="grantForm.amount" :min="1" :max="10" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :loading="grantLoading" @click="handleGrantSpins">发放</el-button>
+          </el-form-item>
+        </el-form>
+
+        <el-divider />
+
+        <h4 style="margin-bottom: 12px;">查看用户抽奖详情</h4>
+        <el-form :inline="true" style="margin-bottom: 16px;">
+          <el-form-item label="用户ID">
+            <el-input v-model="searchUserId" placeholder="输入用户ID" style="width: 300px" />
+          </el-form-item>
+          <el-form-item>
+            <el-button @click="loadUserDetail" :loading="userDetailLoading">查询</el-button>
+          </el-form-item>
+        </el-form>
+
+        <template v-if="userDetail">
+          <el-descriptions :column="2" border style="margin-bottom: 16px;">
+            <el-descriptions-item label="用户">{{ userDetail.user.nickname }} ({{ userDetail.user.username }})</el-descriptions-item>
+            <el-descriptions-item label="邀请人数">{{ userDetail.inviteCount }}</el-descriptions-item>
+            <el-descriptions-item label="基础次数">{{ Math.min(1 + userDetail.inviteCount, 3) }}</el-descriptions-item>
+            <el-descriptions-item label="额外次数">{{ userDetail.user.extraSpins }}</el-descriptions-item>
+            <el-descriptions-item label="总可用次数">{{ Math.min(1 + userDetail.inviteCount, 3) + userDetail.user.extraSpins }}</el-descriptions-item>
+            <el-descriptions-item label="已使用">{{ userDetail.spinResults.length }}</el-descriptions-item>
+          </el-descriptions>
+
+          <el-table :data="userDetail.spinResults" style="width: 100%;" v-if="userDetail.spinResults.length > 0">
+            <el-table-column label="轮次" width="80" prop="spinRound" />
+            <el-table-column label="奖品" min-width="150" prop="prizeLabel" />
+            <el-table-column label="类型" width="120">
+              <template #default="{ row }">
+                <el-tag :type="prizeTypeTag(row.prizeType)" size="small">{{ prizeTypeLabel(row.prizeType) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="兑换码" width="140">
+              <template #default="{ row }">
+                <span v-if="row.redeemCode" class="redeem-code">{{ row.redeemCode }}</span>
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag v-if="row.isRedeemed" type="success" size="small">已兑换</el-tag>
+                <el-tag v-else-if="row.redeemCode" type="warning" size="small">待兑换</el-tag>
+                <el-tag v-else type="info" size="small">—</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="时间" width="160">
+              <template #default="{ row }">{{ fmtDate(row.createdAt) }}</template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="暂无抽奖记录" />
+        </template>
+      </el-tab-pane>
+
       <!-- 活动浮窗配置 -->
       <el-tab-pane label="活动浮窗" name="popup">
         <el-form :model="popupForm" label-width="120px" style="max-width:600px">
@@ -145,47 +220,55 @@
       </el-tab-pane>
     </el-tabs>
 
-    <!-- 编辑奖品弹窗 -->
-    <el-dialog v-model="editPrizeVisible" title="编辑奖品" width="500px">
-      <el-form :model="editPrizeForm" label-width="100px">
+    <!-- 新增/编辑奖品弹窗 -->
+    <el-dialog v-model="prizeDialogVisible" :title="isEditing ? '编辑奖品' : '新增奖品'" width="500px">
+      <el-form :model="prizeForm" label-width="100px">
         <el-form-item label="奖品名称">
-          <el-input v-model="editPrizeForm.label" />
+          <el-input v-model="prizeForm.label" placeholder="如：🏆 28.88元现金大奖" />
         </el-form-item>
         <el-form-item label="类型">
-          <el-tag>{{ prizeTypeLabel(editPrizeForm.type) }}</el-tag>
+          <el-select v-model="prizeForm.type" style="width: 100%;" :disabled="isEditing">
+            <el-option label="现金兑换" value="CASH_REDEEM" />
+            <el-option label="折扣券" value="ORDER_DISCOUNT" />
+            <el-option label="谢谢惠顾" value="NONE" />
+          </el-select>
         </el-form-item>
-        <el-form-item v-if="editPrizeForm.value" label="价值(元)">
-          <el-input-number v-model="editPrizeForm.value" :min="0" :precision="2" />
+        <el-form-item v-if="prizeForm.type !== 'NONE'" label="价值(元)">
+          <el-input-number v-model="prizeForm.value" :min="0" :precision="2" />
         </el-form-item>
-        <el-form-item v-if="editPrizeForm.totalStock !== -1" label="总库存">
-          <el-input-number v-model="editPrizeForm.totalStock" :min="0" />
+        <el-form-item label="权重">
+          <el-input-number v-model="prizeForm.weight" :min="1" :max="100" />
+          <span style="margin-left: 8px; color: var(--el-text-color-secondary); font-size: 12px;">越高越容易中奖</span>
         </el-form-item>
-        <el-form-item v-if="editPrizeForm.totalStock !== -1" label="剩余库存">
-          <el-input-number v-model="editPrizeForm.remainStock" :min="0" />
+        <el-form-item v-if="prizeForm.totalStock !== -1" label="总库存">
+          <el-input-number v-model="prizeForm.totalStock" :min="0" />
+        </el-form-item>
+        <el-form-item v-if="prizeForm.totalStock !== -1" label="剩余库存">
+          <el-input-number v-model="prizeForm.remainStock" :min="0" />
         </el-form-item>
         <el-form-item label="图标">
-          <el-input v-model="editPrizeForm.icon" style="width:80px" />
+          <el-input v-model="prizeForm.icon" style="width:80px" />
         </el-form-item>
         <el-form-item label="颜色">
-          <el-input v-model="editPrizeForm.color" type="color" style="width:80px" />
+          <el-input v-model="prizeForm.color" type="color" style="width:80px" />
         </el-form-item>
         <el-form-item label="排序">
-          <el-input-number v-model="editPrizeForm.sortOrder" :min="0" />
+          <el-input-number v-model="prizeForm.sortOrder" :min="0" />
         </el-form-item>
         <el-form-item label="启用">
-          <el-switch v-model="editPrizeForm.isActive" />
+          <el-switch v-model="prizeForm.isActive" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editPrizeVisible = false">取消</el-button>
-        <el-button type="primary" :loading="editPrizeSaving" @click="savePrize">保存</el-button>
+        <el-button @click="prizeDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="prizeSaving" @click="savePrize">保存</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
 
@@ -197,12 +280,21 @@ const stats = ref({ totalSpins: 0, totalUsers: 0, redeemedCount: 0 })
 // 奖品
 const prizes = ref<any[]>([])
 const prizesLoading = ref(false)
-const editPrizeVisible = ref(false)
-const editPrizeSaving = ref(false)
+const prizeDialogVisible = ref(false)
+const prizeSaving = ref(false)
+const isEditing = ref(false)
 const editPrizeId = ref('')
-const editPrizeForm = reactive({
-  label: '', type: '', value: 0, totalStock: -1, remainStock: -1,
-  icon: '', color: '', sortOrder: 0, isActive: true,
+const prizeForm = reactive({
+  label: '',
+  type: 'ORDER_DISCOUNT' as string,
+  value: 0,
+  weight: 1,
+  totalStock: -1,
+  remainStock: -1,
+  icon: '🎯',
+  color: '#2D3748',
+  sortOrder: 0,
+  isActive: true,
 })
 
 // 记录
@@ -211,6 +303,15 @@ const resultsLoading = ref(false)
 const resultsTotal = ref(0)
 const resultsPage = ref(1)
 const resultsPageSize = 20
+
+// 发放次数
+const grantForm = reactive({ userId: '', amount: 1 })
+const grantLoading = ref(false)
+
+// 用户详情
+const searchUserId = ref('')
+const userDetail = ref<any>(null)
+const userDetailLoading = ref(false)
 
 // 浮窗
 const popupForm = reactive({
@@ -245,13 +346,27 @@ async function loadPrizes() {
   } finally { prizesLoading.value = false }
 }
 
+// 新增奖品
+function openAddPrize() {
+  isEditing.value = false
+  editPrizeId.value = ''
+  Object.assign(prizeForm, {
+    label: '', type: 'ORDER_DISCOUNT', value: 0, weight: 1,
+    totalStock: -1, remainStock: -1, icon: '🎯', color: '#2D3748',
+    sortOrder: prizes.value.length, isActive: true,
+  })
+  prizeDialogVisible.value = true
+}
+
 // 编辑奖品
 function openEditPrize(row: any) {
+  isEditing.value = true
   editPrizeId.value = row.id
-  Object.assign(editPrizeForm, {
+  Object.assign(prizeForm, {
     label: row.label,
     type: row.type,
     value: row.value ?? 0,
+    weight: row.weight ?? 1,
     totalStock: row.totalStock,
     remainStock: row.remainStock,
     icon: row.icon,
@@ -259,19 +374,45 @@ function openEditPrize(row: any) {
     sortOrder: row.sortOrder,
     isActive: row.isActive,
   })
-  editPrizeVisible.value = true
+  prizeDialogVisible.value = true
 }
 
+// 保存奖品（新增/编辑）
 async function savePrize() {
-  editPrizeSaving.value = true
+  if (!prizeForm.label.trim()) {
+    ElMessage.warning('请填写奖品名称')
+    return
+  }
+  prizeSaving.value = true
   try {
-    await api.updateWheelPrize(editPrizeId.value, editPrizeForm)
-    ElMessage.success('保存成功')
-    editPrizeVisible.value = false
+    if (isEditing.value) {
+      await api.updateWheelPrize(editPrizeId.value, prizeForm)
+      ElMessage.success('保存成功')
+    } else {
+      await api.createWheelPrize(prizeForm)
+      ElMessage.success('新增成功')
+    }
+    prizeDialogVisible.value = false
     loadPrizes()
   } catch (err: any) {
     ElMessage.error(err?.message ?? '保存失败')
-  } finally { editPrizeSaving.value = false }
+  } finally { prizeSaving.value = false }
+}
+
+// 删除奖品
+async function handleDeletePrize(row: any) {
+  await ElMessageBox.confirm(
+    `确认删除奖品「${row.label}」？此操作不可撤销。`,
+    '删除确认',
+    { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
+  )
+  try {
+    await api.deleteWheelPrize(row.id)
+    ElMessage.success('删除成功')
+    loadPrizes()
+  } catch (err: any) {
+    ElMessage.error(err?.message ?? '删除失败')
+  }
 }
 
 // 加载记录
@@ -301,6 +442,39 @@ async function handleRedeem(row: any) {
   }
 }
 
+// 发放额外抽奖次数
+async function handleGrantSpins() {
+  if (!grantForm.userId.trim()) {
+    ElMessage.warning('请输入用户ID')
+    return
+  }
+  grantLoading.value = true
+  try {
+    const res: any = await api.grantWheelSpins(grantForm.userId, grantForm.amount)
+    ElMessage.success(`已发放 ${grantForm.amount} 次给 ${res.data.nickname}，当前额外次数: ${res.data.extraSpins}`)
+    grantForm.userId = ''
+    grantForm.amount = 1
+  } catch (err: any) {
+    ElMessage.error(err?.message ?? '发放失败')
+  } finally { grantLoading.value = false }
+}
+
+// 查看用户详情
+async function loadUserDetail() {
+  if (!searchUserId.value.trim()) {
+    ElMessage.warning('请输入用户ID')
+    return
+  }
+  userDetailLoading.value = true
+  try {
+    const res: any = await api.getWheelUserDetail(searchUserId.value)
+    userDetail.value = res.data
+  } catch (err: any) {
+    ElMessage.error(err?.message ?? '查询失败')
+    userDetail.value = null
+  } finally { userDetailLoading.value = false }
+}
+
 // 加载浮窗配置
 async function loadPopup() {
   try {
@@ -321,7 +495,6 @@ async function savePopup() {
 }
 
 // 监听标签页切换加载数据
-import { watch } from 'vue'
 watch(activeTab, (tab) => {
   if (tab === 'results' && results.value.length === 0) loadResults()
   if (tab === 'popup') loadPopup()

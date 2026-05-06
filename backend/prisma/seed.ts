@@ -58,14 +58,14 @@ async function main() {
 
   // 转盘奖品配置
   const wheelPrizes = [
-    { id: 'prize-2888', label: '🏆 28.88元现金大奖', type: PrizeType.CASH_REDEEM, value: 28.88, totalStock: 1, remainStock: 1, color: '#FF6B6B', icon: '🏆', sortOrder: 1 },
-    { id: 'prize-none1', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 2 },
-    { id: 'prize-small', label: '📝 小作业9折券', type: PrizeType.ORDER_DISCOUNT, value: 0.9, totalStock: 20, remainStock: 20, color: '#4ECDC4', icon: '📝', sortOrder: 3 },
-    { id: 'prize-none2', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 4 },
-    { id: 'prize-final', label: '📚 期末85折券', type: PrizeType.ORDER_DISCOUNT, value: 0.85, totalStock: 5, remainStock: 5, color: '#45B7D1', icon: '📚', sortOrder: 5 },
-    { id: 'prize-none3', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 6 },
-    { id: 'prize-70', label: '🎟️ 7折券', type: PrizeType.ORDER_DISCOUNT, value: 0.7, totalStock: 10, remainStock: 10, color: '#F472B6', icon: '🎟️', sortOrder: 7 },
-    { id: 'prize-50', label: '🎁 五折券', type: PrizeType.ORDER_DISCOUNT, value: 0.5, totalStock: 3, remainStock: 3, color: '#A855F7', icon: '🎁', sortOrder: 8 },
+    { id: 'prize-2888', label: '🏆 28.88元现金大奖', type: PrizeType.CASH_REDEEM, value: 28.88, weight: 1, totalStock: 1, remainStock: 1, color: '#FF6B6B', icon: '🏆', sortOrder: 1 },
+    { id: 'prize-none1', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, weight: 4, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 2 },
+    { id: 'prize-small', label: '📝 小作业9折券', type: PrizeType.ORDER_DISCOUNT, value: 0.9, weight: 2, totalStock: 20, remainStock: 20, color: '#4ECDC4', icon: '📝', sortOrder: 3 },
+    { id: 'prize-none2', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, weight: 4, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 4 },
+    { id: 'prize-final', label: '📚 期末85折券', type: PrizeType.ORDER_DISCOUNT, value: 0.85, weight: 2, totalStock: 5, remainStock: 5, color: '#45B7D1', icon: '📚', sortOrder: 5 },
+    { id: 'prize-none3', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, weight: 4, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 6 },
+    { id: 'prize-70', label: '🎟️ 7折券', type: PrizeType.ORDER_DISCOUNT, value: 0.7, weight: 2, totalStock: 10, remainStock: 10, color: '#F472B6', icon: '🎟️', sortOrder: 7 },
+    { id: 'prize-50', label: '🎁 五折券', type: PrizeType.ORDER_DISCOUNT, value: 0.5, weight: 1, totalStock: 3, remainStock: 3, color: '#A855F7', icon: '🎁', sortOrder: 8 },
   ]
 
   for (const prize of wheelPrizes) {

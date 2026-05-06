@@ -11,33 +11,20 @@ function generateRedeemCode(): string {
   return 'JW-' + bytes.toString('hex').toUpperCase()
 }
 
-// 加权随机选择奖品（考虑库存）
+// 加权随机选择奖品（考虑库存和权重）
 function weightedRandom(prizes: any[]): any {
-  // 过滤有库存的奖品
   const available = prizes.filter(p => p.totalStock === -1 || p.remainStock > 0)
+  if (available.length === 0) return prizes[prizes.length - 1]
 
-  // 构建权重列表：NONE 类型权重较高（让谢谢惠顾更常见）
-  const weighted: { prize: any; weight: number }[] = []
-  for (const p of available) {
-    if (p.type === 'NONE') {
-      weighted.push({ prize: p, weight: 4 }) // 谢谢惠顾权重高
-    } else if (p.type === 'CASH_REDEEM') {
-      weighted.push({ prize: p, weight: 1 }) // 现金奖权重低
-    } else {
-      weighted.push({ prize: p, weight: 2 }) // 折扣券中等权重
-    }
-  }
-
-  const totalWeight = weighted.reduce((sum, w) => sum + w.weight, 0)
+  const totalWeight = available.reduce((sum, p) => sum + (p.weight || 1), 0)
   let random = Math.random() * totalWeight
 
-  for (const w of weighted) {
-    random -= w.weight
-    if (random <= 0) return w.prize
+  for (const p of available) {
+    random -= (p.weight || 1)
+    if (random <= 0) return p
   }
 
-  // fallback: 返回最后一个（谢谢惠顾）
-  return weighted[weighted.length - 1]?.prize ?? prizes[prizes.length - 1]
+  return available[available.length - 1]
 }
 
 export async function luckyWheelRoutes(fastify: FastifyInstance) {
@@ -46,7 +33,7 @@ export async function luckyWheelRoutes(fastify: FastifyInstance) {
   fastify.get('/lucky-wheel/info', { preHandler: [verifyJWT] }, async (request, reply) => {
     const { userId } = request.user as { userId: string }
 
-    const [prizes, spinResults, inviteCount] = await Promise.all([
+    const [prizes, spinResults, inviteCount, user] = await Promise.all([
       prisma.wheelPrize.findMany({
         where: { isActive: true },
         orderBy: { sortOrder: 'asc' },
@@ -58,9 +45,12 @@ export async function luckyWheelRoutes(fastify: FastifyInstance) {
         include: { prize: { select: { label: true, type: true } } },
       }),
       prisma.user.count({ where: { invitedById: userId } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { extraSpins: true } }),
     ])
 
-    const maxSpins = Math.min(1 + inviteCount, 3)
+    const baseSpins = Math.min(1 + inviteCount, 3)
+    const extraSpins = user?.extraSpins ?? 0
+    const maxSpins = baseSpins + extraSpins
     const usedSpins = spinResults.length
     const remainingSpins = Math.max(0, maxSpins - usedSpins)
 
@@ -76,6 +66,7 @@ export async function luckyWheelRoutes(fastify: FastifyInstance) {
       prizes,
       remainingSpins,
       maxSpins,
+      extraSpins,
       history,
     }))
   })
@@ -89,13 +80,16 @@ export async function luckyWheelRoutes(fastify: FastifyInstance) {
         // 1. 检查剩余次数
         const spinCount = await tx.spinResult.count({ where: { userId } })
         const inviteCount = await tx.user.count({ where: { invitedById: userId } })
-        const maxSpins = Math.min(1 + inviteCount, 3)
+        const user = await tx.user.findUnique({ where: { id: userId }, select: { extraSpins: true } })
+        const baseSpins = Math.min(1 + inviteCount, 3)
+        const extraSpins = user?.extraSpins ?? 0
+        const maxSpins = baseSpins + extraSpins
 
         if (spinCount >= maxSpins) {
           throw new Error('NO_SPINS_LEFT')
         }
 
-        // 2. 获取奖品列表
+        // 2. 获取奖品列表（含权重）
         const prizes = await tx.wheelPrize.findMany({
           where: { isActive: true },
           orderBy: { sortOrder: 'asc' },
@@ -119,7 +113,6 @@ export async function luckyWheelRoutes(fastify: FastifyInstance) {
         // 5. 生成兑换码（现金类奖品）
         let redeemCode: string | null = null
         if (winner.type === 'CASH_REDEEM') {
-          // 生成唯一兑换码
           for (let i = 0; i < 10; i++) {
             const code = generateRedeemCode()
             const exists = await tx.spinResult.findUnique({ where: { redeemCode: code } })

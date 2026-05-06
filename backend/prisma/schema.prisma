@@ -41,6 +41,7 @@ model User {
   redeemOrders  RedeemOrder[]
   coupons       Coupon[]
   productOrders ProductOrder[]
+  extraSpins    Int      @default(0)
   spinResults   SpinResult[]
 
   @@index([email])
@@ -550,6 +551,7 @@ model WheelPrize {
   label       String
   type        PrizeType
   value       Decimal? @db.Decimal(10, 2)
+  weight      Int      @default(1)
   totalStock  Int      @default(-1)
   remainStock Int      @default(-1)
   color       String   @default("#2D3748")
@@ -558,6 +560,7 @@ model WheelPrize {
   isActive    Boolean  @default(true)
 
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   spinResults SpinResult[]
 

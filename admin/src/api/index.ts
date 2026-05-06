@@ -138,10 +138,14 @@ export const api = {
 
   // 幸运转盘管理
   getWheelPrizes: () => http.get('/admin/wheel/prizes'),
+  createWheelPrize: (data: any) => http.post('/admin/wheel/prizes', data),
   updateWheelPrize: (id: string, data: any) => http.put(`/admin/wheel/prizes/${id}`, data),
+  deleteWheelPrize: (id: string) => http.delete(`/admin/wheel/prizes/${id}`),
   getWheelResults: (params?: Record<string, any>) => http.get('/admin/wheel/results', { params }),
   redeemWheelCode: (id: string) => http.post(`/admin/wheel/redeem/${id}`),
   getWheelStats: () => http.get('/admin/wheel/stats'),
+  grantWheelSpins: (userId: string, amount: number) => http.post('/admin/wheel/grant-spins', { userId, amount }),
+  getWheelUserDetail: (userId: string) => http.get(`/admin/wheel/user/${userId}`),
 
   // 活动浮窗配置
   getActivityPopup: () => http.get('/admin/activity-popup'),

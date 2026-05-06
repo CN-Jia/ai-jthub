@@ -15,17 +15,40 @@ export async function adminLuckyWheelRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse(prizes))
   })
 
+  // ── 新增奖品 ──────────────────────────────────────────────────
+  const createPrizeSchema = z.object({
+    label: z.string().min(1).max(50),
+    type: z.enum(['CASH_REDEEM', 'ORDER_DISCOUNT', 'NONE']),
+    value: z.number().min(0).optional().nullable(),
+    weight: z.number().int().min(1).max(100).default(1),
+    totalStock: z.number().int().min(-1).default(-1),
+    remainStock: z.number().int().min(-1).default(-1),
+    color: z.string().default('#2D3748'),
+    icon: z.string().default('🎯'),
+    sortOrder: z.number().int().default(0),
+    isActive: z.boolean().default(true),
+  })
+
+  fastify.post('/admin/wheel/prizes', { preHandler: [verifyAdmin] }, async (request, reply) => {
+    const parse = createPrizeSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, parse.error.errors[0]?.message ?? '参数错误'))
+
+    const prize = await prisma.wheelPrize.create({ data: parse.data })
+    return reply.code(201).send(successResponse(prize))
+  })
+
   // ── 修改奖品 ──────────────────────────────────────────────────
   const updatePrizeSchema = z.object({
     label: z.string().min(1).max(50).optional(),
     value: z.number().min(0).optional().nullable(),
+    weight: z.number().int().min(1).max(100).optional(),
     totalStock: z.number().int().min(-1).optional(),
     remainStock: z.number().int().min(-1).optional(),
     color: z.string().optional(),
     icon: z.string().optional(),
     sortOrder: z.number().int().optional(),
     isActive: z.boolean().optional(),
-  }).strip() // 忽略多余字段（如 type）
+  }).strip()
 
   fastify.put('/admin/wheel/prizes/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
@@ -34,6 +57,74 @@ export async function adminLuckyWheelRoutes(fastify: FastifyInstance) {
 
     const prize = await prisma.wheelPrize.update({ where: { id }, data: parse.data })
     return reply.send(successResponse(prize))
+  })
+
+  // ── 删除奖品 ──────────────────────────────────────────────────
+  fastify.delete('/admin/wheel/prizes/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+
+    const spinCount = await prisma.spinResult.count({ where: { prizeId: id } })
+    if (spinCount > 0) {
+      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, `该奖品已有 ${spinCount} 条抽奖记录，无法删除`))
+    }
+
+    await prisma.wheelPrize.delete({ where: { id } })
+    return reply.send(successResponse({ ok: true }))
+  })
+
+  // ── 发放额外抽奖次数 ──────────────────────────────────────────
+  const grantSpinsSchema = z.object({
+    userId: z.string().min(1),
+    amount: z.number().int().min(1).max(10),
+  })
+
+  fastify.post('/admin/wheel/grant-spins', { preHandler: [verifyAdmin] }, async (request, reply) => {
+    const parse = grantSpinsSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, parse.error.errors[0]?.message ?? '参数错误'))
+
+    const user = await prisma.user.findUnique({ where: { id: parse.data.userId } })
+    if (!user) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '用户不存在'))
+
+    const updated = await prisma.user.update({
+      where: { id: parse.data.userId },
+      data: { extraSpins: { increment: parse.data.amount } },
+      select: { id: true, nickname: true, extraSpins: true },
+    })
+
+    return reply.send(successResponse(updated))
+  })
+
+  // ── 查看用户抽奖详情 ──────────────────────────────────────────
+  fastify.get('/admin/wheel/user/:userId', { preHandler: [verifyAdmin] }, async (request, reply) => {
+    const { userId } = request.params as { userId: string }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, nickname: true, username: true, extraSpins: true },
+    })
+    if (!user) return reply.code(404).send(errorResponse(ERROR_CODES.NOT_FOUND, '用户不存在'))
+
+    const spinResults = await prisma.spinResult.findMany({
+      where: { userId },
+      orderBy: { spinRound: 'asc' },
+      include: { prize: { select: { label: true, type: true } } },
+    })
+
+    const inviteCount = await prisma.user.count({ where: { invitedById: userId } })
+
+    return reply.send(successResponse({
+      user,
+      inviteCount,
+      spinResults: spinResults.map(r => ({
+        id: r.id,
+        spinRound: r.spinRound,
+        prizeLabel: r.prize.label,
+        prizeType: r.prize.type,
+        redeemCode: r.redeemCode,
+        isRedeemed: r.isRedeemed,
+        createdAt: r.createdAt,
+      })),
+    }))
   })
 
   // ── 抽奖记录列表 ──────────────────────────────────────────────
@@ -104,7 +195,6 @@ export async function adminLuckyWheelRoutes(fastify: FastifyInstance) {
       prisma.spinResult.count({ where: { isRedeemed: true } }),
     ])
 
-    // 获取奖品详情
     const prizes = await prisma.wheelPrize.findMany({
       select: { id: true, label: true, type: true },
     })
@@ -144,7 +234,7 @@ export async function adminLuckyWheelRoutes(fastify: FastifyInstance) {
     showCondition: z.enum(['all', 'new_user', 'has_spins']).optional(),
   }).transform(data => ({
     ...data,
-    imageUrl: data.imageUrl || null, // 空字符串转 null
+    imageUrl: data.imageUrl || null,
   }))
 
   fastify.put('/admin/activity-popup', { preHandler: [verifyAdmin] }, async (request, reply) => {
