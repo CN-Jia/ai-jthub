@@ -12,6 +12,11 @@
             <div class="profile-username">@{{ info.username }}</div>
           </div>
         </div>
+        <div class="uid-bar" @click="copyUid">
+          <span class="uid-label">用户ID</span>
+          <span class="uid-value">{{ info.id }}</span>
+          <span class="uid-copy">复制</span>
+        </div>
         <hr class="divider" />
         <form @submit.prevent="saveProfile" class="form">
           <div class="form-group">
@@ -98,7 +103,7 @@ import { useUserStore } from '../../store/user'
 import { api } from '../../api'
 
 const store = useUserStore()
-const info = computed(() => store.userInfo ?? { nickname: '', username: '', email: '', emailVerified: false })
+const info = computed(() => store.userInfo ?? { id: '', nickname: '', username: '', email: '', emailVerified: false })
 const avatarChar = computed(() => info.value.nickname ? info.value.nickname[0] : 'U')
 
 const form = ref({ nickname: '', phone: '', wechatId: '', grade: '' })
@@ -118,6 +123,12 @@ const verifyMsgType = ref('success')
 const showVerifyCode = ref(false)
 const verifySubmitting = ref(false)
 let cdTimer: ReturnType<typeof setInterval>
+
+function copyUid() {
+  if (info.value.id) {
+    navigator.clipboard.writeText(info.value.id).then(() => alert('✅ 用户ID已复制'))
+  }
+}
 
 onMounted(async () => {
   try {
@@ -207,6 +218,16 @@ async function doVerifyCode() {
 .avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .profile-name { font-size: 18px; font-weight: 700; color: var(--text-1); }
 .profile-username { font-size: 13px; color: var(--text-3); }
+.uid-bar {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--primary-light); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.uid-bar:hover { border-color: var(--primary); }
+.uid-label { font-size: 12px; color: var(--text-3); }
+.uid-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text-1); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uid-copy { font-size: 11px; color: var(--primary); background: rgba(22,119,255,0.1); padding: 2px 8px; border-radius: 4px; }
 .form { display: flex; flex-direction: column; gap: 14px; }
 .info-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text-2); }
 .info-row:last-child { border-bottom: none; }

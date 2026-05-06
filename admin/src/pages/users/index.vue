@@ -12,6 +12,11 @@
       </div>
 
       <el-table :data="list" v-loading="loading" style="width:100%">
+        <el-table-column label="用户ID" width="200" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-text size="small" class="uid-text" @click="copyId(row.id)" style="cursor:pointer;font-family:monospace;">{{ row.id }}</el-text>
+          </template>
+        </el-table-column>
         <el-table-column label="用户名" prop="username" width="130" />
         <el-table-column label="昵称" prop="nickname" width="120" />
         <el-table-column label="邮箱" prop="email" min-width="180" show-overflow-tooltip />
@@ -60,6 +65,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+function copyId(id: string) {
+  navigator.clipboard.writeText(id).then(() => ElMessage.success('已复制用户ID'))
+}
 import { api } from '../../api'
 import { format } from 'date-fns'
 

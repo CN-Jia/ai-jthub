@@ -170,6 +170,7 @@ async function loadCoupons() {
 onMounted(() => {
   loadBalance()
   loadLogs()
+  loadCoupons()
 })
 </script>
 
