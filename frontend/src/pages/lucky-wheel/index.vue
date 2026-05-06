@@ -19,35 +19,44 @@
       <p class="wheel-subtitle">邀请好友越多，机会越多！</p>
 
       <!-- ═══ 横向滚轮区域 ═══ -->
-      <div class="slot-wrapper">
+      <div class="slot-wrapper" :class="{ spinning: isSpinning }">
         <div class="slot-mask">
-          <div class="slot-pointer-left"></div>
-          <div class="slot-pointer-right"></div>
+          <div class="slot-fade-left"></div>
+          <div class="slot-fade-right"></div>
+
           <div class="slot-track" ref="trackRef">
             <div
               v-for="(item, i) in slotItems"
               :key="i"
               class="slot-item"
-              :class="{ 'is-cash': item.type === 'CASH_REDEEM', 'is-discount': item.type === 'ORDER_DISCOUNT', 'is-none': item.type === 'NONE' }"
-              :style="{ '--item-color': item.color || '#00d4ff' }"
+              :class="{
+                'is-cash': item.type === 'CASH_REDEEM',
+                'is-discount': item.type === 'ORDER_DISCOUNT',
+                'is-none': item.type === 'NONE'
+              }"
             >
+              <div class="slot-item-glow"></div>
               <div class="slot-item-inner">
                 <span class="slot-icon">{{ item.icon }}</span>
-                <span class="slot-label">{{ item.label.replace(/^[^\s]+\s/, '') }}</span>
+                <span class="slot-label">{{ shortLabel(item.label) }}</span>
+                <span v-if="item.type === 'CASH_REDEEM'" class="slot-tag cash">现金</span>
+                <span v-else-if="item.type === 'ORDER_DISCOUNT'" class="slot-tag discount">折扣</span>
               </div>
             </div>
           </div>
-          <div class="slot-center-marker">
-            <div class="marker-arrow">▼</div>
-          </div>
-        </div>
 
-        <div class="slot-glow"></div>
+          <!-- 中心指示线 -->
+          <div class="slot-center-line">
+            <div class="center-line-top"></div>
+            <div class="center-line-bottom"></div>
+          </div>
+          <div class="slot-center-arrow">▼</div>
+        </div>
       </div>
 
       <button class="spin-btn" @click="spin" :disabled="isSpinning || remainingSpins <= 0">
-        <span class="spin-btn-text">{{ isSpinning ? '抽奖中...' : '开始抽奖' }}</span>
-        <span class="spin-btn-glow" v-if="!isSpinning && remainingSpins > 0"></span>
+        <span class="spin-btn-shine" v-if="!isSpinning && remainingSpins > 0"></span>
+        <span class="spin-btn-text">{{ isSpinning ? '🎰 抽奖中...' : '🎯 开始抽奖' }}</span>
       </button>
 
       <p class="spin-hint" v-if="remainingSpins <= 0">抽奖次数已用完，邀请好友可获得更多机会</p>
@@ -111,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { api } from '../../api'
 
 const prizes = ref<any[]>([])
@@ -124,23 +133,47 @@ const resultPrize = ref<any>(null)
 const redeemCode = ref('')
 const trackRef = ref<HTMLElement | null>(null)
 
-const ITEM_WIDTH = 120
-const ITEM_GAP = 12
-const ITEM_FULL = ITEM_WIDTH + ITEM_GAP
-const REPEAT = 8
-const VISIBLE_COUNT = 5
+const ITEM_W = 110
+const GAP = 10
+const FULL = ITEM_W + GAP
+const REPEAT = 10
 
-// 重复奖品用于滚动
+let marqueeRaf = 0
+let marqueePos = 0
+const MARQUEE_SPEED = 0.5 // px/frame
+
+function shortLabel(label: string) {
+  return label.replace(/^[^\s]+\s/, '')
+}
+
 const slotItems = computed(() => {
   if (!prizes.value.length) return []
-  const items: any[] = []
+  const arr: any[] = []
   for (let r = 0; r < REPEAT; r++) {
-    for (const p of prizes.value) {
-      items.push(p)
-    }
+    for (const p of prizes.value) arr.push(p)
   }
-  return items
+  return arr
 })
+
+// 空闲时持续滚动
+function startMarquee() {
+  const track = trackRef.value
+  if (!track || isSpinning.value) return
+  const oneSet = prizes.value.length * FULL
+
+  function tick() {
+    marqueePos += MARQUEE_SPEED
+    if (marqueePos >= oneSet) marqueePos -= oneSet
+    track!.style.transition = 'none'
+    track!.style.transform = `translateX(-${marqueePos}px)`
+    marqueeRaf = requestAnimationFrame(tick)
+  }
+  marqueeRaf = requestAnimationFrame(tick)
+}
+
+function stopMarquee() {
+  cancelAnimationFrame(marqueeRaf)
+}
 
 async function loadInfo() {
   try {
@@ -154,42 +187,52 @@ async function loadInfo() {
 function spin() {
   if (isSpinning.value || remainingSpins.value <= 0) return
   isSpinning.value = true
+  stopMarquee()
 
-  // 先启动快速滚动动画
   const track = trackRef.value
   if (!track) { isSpinning.value = false; return }
 
-  // 快速滚动到中奖位置的动画
   api.spinLuckyWheel().then((res: any) => {
     const { prizeIndex, prize, won, redeemCode: code, remainingSpins: remaining } = res.data
 
-    // 计算目标位置：最后一轮的中奖奖品居中
-    const wrapperWidth = track.parentElement?.clientWidth || 500
-    const centerOffset = wrapperWidth / 2 - ITEM_WIDTH / 2
-    const targetIndex = (REPEAT - 2) * prizes.value.length + prizeIndex
-    const targetPos = targetIndex * ITEM_FULL - centerOffset
+    const wrapperW = track.parentElement?.clientWidth || 500
+    const centerOff = wrapperW / 2 - ITEM_W / 2
 
-    // 设置起始位置（快速滚动几轮）
-    const startPos = prizes.value.length * ITEM_FULL * 2
+    // 目标：倒数第二轮的中奖奖品居中
+    const targetIdx = (REPEAT - 2) * prizes.value.length + prizeIndex
+    const targetPos = targetIdx * FULL - centerOff
+
+    // 快速滚动 3 轮后到达目标
+    const fastStart = prizes.value.length * FULL * 3 + marqueePos
     track.style.transition = 'none'
-    track.style.transform = `translateX(-${startPos}px)`
+    track.style.transform = `translateX(-${fastStart}px)`
 
     requestAnimationFrame(() => {
-      track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.85, 0.2, 1)'
+      track.style.transition = 'transform 4s cubic-bezier(0.12, 0.7, 0.15, 1)'
       track.style.transform = `translateX(-${targetPos}px)`
     })
 
     setTimeout(() => {
+      // 停止闪光效果
+      track.classList.add('flash-stop')
+      setTimeout(() => track.classList.remove('flash-stop'), 600)
+
       isSpinning.value = false
       resultWon.value = won
       resultPrize.value = prize
       redeemCode.value = code || ''
       remainingSpins.value = remaining
-      showResult.value = true
-      loadInfo()
-    }, 3700)
+
+      setTimeout(() => {
+        showResult.value = true
+        loadInfo()
+        marqueePos = targetPos % (prizes.value.length * FULL)
+        startMarquee()
+      }, 800)
+    }, 4200)
   }).catch((err: any) => {
     isSpinning.value = false
+    startMarquee()
     alert(err?.message ?? '抽奖失败')
   })
 }
@@ -198,7 +241,12 @@ function copyCode() {
   if (redeemCode.value) navigator.clipboard.writeText(redeemCode.value).then(() => alert('✅ 已复制'))
 }
 
-onMounted(loadInfo)
+onMounted(() => {
+  loadInfo().then(() => {
+    setTimeout(startMarquee, 300)
+  })
+})
+onUnmounted(stopMarquee)
 </script>
 
 <style scoped>
@@ -222,33 +270,50 @@ onMounted(loadInfo)
 .wheel-subtitle { text-align: center; font-size: 14px; color: var(--text-3); margin-bottom: 32px; }
 
 /* ═══ 横向滚轮 ═══ */
-.slot-wrapper { position: relative; margin: 0 auto 32px; max-width: 100%; }
+.slot-wrapper { position: relative; margin: 0 auto 32px; }
 
 .slot-mask {
   position: relative;
   overflow: hidden;
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(0,212,255,0.03) 0%, rgba(13,17,23,0.8) 50%, rgba(0,212,255,0.03) 100%);
-  border: 1px solid rgba(0,212,255,0.15);
-  padding: 16px 0;
+  background: linear-gradient(180deg, rgba(0,212,255,0.04) 0%, rgba(13,17,23,0.9) 50%, rgba(0,212,255,0.04) 100%);
+  border: 1px solid rgba(0,212,255,0.2);
+  padding: 20px 0;
+  box-shadow: 0 0 40px rgba(0,212,255,0.06), inset 0 0 40px rgba(0,0,0,0.3);
 }
 
 .slot-track {
   display: flex;
-  gap: 12px;
-  padding: 0 calc(50% - 60px);
+  gap: 10px;
+  padding: 0 calc(50% - 55px);
   will-change: transform;
+}
+.slot-track.flash-stop {
+  animation: flash-stop 0.6s ease-out;
+}
+@keyframes flash-stop {
+  0% { filter: brightness(1.8) drop-shadow(0 0 20px rgba(0,212,255,0.8)); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 10px rgba(0,212,255,0.4)); }
+  100% { filter: brightness(1); }
 }
 
 .slot-item {
   flex-shrink: 0;
-  width: 120px;
+  width: 110px;
   height: 100px;
   border-radius: 14px;
   position: relative;
   overflow: hidden;
-  cursor: default;
-  transition: transform 0.2s;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.slot-item-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
 }
 
 .slot-item-inner {
@@ -258,8 +323,8 @@ onMounted(loadInfo)
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 12px 8px;
+  gap: 4px;
+  padding: 10px 6px;
   border-radius: 14px;
   position: relative;
   z-index: 1;
@@ -267,34 +332,35 @@ onMounted(loadInfo)
 
 /* 类型样式 */
 .slot-item.is-cash {
-  background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(255,107,107,0.05));
-  border: 1.5px solid rgba(255,107,107,0.4);
-  box-shadow: 0 0 20px rgba(255,107,107,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+  background: linear-gradient(135deg, rgba(255,107,107,0.18), rgba(255,107,107,0.05));
+  border: 1.5px solid rgba(255,107,107,0.45);
+  box-shadow: 0 0 16px rgba(255,107,107,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.slot-item.is-cash .slot-icon { filter: drop-shadow(0 0 8px rgba(255,107,107,0.5)); }
+.slot-item.is-cash .slot-item-glow { background: radial-gradient(circle at 50% 80%, rgba(255,107,107,0.15) 0%, transparent 70%); }
+.slot-item.is-cash .slot-icon { filter: drop-shadow(0 0 6px rgba(255,107,107,0.5)); }
 
 .slot-item.is-discount {
-  background: linear-gradient(135deg, rgba(0,212,255,0.12), rgba(168,85,247,0.08));
+  background: linear-gradient(135deg, rgba(0,212,255,0.14), rgba(168,85,247,0.08));
   border: 1.5px solid rgba(0,212,255,0.35);
-  box-shadow: 0 0 20px rgba(0,212,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: 0 0 16px rgba(0,212,255,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.slot-item.is-discount .slot-icon { filter: drop-shadow(0 0 8px rgba(0,212,255,0.5)); }
+.slot-item.is-discount .slot-item-glow { background: radial-gradient(circle at 50% 80%, rgba(0,212,255,0.15) 0%, transparent 70%); }
+.slot-item.is-discount .slot-icon { filter: drop-shadow(0 0 6px rgba(0,212,255,0.5)); }
 
 .slot-item.is-none {
   background: linear-gradient(135deg, rgba(100,116,139,0.12), rgba(100,116,139,0.04));
-  border: 1.5px solid rgba(100,116,139,0.25);
+  border: 1.5px solid rgba(100,116,139,0.2);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
 .slot-icon {
-  font-size: 32px;
+  font-size: 30px;
   line-height: 1;
   transition: transform 0.2s;
 }
-.slot-item:hover .slot-icon { transform: scale(1.15); }
 
 .slot-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-1);
   text-align: center;
@@ -305,68 +371,80 @@ onMounted(loadInfo)
   white-space: nowrap;
 }
 
-/* 中心指示器 */
-.slot-center-marker {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  z-index: 10;
+.slot-tag {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
-.marker-arrow {
-  position: absolute;
-  top: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 18px;
-  color: #00d4ff;
-  text-shadow: 0 0 10px rgba(0,212,255,0.8);
-  animation: arrow-bounce 1s ease-in-out infinite;
-}
-@keyframes arrow-bounce {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(4px); }
-}
+.slot-tag.cash { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+.slot-tag.discount { background: rgba(0,212,255,0.15); color: #00d4ff; }
 
-/* 左右渐变遮罩 */
-.slot-pointer-left,
-.slot-pointer-right {
+/* 中心指示器 */
+.slot-center-line {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  z-index: 10;
+  pointer-events: none;
+}
+.center-line-top, .center-line-bottom {
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(180deg, #00d4ff 0%, rgba(0,212,255,0.1) 100%);
+}
+.center-line-bottom {
+  background: linear-gradient(0deg, #00d4ff 0%, rgba(0,212,255,0.1) 100%);
+}
+
+.slot-center-arrow {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  color: #00d4ff;
+  text-shadow: 0 0 12px rgba(0,212,255,0.9);
+  z-index: 11;
+  animation: arrow-pulse 1s ease-in-out infinite;
+}
+@keyframes arrow-pulse {
+  0%, 100% { opacity: 0.6; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 1; transform: translateX(-50%) translateY(3px); }
+}
+
+/* 左右渐变遮罩 */
+.slot-fade-left, .slot-fade-right {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 70px;
   z-index: 5;
   pointer-events: none;
 }
-.slot-pointer-left {
-  left: 0;
-  background: linear-gradient(90deg, var(--bg) 0%, transparent 100%);
-}
-.slot-pointer-right {
-  right: 0;
-  background: linear-gradient(270deg, var(--bg) 0%, transparent 100%);
-}
+.slot-fade-left { left: 0; background: linear-gradient(90deg, rgba(13,17,23,0.95) 0%, transparent 100%); }
+.slot-fade-right { right: 0; background: linear-gradient(270deg, rgba(13,17,23,0.95) 0%, transparent 100%); }
 
-.slot-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
+/* 抖动效果 */
+.slot-wrapper.spinning .slot-mask {
+  animation: slot-shake 0.08s linear infinite;
+}
+@keyframes slot-shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-1px); }
+  75% { transform: translateX(1px); }
+  100% { transform: translateX(0); }
 }
 
 /* ═══ 按钮 ═══ */
 .spin-btn {
   display: block;
   margin: 0 auto 16px;
-  padding: 16px 48px;
+  padding: 16px 52px;
   border-radius: 16px;
   border: 2px solid #00d4ff;
   background: linear-gradient(135deg, #0d1117 0%, #16213e 100%);
@@ -377,20 +455,25 @@ onMounted(loadInfo)
   box-shadow: 0 0 20px rgba(0,212,255,0.25), inset 0 0 20px rgba(0,212,255,0.08);
 }
 .spin-btn:hover:not(:disabled) {
-  box-shadow: 0 0 35px rgba(0,212,255,0.45), inset 0 0 30px rgba(0,212,255,0.15);
+  box-shadow: 0 0 40px rgba(0,212,255,0.5), inset 0 0 30px rgba(0,212,255,0.15);
   transform: translateY(-2px);
 }
-.spin-btn:active:not(:disabled) { transform: translateY(0); }
-.spin-btn:disabled { opacity: 0.45; cursor: not-allowed; border-color: rgba(0,212,255,0.3); }
-.spin-btn-text { font-size: 18px; font-weight: 900; color: #00d4ff; letter-spacing: 4px; text-shadow: 0 0 12px rgba(0,212,255,0.5); position: relative; z-index: 1; }
-.spin-btn-glow {
-  position: absolute; inset: -2px; border-radius: 16px;
-  border: 2px solid rgba(0,212,255,0.3);
-  animation: btn-pulse 2s ease-in-out infinite;
+.spin-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+.spin-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: rgba(0,212,255,0.2); }
+.spin-btn-text { font-size: 18px; font-weight: 900; color: #00d4ff; letter-spacing: 3px; text-shadow: 0 0 14px rgba(0,212,255,0.5); position: relative; z-index: 1; }
+
+.spin-btn-shine {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent);
+  animation: btn-shine 2.5s ease-in-out infinite;
 }
-@keyframes btn-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.02); }
+@keyframes btn-shine {
+  0% { left: -100%; }
+  50% { left: 140%; }
+  100% { left: 140%; }
 }
 
 .spin-hint { text-align: center; font-size: 13px; color: var(--text-3); margin-bottom: 32px; }
@@ -451,10 +534,10 @@ onMounted(loadInfo)
 .rule-item strong { color: #00d4ff; }
 
 @media (max-width: 480px) {
-  .slot-item { width: 100px; height: 88px; }
-  .slot-icon { font-size: 28px; }
-  .slot-label { font-size: 11px; }
-  .slot-track { gap: 10px; padding: 0 calc(50% - 50px); }
+  .slot-item { width: 90px; height: 84px; }
+  .slot-icon { font-size: 26px; }
+  .slot-label { font-size: 10px; }
+  .slot-track { gap: 8px; padding: 0 calc(50% - 45px); }
   .wheel-title { font-size: 24px; }
   .spin-btn { padding: 14px 36px; }
   .spin-btn-text { font-size: 16px; letter-spacing: 2px; }
