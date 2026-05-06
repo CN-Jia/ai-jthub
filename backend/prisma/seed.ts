@@ -64,8 +64,8 @@ async function main() {
     { id: 'prize-none2', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 4 },
     { id: 'prize-final', label: '📚 期末85折券', type: PrizeType.ORDER_DISCOUNT, value: 0.85, totalStock: 5, remainStock: 5, color: '#45B7D1', icon: '📚', sortOrder: 5 },
     { id: 'prize-none3', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 6 },
-    { id: 'prize-none4', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 7 },
-    { id: 'prize-none5', label: '🎯 谢谢惠顾', type: PrizeType.NONE, value: null, totalStock: -1, remainStock: -1, color: '#2D3748', icon: '🎯', sortOrder: 8 },
+    { id: 'prize-70', label: '🎟️ 7折券', type: PrizeType.ORDER_DISCOUNT, value: 0.7, totalStock: 10, remainStock: 10, color: '#F472B6', icon: '🎟️', sortOrder: 7 },
+    { id: 'prize-50', label: '🎁 五折券', type: PrizeType.ORDER_DISCOUNT, value: 0.5, totalStock: 3, remainStock: 3, color: '#A855F7', icon: '🎁', sortOrder: 8 },
   ]
 
   for (const prize of wheelPrizes) {
