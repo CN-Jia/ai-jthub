@@ -140,9 +140,12 @@ export async function adminLuckyWheelRoutes(fastify: FastifyInstance) {
     description: z.string().max(500).optional(),
     buttonText: z.string().max(50).optional(),
     linkUrl: z.string().max(200).optional(),
-    imageUrl: z.string().url().optional().nullable(),
+    imageUrl: z.string().url().optional().nullable().or(z.literal('')),
     showCondition: z.enum(['all', 'new_user', 'has_spins']).optional(),
-  })
+  }).transform(data => ({
+    ...data,
+    imageUrl: data.imageUrl || null, // 空字符串转 null
+  }))
 
   fastify.put('/admin/activity-popup', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const parse = updatePopupSchema.safeParse(request.body)
