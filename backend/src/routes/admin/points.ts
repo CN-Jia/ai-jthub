@@ -183,9 +183,12 @@ export async function adminPointsRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({ total, list }))
   })
 
+  const approveSchema = z.object({ note: z.string().max(500).optional() })
+
   fastify.post('/admin/redeem/orders/:id/approve', { preHandler: verifyAdmin }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { note } = (request.body as any) ?? {}
+    const parse = approveSchema.safeParse(request.body ?? {})
+    const note = parse.success ? parse.data.note : undefined
 
     const order = await prisma.redeemOrder.findUnique({
       where: { id },

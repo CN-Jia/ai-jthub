@@ -7,9 +7,10 @@ import { verifyAdmin } from '../../middlewares/auth.middleware.js'
 export async function adminPostRoutes(fastify: FastifyInstance) {
 
   fastify.get('/admin/posts', { preHandler: [verifyAdmin] }, async (request, reply) => {
-    const { page = '1', pageSize = '20', status } = request.query as Record<string, string>
+    const { page = '1', pageSize = '20', status, board } = request.query as Record<string, string>
     const where: any = {}
     if (status) where.status = status
+    if (board) where.board = board
 
     const [list, total] = await Promise.all([
       prisma.post.findMany({
@@ -34,6 +35,7 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
       content: z.string().min(1),
       cover: z.string().url().optional(),
       isPinned: z.boolean().optional().default(false),
+      board: z.enum(['announcement', 'service', 'faq', 'exchange']).optional().default('exchange'),
     })
     const parse = schema.safeParse(request.body)
     if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '参数错误'))
@@ -51,6 +53,7 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
       summary: z.string().max(200).optional(),
       content: z.string().min(1).optional(),
       cover: z.string().optional(),
+      board: z.enum(['announcement', 'service', 'faq', 'exchange']).optional(),
     })
     const parse = schema.safeParse(request.body)
     if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '参数错误'))
@@ -59,13 +62,13 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse(post))
   })
 
+  const updateStatusSchema = z.object({ status: z.enum(['APPROVED', 'REJECTED']) })
+
   fastify.patch('/admin/posts/:id/status', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { status } = request.body as { status: 'APPROVED' | 'REJECTED' }
-    if (!['APPROVED', 'REJECTED'].includes(status)) {
-      return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '状态值无效'))
-    }
-    const post = await prisma.post.update({ where: { id }, data: { status } })
+    const parse = updateStatusSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '状态值无效'))
+    const post = await prisma.post.update({ where: { id }, data: { status: parse.data.status } })
     return reply.send(successResponse(post))
   })
 
@@ -87,10 +90,13 @@ export async function adminPostRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({ message: '已删除' }))
   })
 
+  const updateCommentSchema = z.object({ isHidden: z.boolean() })
+
   fastify.patch('/admin/comments/:id', { preHandler: [verifyAdmin] }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const { isHidden } = request.body as { isHidden: boolean }
-    const comment = await prisma.comment.update({ where: { id }, data: { isHidden } })
+    const parse = updateCommentSchema.safeParse(request.body)
+    if (!parse.success) return reply.code(400).send(errorResponse(ERROR_CODES.VALIDATION_ERROR, '参数错误'))
+    const comment = await prisma.comment.update({ where: { id }, data: { isHidden: parse.data.isHidden } })
     return reply.send(successResponse(comment))
   })
 

@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { PointEventType } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import { verifyJWT } from '../middlewares/auth.middleware.js'
 import { successResponse, errorResponse, ERROR_CODES } from '../utils/response.js'
@@ -69,7 +70,7 @@ export async function pointsRoutes(fastify: FastifyInstance) {
     return reply.send(successResponse({
       totalPoints: balance?.totalPoints ?? 0,
       frozenPoints: balance?.frozenPoints ?? 0,
-      availablePoints: (balance?.totalPoints ?? 0),
+      availablePoints: (balance?.totalPoints ?? 0) - (balance?.frozenPoints ?? 0),
       lifetimeEarned: balance?.lifetimeEarned ?? 0,
     }))
   })
