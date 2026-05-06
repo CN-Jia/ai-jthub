@@ -4,7 +4,7 @@ import { PointEventType } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import { verifyJWT } from '../middlewares/auth.middleware.js'
 import { successResponse, errorResponse, ERROR_CODES } from '../utils/response.js'
-import { freezePoints } from '../services/points.service.js'
+import { freezePoints, deductFrozen } from '../services/points.service.js'
 
 export async function pointsRoutes(fastify: FastifyInstance) {
 
@@ -144,6 +144,29 @@ export async function pointsRoutes(fastify: FastifyInstance) {
 
     await freezePoints(userId, item.pointsCost, redeemOrder.id)
 
+    // 自动审批：立即扣减冻结积分
+    await deductFrozen(userId, item.pointsCost, redeemOrder.id)
+
+    // 折扣券类型：生成优惠码
+    if (item.type === 'COUPON' && item.discountAmt) {
+      const crypto = await import('node:crypto')
+      let code = ''
+      for (let i = 0; i < 10; i++) {
+        code = 'JT' + crypto.randomBytes(3).toString('hex').toUpperCase()
+        const exists = await prisma.coupon.findUnique({ where: { code } })
+        if (!exists) break
+      }
+      await prisma.coupon.create({
+        data: {
+          code,
+          userId,
+          redeemOrderId: redeemOrder.id,
+          discountAmt: item.discountAmt,
+          expiresAt,
+        },
+      })
+    }
+
     // 扣减库存（有限库存）
     if (item.stock > 0) {
       await prisma.shopItem.update({ where: { id: shopItemId }, data: { stock: { decrement: 1 } } })
@@ -153,7 +176,7 @@ export async function pointsRoutes(fastify: FastifyInstance) {
       redeemOrderId: redeemOrder.id,
       status: 'COMPLETED',
       expiresAt,
-      frozenPoints: item.pointsCost,
+      pointsCost: item.pointsCost,
       message: '兑换成功！请在有效期内使用',
     }))
   })
