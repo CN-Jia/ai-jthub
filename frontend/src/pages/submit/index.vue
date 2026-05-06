@@ -52,6 +52,32 @@
             <label>联系微信号 <span class="req">*</span></label>
             <input v-model="form.contactWechat" class="input" placeholder="管理员将通过此微信与您联系" />
           </div>
+
+          <!-- 服务套餐选择 -->
+          <div class="field" v-if="availableServices.length > 0">
+            <label>🎓 使用服务套餐 <span class="opt">（可选）</span></label>
+            <select v-model="form.redeemItemId" class="input">
+              <option value="">不使用服务套餐</option>
+              <option v-for="s in availableServices" :key="s.id" :value="s.id">
+                {{ s.name }}
+                <template v-if="s.discountAmt">（抵扣 ¥{{ s.discountAmt }}）</template>
+                · {{ formatDate(s.expiresAt) }}到期
+              </option>
+            </select>
+            <p class="field-hint">使用积分兑换的服务套餐可抵扣订单金额</p>
+          </div>
+
+          <!-- 优惠券选择 -->
+          <div class="field" v-if="availableCoupons.length > 0">
+            <label>🎟️ 使用优惠券 <span class="opt">（可选）</span></label>
+            <select v-model="form.couponId" class="input">
+              <option value="">不使用优惠券</option>
+              <option v-for="c in availableCoupons" :key="c.id" :value="c.id">
+                {{ c.code }} · 面值 ¥{{ c.discountAmt }} · {{ formatDate(c.expiresAt) }}到期
+              </option>
+            </select>
+            <p class="field-hint">选择优惠券可在报价时自动抵扣</p>
+          </div>
         </div>
 
         <div class="notice-bar">
@@ -128,16 +154,44 @@ import { api } from '../../api'
 const router = useRouter()
 const route = useRoute()
 const orderTypes = ref<any[]>([])
+const availableServices = ref<any[]>([])
+const availableCoupons = ref<any[]>([])
 const today = new Date().toISOString().slice(0, 10)
 const submitting = ref(false)
-const form = reactive({ courseName: '', orderTypeId: '', grade: '', deadline: '', contactWechat: '' })
+const form = reactive({
+  courseName: '',
+  orderTypeId: '',
+  grade: '',
+  deadline: '',
+  contactWechat: '',
+  redeemItemId: '',
+  couponId: '',
+})
 const selectedType = computed(() => orderTypes.value.find(t => t.id === form.orderTypeId) ?? null)
 const adminWechat = ref('Jt--04')
 
+function formatDate(d: string) {
+  if (!d) return ''
+  return new Date(d).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+}
+
 onMounted(async () => {
-  const [typesRes, configRes]: any[] = await Promise.all([api.getOrderTypes(), api.getConfig()])
+  const [typesRes, configRes, servicesRes, couponsRes]: any[] = await Promise.all([
+    api.getOrderTypes(),
+    api.getConfig(),
+    api.getAvailableRedeems().catch(() => ({ data: [] })),
+    api.getMyCoupons().catch(() => ({ data: { list: [] } })),
+  ])
   orderTypes.value = typesRes.data ?? []
   if (configRes.data?.adminWechatId) adminWechat.value = configRes.data.adminWechatId
+
+  // 过滤出可用的服务套餐
+  const allRedeems = servicesRes.data ?? []
+  availableServices.value = allRedeems.filter((r: any) => r.type === 'SERVICE')
+
+  // 优惠券
+  availableCoupons.value = couponsRes.data?.list ?? []
+
   // 从首页价格行跳转时预选类型
   const preTypeId = route.query.typeId as string
   if (preTypeId && orderTypes.value.some(t => t.id === preTypeId)) {
@@ -157,11 +211,18 @@ async function doSubmit() {
   if (!form.contactWechat.trim()) return alert('请填写联系微信号')
   submitting.value = true
   try {
-    const res: any = await api.createOrder({
-      ...form,
+    const payload: any = {
+      courseName: form.courseName,
+      orderTypeId: form.orderTypeId,
+      grade: form.grade,
       deadline: new Date(form.deadline + 'T23:59:59Z').toISOString(),
+      contactWechat: form.contactWechat,
       source: 'PC',
-    })
+    }
+    if (form.redeemItemId) payload.redeemItemId = form.redeemItemId
+    if (form.couponId) payload.couponId = form.couponId
+
+    const res: any = await api.createOrder(payload)
     router.push(`/result?orderNo=${res.data.orderNo}&adminWechat=${res.data.adminWechatId ?? 'Jt--04'}`)
   } catch (e: any) {
     alert(e.message ?? '提交失败，请重试')
@@ -188,6 +249,7 @@ async function doSubmit() {
 .field { display: flex; flex-direction: column; gap: 8px; }
 .field label { font-size: 13px; font-weight: 600; color: var(--text-2); }
 .req { color: var(--danger); }
+.opt { font-weight: 400; color: var(--text-3); font-size: 12px; }
 .input {
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   padding: 10px 14px; font-size: 15px; color: var(--text-1);
@@ -199,6 +261,7 @@ async function doSubmit() {
   border-color: var(--primary); background: #fff;
   box-shadow: 0 0 0 3px rgba(22,119,255,0.1);
 }
+.field-hint { font-size: 12px; color: var(--text-3); margin-top: -4px; }
 
 /* 参考价格提示 */
 .price-tip {

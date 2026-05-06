@@ -13,12 +13,18 @@ export interface CreateOrderInput {
   source: OrderSource
   userId?: string
   redeemItemId?: string
+  couponId?: string
 }
 
 /** 创建订单 */
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const orderNo = generateOrderNo()
   return prisma.$transaction(async (tx) => {
+    // 组装备注信息（包含优惠券和服务套餐选择）
+    const notes: string[] = []
+    if (input.redeemItemId) notes.push(`[服务套餐: ${input.redeemItemId}]`)
+    if (input.couponId) notes.push(`[优惠券: ${input.couponId}]`)
+
     const order = await tx.order.create({
       data: {
         orderNo,
@@ -30,6 +36,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         source: input.source,
         status: 'PENDING',
         userId: input.userId ?? null,
+        redeemItemId: input.redeemItemId ?? null,
+        adminNote: notes.length > 0 ? notes.join(' ') : null,
       },
     })
     await tx.statusHistory.create({
