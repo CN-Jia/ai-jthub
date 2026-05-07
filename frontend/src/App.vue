@@ -13,15 +13,35 @@
 
         <!-- 桌面导航 -->
         <div class="nav-center hide-sm">
-          <router-link to="/" class="nav-link" exact-active-class="active">首页</router-link>
-          <router-link to="/activity" class="nav-link" active-class="active">活动公告</router-link>
-          <router-link to="/forum" class="nav-link" active-class="active">论坛</router-link>
+          <router-link to="/" class="nav-link" exact-active-class="active">
+            <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            首页
+          </router-link>
+          <router-link to="/activity" class="nav-link" active-class="active">
+            <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            活动公告
+          </router-link>
+          <router-link to="/forum" class="nav-link" active-class="active">
+            <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            论坛
+          </router-link>
           <template v-if="store.isLoggedIn">
-            <!-- <router-link to="/products" class="nav-link" active-class="active">立即选购</router-link> -->
-            <router-link to="/orders" class="nav-link" active-class="active">我的订单</router-link>
-            <router-link to="/points" class="nav-link" active-class="active">积分</router-link>
-            <router-link to="/invite" class="nav-link" active-class="active">邀请</router-link>
-            <router-link to="/lucky-wheel" class="nav-link nav-lucky" active-class="active">🎰 转盘</router-link>
+            <router-link to="/orders" class="nav-link" active-class="active">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              我的订单
+            </router-link>
+            <router-link to="/points" class="nav-link" active-class="active">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              积分
+            </router-link>
+            <router-link to="/invite" class="nav-link" active-class="active">
+              <svg class="nav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              邀请
+            </router-link>
+            <router-link to="/lucky-wheel" class="nav-link nav-lucky" active-class="active">
+              <span class="lucky-emoji">🎰</span>
+              转盘
+            </router-link>
           </template>
         </div>
 
@@ -80,7 +100,6 @@
         <router-link to="/activity" class="mobile-link" @click="closeMobileMenu">活动公告</router-link>
         <router-link to="/forum" class="mobile-link" @click="closeMobileMenu">论坛</router-link>
         <template v-if="store.isLoggedIn">
-          <!-- <router-link to="/products" class="mobile-link" @click="closeMobileMenu">立即选购</router-link> -->
           <router-link to="/orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
           <router-link to="/points" class="mobile-link" @click="closeMobileMenu">我的积分</router-link>
           <router-link to="/invite" class="mobile-link" @click="closeMobileMenu">邀请好友</router-link>
@@ -245,7 +264,6 @@ function initCursorParticles() {
   const particles: CursorParticle[] = []
   let mouse = { x: -999, y: -999 }
   let rafId = 0
-  let isTouch = false
 
   function resize() {
     el.width = window.innerWidth
@@ -255,29 +273,28 @@ function initCursorParticles() {
   window.addEventListener('resize', resize)
 
   function onMouseMove(e: MouseEvent) {
-    isTouch = false
     mouse.x = e.clientX
     mouse.y = e.clientY
-    const count = Math.random() < 0.5 ? 2 : 3
+    const count = Math.random() < 0.6 ? 1 : 2
     for (let i = 0; i < count; i++) spawnParticle(mouse.x, mouse.y)
   }
 
   function spawnParticle(x: number, y: number) {
     const dark = document.documentElement.getAttribute('data-theme') === 'dark'
     const angle = Math.random() * Math.PI * 2
-    const speed = Math.random() * 1.5 + 0.5
+    const speed = Math.random() * 1.2 + 0.3
     particles.push({
       x, y,
-      vx: Math.cos(angle) * speed * 0.6,
-      vy: Math.sin(angle) * speed * 0.6 - 0.8,
+      vx: Math.cos(angle) * speed * 0.5,
+      vy: Math.sin(angle) * speed * 0.5 - 0.6,
       life: 1,
       maxLife: 1,
-      r: Math.random() * 3 + 1.5,
+      r: Math.random() * 2.5 + 1,
       hue: dark
-        ? 190 + Math.random() * 60
-        : 210 + Math.random() * 50,
+        ? 195 + Math.random() * 50
+        : 215 + Math.random() * 40,
     })
-    if (particles.length > 120) particles.splice(0, particles.length - 120)
+    if (particles.length > 80) particles.splice(0, particles.length - 80)
   }
 
   function draw() {
@@ -286,29 +303,31 @@ function initCursorParticles() {
 
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i]
-      p.life -= 0.035
+      p.life -= 0.025
       if (p.life <= 0) { particles.splice(i, 1); continue }
 
       p.x += p.vx
       p.y += p.vy
-      p.vy += 0.04
+      p.vy += 0.03
       p.vx *= 0.97
 
-      const alpha = p.life * (dark ? 0.85 : 0.6)
-      const sat = dark ? '90%' : '80%'
-      const lgt = dark ? '70%' : '55%'
+      const alpha = p.life * (dark ? 0.7 : 0.45)
+      const sat = dark ? '85%' : '75%'
+      const lgt = dark ? '72%' : '60%'
 
-      const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3)
-      glow.addColorStop(0, `hsla(${p.hue},${sat},${lgt},${alpha})`)
+      // Outer glow
+      const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4)
+      glow.addColorStop(0, `hsla(${p.hue},${sat},${lgt},${alpha * 0.6})`)
       glow.addColorStop(1, `hsla(${p.hue},${sat},${lgt},0)`)
       ctx.beginPath()
-      ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2)
+      ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2)
       ctx.fillStyle = glow
       ctx.fill()
 
+      // Core
       ctx.beginPath()
       ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2)
-      ctx.fillStyle = `hsla(${p.hue},${sat},${dark ? '92%' : '75%'},${alpha})`
+      ctx.fillStyle = `hsla(${p.hue},${sat},${dark ? '90%' : '78%'},${alpha})`
       ctx.fill()
     }
     rafId = requestAnimationFrame(draw)
@@ -375,14 +394,16 @@ function handleSubmit() {
   .hide-on-mobile { display: none !important; }
 }
 
-/* ══ 导航栏 ══ */
+/* ═══════════════════════════════════
+   导航栏 — 高级毛玻璃风格
+   ═══════════════════════════════════ */
 .navbar {
   position: sticky; top: 0; z-index: 200;
   background: var(--navbar-bg);
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
   border-bottom: 1px solid var(--navbar-border);
-  transition: background 0.35s, border-color 0.35s, box-shadow 0.35s, backdrop-filter 0.35s;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .navbar.transparent {
   background: transparent;
@@ -395,11 +416,13 @@ function handleSubmit() {
 }
 .nav-inner {
   max-width: 1200px; margin: 0 auto;
-  padding: 0 20px; height: 64px;
+  padding: 0 24px; height: 64px;
   display: flex; align-items: center; gap: 4px;
 }
+
+/* Logo */
 .nav-logo {
-  display: flex; align-items: center; gap: 9px;
+  display: flex; align-items: center; gap: 10px;
   font-weight: 800; font-size: 17px; color: var(--primary);
   white-space: nowrap; flex-shrink: 0;
   letter-spacing: -0.3px;
@@ -408,129 +431,167 @@ function handleSubmit() {
 .navbar.transparent .nav-logo { color: #fff; }
 .nav-logo:hover { opacity: 0.85; }
 .logo-text {
-  background: linear-gradient(135deg, var(--primary), #4096ff);
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 .navbar.transparent .logo-text { background: none; -webkit-text-fill-color: rgba(255,255,255,0.95); }
 
-.nav-center { display: flex; align-items: center; gap: 0; flex: 1; padding: 0 4px; min-width: 0; }
+/* 中间导航链接 */
+.nav-center { display: flex; align-items: center; gap: 2px; flex: 1; padding: 0 8px; min-width: 0; }
 .nav-link {
   position: relative;
-  padding: 6px 11px; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 12px; border-radius: 10px;
   font-size: 13.5px; font-weight: 500; color: var(--text-2);
-  transition: color 0.15s; white-space: nowrap;
+  transition: color 0.2s, background 0.2s; white-space: nowrap;
 }
-.nav-link::after {
-  content: ''; position: absolute; bottom: -1px; left: 11px; right: 11px;
-  height: 2px; border-radius: 2px;
-  background: var(--primary);
-  transform: scaleX(0); transform-origin: center;
-  transition: transform 0.2s ease;
-}
-.nav-link:hover { color: var(--primary); }
-.nav-link:hover::after { transform: scaleX(0.6); }
+.nav-link-icon { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.5; transition: opacity 0.2s; }
+.nav-link:hover { color: var(--primary); background: var(--primary-light); }
+.nav-link:hover .nav-link-icon { opacity: 0.8; }
 .nav-link.active { color: var(--primary); font-weight: 600; }
+.nav-link.active .nav-link-icon { opacity: 0.9; }
+
+/* 底部指示条 */
+.nav-link::after {
+  content: ''; position: absolute; bottom: -1px; left: 12px; right: 12px;
+  height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary), #a78bfa);
+  transform: scaleX(0); transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-link:hover::after { transform: scaleX(0.5); }
 .nav-link.active::after { transform: scaleX(1); }
 
 /* 透明导航下 nav-link 变白 */
-.navbar.transparent .nav-link { color: rgba(255,255,255,0.8); }
-.navbar.transparent .nav-link:hover { color: #fff; }
+.navbar.transparent .nav-link { color: rgba(255,255,255,0.75); }
+.navbar.transparent .nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.navbar.transparent .nav-link:hover .nav-link-icon { opacity: 1; }
 .navbar.transparent .nav-link.active { color: #fff; }
-.navbar.transparent .nav-link::after { background: rgba(255,255,255,0.9); }
+.navbar.transparent .nav-link::after { background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(168,139,250,0.8)); }
+
+/* 转盘特殊样式 */
+.nav-lucky .lucky-emoji {
+  display: inline-block;
+  animation: luckySpin 3s ease-in-out infinite;
+}
+@keyframes luckySpin {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(10deg); }
+  75% { transform: rotate(-10deg); }
+}
 
 /* 运行时长 */
 .nav-uptime {
-  display: flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; gap: 6px;
   font-size: 12px; color: var(--text-3); white-space: nowrap;
-  padding: 4px 10px; border-radius: 100px;
-  background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);
+  padding: 5px 14px; border-radius: 100px;
+  background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15);
   transition: all 0.3s; flex-shrink: 0;
+  font-weight: 500;
 }
 .navbar.transparent .nav-uptime {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.6);
 }
 .uptime-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: #10b981;
-  box-shadow: 0 0 0 2px rgba(16,185,129,0.25);
+  box-shadow: 0 0 0 2px rgba(16,185,129,0.2);
   animation: uptimePulse 2s ease-in-out infinite;
   flex-shrink: 0;
 }
 @keyframes uptimePulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(16,185,129,0.25); }
-  50% { box-shadow: 0 0 0 5px rgba(16,185,129,0.08); }
+  0%, 100% { box-shadow: 0 0 0 2px rgba(16,185,129,0.2); }
+  50% { box-shadow: 0 0 0 6px rgba(16,185,129,0.06); }
 }
 
 /* 右侧区域 */
-.nav-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: 8px; }
+.nav-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: 8px; }
 
 /* 主题切换按钮 */
 .theme-toggle {
-  width: 34px; height: 34px; border-radius: 8px;
+  width: 36px; height: 36px; border-radius: 10px;
   background: none; border: 1.5px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; color: var(--text-2);
-  transition: all 0.15s;
+  transition: all 0.2s;
   flex-shrink: 0;
 }
 .theme-toggle:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 .theme-icon { width: 16px; height: 16px; }
 .navbar.transparent .theme-toggle {
-  border-color: rgba(255,255,255,0.3);
-  color: rgba(255,255,255,0.85);
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
 }
 .navbar.transparent .theme-toggle:hover {
-  border-color: rgba(255,255,255,0.7);
+  border-color: rgba(255,255,255,0.4);
   color: #fff;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
 }
 
+/* 登录按钮 */
 .nav-login {
-  padding: 7px 12px; border-radius: 8px;
+  display: inline-flex; align-items: center;
+  padding: 8px 14px; border-radius: 10px;
   font-size: 13.5px; font-weight: 500; color: var(--text-2);
-  transition: color 0.15s, background 0.15s;
+  transition: color 0.2s, background 0.2s;
 }
 .nav-login:hover { color: var(--primary); background: var(--primary-light); }
-.navbar.transparent .nav-login { color: rgba(255,255,255,0.85); }
-.navbar.transparent .nav-login:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.navbar.transparent .nav-login { color: rgba(255,255,255,0.8); }
+.navbar.transparent .nav-login:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
+/* 注册按钮 */
 .nav-register {
   background: var(--primary); color: #fff;
-  padding: 7px 16px; border-radius: 8px;
+  padding: 8px 18px; border-radius: 10px;
   font-size: 13.5px; font-weight: 600; white-space: nowrap;
-  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
-  box-shadow: 0 2px 8px rgba(22,119,255,0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 12px rgba(22,119,255,0.25);
 }
-.nav-register:hover { background: var(--primary-dark); box-shadow: 0 4px 16px rgba(22,119,255,0.35); transform: translateY(-1px); }
-.navbar.transparent .nav-register { background: rgba(255,255,255,0.18); box-shadow: none; border: 1px solid rgba(255,255,255,0.35); }
-.navbar.transparent .nav-register:hover { background: rgba(255,255,255,0.28); }
+.nav-register:hover {
+  background: var(--primary-dark);
+  box-shadow: 0 4px 20px rgba(22,119,255,0.35);
+  transform: translateY(-1px);
+}
+.navbar.transparent .nav-register {
+  background: rgba(255,255,255,0.12);
+  box-shadow: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.navbar.transparent .nav-register:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.35);
+}
 
+/* 用户头像 */
 .nav-user {
-  display: flex; align-items: center; gap: 7px;
-  border-radius: 10px; padding: 5px 10px 5px 5px;
+  display: flex; align-items: center; gap: 8px;
+  border-radius: 10px; padding: 5px 12px 5px 5px;
   font-size: 13.5px; color: var(--text-2); font-weight: 500;
-  transition: background 0.15s;
+  transition: background 0.2s;
 }
 .nav-user:hover { background: var(--primary-light); color: var(--primary); }
 .user-avatar {
-  width: 27px; height: 27px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), #4096ff);
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
   color: #fff; font-size: 12px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(22,119,255,0.3);
+  box-shadow: 0 2px 10px rgba(22,119,255,0.25);
 }
 .user-name { font-weight: 600; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* 退出 */
 .nav-logout {
   background: none; border: none; padding: 7px 10px;
   font-size: 13px; color: var(--text-3);
   border-radius: 8px; cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition: color 0.2s, background 0.2s;
 }
-.nav-logout:hover { color: var(--danger); background: rgba(255,77,79,0.08); }
+.nav-logout:hover { color: var(--danger); background: rgba(255,77,79,0.06); }
 
 /* 汉堡菜单 */
 .hamburger {
@@ -547,10 +608,12 @@ function handleSubmit() {
 .hamburger.open span:nth-child(2) { opacity: 0; }
 .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
-/* ── 移动端菜单（fixed 脱离 nav stacking context） ── */
+/* ── 移动端菜单 ── */
 .mobile-backdrop {
   position: fixed; inset: 0; top: var(--nav-h);
-  background: rgba(0,0,0,0.35); z-index: 998;
+  background: rgba(0,0,0,0.4); z-index: 998;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 .mobile-drawer {
   position: fixed; top: var(--nav-h); left: 0; right: 0;
@@ -558,10 +621,11 @@ function handleSubmit() {
   border-bottom: 1px solid var(--border);
   padding: 8px 0;
   z-index: 999;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  border-radius: 0 0 16px 16px;
 }
 .mobile-link {
-  display: block; padding: 13px 20px;
+  display: block; padding: 14px 22px;
   font-size: 15px; font-weight: 500; color: var(--text-2);
   border: none; background: none; width: 100%; text-align: left;
   cursor: pointer; border-bottom: 1px solid var(--border);
@@ -573,9 +637,9 @@ function handleSubmit() {
 .mobile-register { color: var(--primary); font-weight: 700; }
 .mobile-theme { color: var(--text-3); }
 
-.slide-down-enter-active, .slide-down-leave-active { transition: all 0.2s ease; }
-.slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-8px); }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.slide-down-enter-active, .slide-down-leave-active { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+.slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-12px); }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* ── 底部导航栏 ── */
@@ -584,12 +648,12 @@ function handleSubmit() {
   height: calc(60px + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--navbar-bg);
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
   border-top: 1px solid var(--navbar-border);
   display: flex; align-items: stretch;
   z-index: 300;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 -2px 24px rgba(0,0,0,0.06);
 }
 .bn-item {
   flex: 1; display: flex; flex-direction: column;
@@ -611,10 +675,10 @@ function handleSubmit() {
 }
 .bn-submit {
   width: 48px; height: 48px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), #4096ff);
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
   border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 16px rgba(22,119,255,0.4);
+  box-shadow: 0 4px 20px rgba(22,119,255,0.35);
   margin-top: -16px;
   transition: transform 0.15s, box-shadow 0.15s;
 }
@@ -627,15 +691,15 @@ function handleSubmit() {
 /* ── Footer ── */
 .footer {
   background: var(--white); border-top: 1px solid var(--border);
-  padding: 24px 20px;
+  padding: 28px 20px;
   transition: background 0.25s, border-color 0.25s;
 }
 .footer-inner {
   max-width: 1200px; margin: 0 auto;
   display: flex; flex-direction: column; align-items: center;
-  gap: 8px; text-align: center;
+  gap: 10px; text-align: center;
 }
 .footer-logo { font-size: 18px; font-weight: 800; color: var(--primary); }
 .footer-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-3); flex-wrap: wrap; justify-content: center; }
-.footer-copy { font-size: 12px; color: var(--text-3); opacity: 0.7; }
+.footer-copy { font-size: 12px; color: var(--text-3); opacity: 0.6; }
 </style>
