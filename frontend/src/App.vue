@@ -125,6 +125,9 @@
     <!-- 活动浮窗 -->
     <ActivityPopup />
 
+    <!-- 微信内置浏览器引导 -->
+    <WechatGuide />
+
     <!-- 移动端底部导航栏 -->
     <nav class="bottom-nav show-sm-only">
       <router-link to="/" class="bn-item" exact-active-class="bn-active">
@@ -185,6 +188,7 @@ import { useUserStore } from './store/user'
 import { api } from './api'
 import JtLogo from './components/JtLogo.vue'
 import ActivityPopup from './components/ActivityPopup.vue'
+import WechatGuide from './components/WechatGuide.vue'
 
 const store = useUserStore()
 const router = useRouter()
