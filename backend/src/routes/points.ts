@@ -245,9 +245,9 @@ export async function pointsRoutes(fastify: FastifyInstance) {
   fastify.get('/coupons/my', { preHandler: [verifyJWT] }, async (request, reply) => {
     const { userId } = request.user as { userId: string }
     const list = await prisma.coupon.findMany({
-      where: { userId, status: 'UNUSED' },
-      orderBy: { expiresAt: 'asc' },
-      select: { id: true, code: true, discountAmt: true, status: true, expiresAt: true },
+      where: { userId },
+      orderBy: [{ status: 'asc' }, { expiresAt: 'asc' }],
+      select: { id: true, code: true, discountAmt: true, status: true, expiresAt: true, usedAt: true },
     })
     return reply.send(successResponse({ list }))
   })

@@ -75,15 +75,18 @@
 
     <!-- 优惠券 -->
     <div v-if="tab === 'coupons'">
-      <div v-if="coupons.length === 0" class="empty-state">暂无可用优惠券</div>
+      <div v-if="coupons.length === 0" class="empty-state">暂无优惠券</div>
       <div class="coupon-list">
-        <div v-for="c in coupons" :key="c.id" class="coupon-card">
+        <div v-for="c in coupons" :key="c.id" class="coupon-card" :class="couponCardClass(c)">
           <div class="coupon-amount">¥{{ c.discountAmt }}</div>
           <div class="coupon-info">
             <div class="coupon-code">{{ c.code }}</div>
-            <div class="coupon-expire">有效期至 {{ formatDate(c.expiresAt) }}</div>
+            <div class="coupon-expire">
+              <template v-if="c.status === 'USED'">使用时间：{{ formatDate(c.usedAt) }}</template>
+              <template v-else>有效期至 {{ formatDate(c.expiresAt) }}</template>
+            </div>
           </div>
-          <div class="coupon-status">可用</div>
+          <div class="coupon-status" :class="couponStatusClass(c.status)">{{ couponStatusLabel(c.status) }}</div>
         </div>
       </div>
     </div>
@@ -121,6 +124,15 @@ function eventClass(type: string) {
 }
 function redeemStatusLabel(s: string) {
   return { PENDING: '待审核', COMPLETED: '已完成', REJECTED: '已拒绝' }[s] ?? s
+}
+function couponStatusLabel(s: string) {
+  return { UNUSED: '可用', USED: '已使用', EXPIRED: '已过期' }[s] ?? s
+}
+function couponStatusClass(s: string) {
+  return { UNUSED: 'cs-unused', USED: 'cs-used', EXPIRED: 'cs-expired' }[s] ?? ''
+}
+function couponCardClass(c: any) {
+  return c.status !== 'UNUSED' ? 'coupon-card--inactive' : ''
 }
 function redeemStatusClass(s: string) {
   return { PENDING: 'status-pending', COMPLETED: 'status-success', REJECTED: 'status-danger' }[s] ?? ''
@@ -225,7 +237,11 @@ onMounted(() => {
 .coupon-info { flex: 1; }
 .coupon-code { font-family: monospace; font-size: 1rem; font-weight: 700; letter-spacing: 2px; color: var(--text-primary); }
 .coupon-expire { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
-.coupon-status { padding: 4px 12px; background: #22c55e; color: #fff; border-radius: 20px; font-size: 0.75rem; }
+.coupon-status { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+.cs-unused { background: #22c55e; color: #fff; }
+.cs-used { background: #94a3b8; color: #fff; }
+.cs-expired { background: #ef4444; color: #fff; }
+.coupon-card--inactive { opacity: 0.55; filter: grayscale(0.4); }
 
 .empty-state { text-align: center; padding: 48px 0; color: var(--text-muted); }
 @media (max-width: 600px) {

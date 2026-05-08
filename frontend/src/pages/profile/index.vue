@@ -89,7 +89,7 @@
 
         <!-- 快捷链接 -->
         <div class="card quick-links">
-          <router-link to="/orders" class="quick-link">📋 我的订单</router-link>
+          <router-link to="/my-orders" class="quick-link">📋 我的订单</router-link>
           <router-link to="/forum" class="quick-link">📝 论坛社区</router-link>
         </div>
       </div>
