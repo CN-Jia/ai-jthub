@@ -142,6 +142,16 @@ let marqueeRaf = 0
 let marqueePos = 0
 const MARQUEE_SPEED = 0.5 // px/frame
 
+// 运行时从 DOM 读取真实尺寸，兼容移动端响应式
+function getActualFull(): number {
+  const track = trackRef.value
+  if (!track) return FULL
+  const firstItem = track.querySelector('.slot-item') as HTMLElement | null
+  if (!firstItem) return FULL
+  const gap = parseFloat(getComputedStyle(track).gap) || GAP
+  return firstItem.offsetWidth + gap
+}
+
 function shortLabel(label: string) {
   return label.replace(/^[^\s]+\s/, '')
 }
@@ -159,7 +169,8 @@ const slotItems = computed(() => {
 function startMarquee() {
   const track = trackRef.value
   if (!track || isSpinning.value) return
-  const oneSet = prizes.value.length * FULL
+  const f = getActualFull()
+  const oneSet = prizes.value.length * f
 
   function tick() {
     marqueePos += MARQUEE_SPEED
@@ -195,15 +206,16 @@ function spin() {
   api.spinLuckyWheel().then((res: any) => {
     const { prizeIndex, prize, won, redeemCode: code, remainingSpins: remaining } = res.data
 
-    const wrapperW = track.parentElement?.clientWidth || 500
-    const centerOff = wrapperW / 2 - ITEM_W / 2
+    // 使用实际 DOM 尺寸，兼容移动端
+    const f = getActualFull()
+    const n = prizes.value.length
 
-    // 目标：倒数第二轮的中奖奖品居中
-    const targetIdx = (REPEAT - 2) * prizes.value.length + prizeIndex
-    const targetPos = targetIdx * FULL - centerOff
+    // translateX(-i*f) 恰好让第 i 个 item 居中（CSS padding 已使 item-0 在 x=0 时居中）
+    const targetIdx = (REPEAT - 2) * n + prizeIndex
+    const targetPos = targetIdx * f
 
-    // 快速滚动 3 轮后到达目标
-    const fastStart = prizes.value.length * FULL * 3 + marqueePos
+    // 先跳到 3 整轮之后，再缓动到目标
+    const fastStart = n * f * 3 + marqueePos
     track.style.transition = 'none'
     track.style.transform = `translateX(-${fastStart}px)`
 
@@ -213,7 +225,6 @@ function spin() {
     })
 
     setTimeout(() => {
-      // 停止闪光效果
       track.classList.add('flash-stop')
       setTimeout(() => track.classList.remove('flash-stop'), 600)
 
@@ -226,7 +237,7 @@ function spin() {
       setTimeout(() => {
         showResult.value = true
         loadInfo()
-        marqueePos = targetPos % (prizes.value.length * FULL)
+        marqueePos = targetPos % (n * f)
         startMarquee()
       }, 800)
     }, 4200)
