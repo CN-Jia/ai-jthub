@@ -25,7 +25,6 @@
     <div class="tab-bar">
       <button :class="['tab-btn', tab === 'logs' && 'active']" @click="tab = 'logs'">积分明细</button>
       <button :class="['tab-btn', tab === 'redeem' && 'active']" @click="tab = 'redeem'; loadRedeems()">兑换记录</button>
-      <button :class="['tab-btn', tab === 'coupons' && 'active']" @click="tab = 'coupons'; loadCoupons()">我的优惠券</button>
     </div>
 
     <!-- 积分明细 -->
@@ -73,23 +72,6 @@
       </div>
     </div>
 
-    <!-- 优惠券 -->
-    <div v-if="tab === 'coupons'">
-      <div v-if="coupons.length === 0" class="empty-state">暂无优惠券</div>
-      <div class="coupon-list">
-        <div v-for="c in coupons" :key="c.id" class="coupon-card" :class="couponCardClass(c)">
-          <div class="coupon-amount">¥{{ c.discountAmt }}</div>
-          <div class="coupon-info">
-            <div class="coupon-code">{{ c.code }}</div>
-            <div class="coupon-expire">
-              <template v-if="c.status === 'USED'">使用时间：{{ formatDate(c.usedAt) }}</template>
-              <template v-else>有效期至 {{ formatDate(c.expiresAt) }}</template>
-            </div>
-          </div>
-          <div class="coupon-status" :class="couponStatusClass(c.status)">{{ couponStatusLabel(c.status) }}</div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -103,8 +85,7 @@ const logsTotal = ref(0)
 const logsPage = ref(1)
 const logsLoading = ref(false)
 const redeems = ref<any[]>([])
-const coupons = ref<any[]>([])
-const tab = ref<'logs' | 'redeem' | 'coupons'>('logs')
+const tab = ref<'logs' | 'redeem'>('logs')
 
 const EVENT_LABELS: Record<string, string> = {
   INVITE_REGISTER: '邀请注册',
@@ -124,15 +105,6 @@ function eventClass(type: string) {
 }
 function redeemStatusLabel(s: string) {
   return { PENDING: '待审核', COMPLETED: '已完成', REJECTED: '已拒绝' }[s] ?? s
-}
-function couponStatusLabel(s: string) {
-  return { UNUSED: '可用', USED: '已使用', EXPIRED: '已过期' }[s] ?? s
-}
-function couponStatusClass(s: string) {
-  return { UNUSED: 'cs-unused', USED: 'cs-used', EXPIRED: 'cs-expired' }[s] ?? ''
-}
-function couponCardClass(c: any) {
-  return c.status !== 'UNUSED' ? 'coupon-card--inactive' : ''
 }
 function redeemStatusClass(s: string) {
   return { PENDING: 'status-pending', COMPLETED: 'status-success', REJECTED: 'status-danger' }[s] ?? ''
@@ -174,15 +146,9 @@ async function loadRedeems() {
   redeems.value = res.data.list
 }
 
-async function loadCoupons() {
-  const res: any = await api.getMyCoupons()
-  coupons.value = res.data.list
-}
-
 onMounted(() => {
   loadBalance()
   loadLogs()
-  loadCoupons()
 })
 </script>
 
