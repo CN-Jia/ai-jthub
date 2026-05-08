@@ -355,17 +355,20 @@ enum ShopItemType {
 
 // ==================== 兑换订单 ====================
 model RedeemOrder {
-  id         String       @id @default(cuid())
-  userId     String
-  user       User         @relation(fields: [userId], references: [id])
-  shopItemId String
-  shopItem   ShopItem     @relation(fields: [shopItemId], references: [id])
-  pointsCost  Int
-  status      RedeemStatus @default(PENDING)
-  adminNote   String?
-  usedAt      DateTime?
-  usedOrderId String?
-  expiresAt   DateTime?
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  shopItemId   String?
+  shopItem     ShopItem?    @relation(fields: [shopItemId], references: [id])
+  spinResultId String?      @unique
+  spinResult   SpinResult?  @relation(fields: [spinResultId], references: [id])
+  prizeName    String?
+  pointsCost   Int
+  status       RedeemStatus @default(PENDING)
+  adminNote    String?
+  usedAt       DateTime?
+  usedOrderId  String?
+  expiresAt    DateTime?
 
   coupon Coupon?
 
@@ -575,16 +578,17 @@ enum PrizeType {
 
 // ==================== 用户抽奖记录 ====================
 model SpinResult {
-  id         String     @id @default(cuid())
-  userId     String
-  user       User       @relation(fields: [userId], references: [id])
-  prizeId    String
-  prize      WheelPrize @relation(fields: [prizeId], references: [id])
-  spinRound  Int
-  redeemCode String?
-  isRedeemed Boolean    @default(false)
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  prizeId     String
+  prize       WheelPrize   @relation(fields: [prizeId], references: [id])
+  spinRound   Int
+  redeemCode  String?
+  isRedeemed  Boolean      @default(false)
+  redeemOrder RedeemOrder?
 
-  createdAt  DateTime   @default(now())
+  createdAt   DateTime     @default(now())
 
   @@unique([userId, spinRound])
   @@unique([redeemCode])

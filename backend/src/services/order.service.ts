@@ -23,7 +23,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     let quotedPrice: string | undefined
     const notes: string[] = []
 
-    // 验证并使用服务套餐兑换
+    // 验证并使用服务套餐兑换（含转盘中奖折扣）
     if (input.redeemItemId && input.userId) {
       const redeemOrder = await tx.redeemOrder.findFirst({
         where: {
@@ -33,20 +33,27 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
           usedAt: null,
           OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        include: { shopItem: { select: { name: true, discountAmt: true } } },
+        include: {
+          shopItem: { select: { name: true, discountAmt: true } },
+          coupon: { select: { discountAmt: true } },
+        },
       })
       if (!redeemOrder) {
         throw Object.assign(new Error('服务套餐不可用或已过期'), { code: ERROR_CODES.VALIDATION_ERROR })
       }
 
-      const discountAmt = redeemOrder.shopItem.discountAmt ? Number(redeemOrder.shopItem.discountAmt) : 0
+      // 兼容：shopItem 来自积分商城；coupon 来自转盘中奖折扣
+      const itemName = redeemOrder.shopItem?.name ?? redeemOrder.prizeName ?? '转盘奖品'
+      const rawDiscount = redeemOrder.shopItem?.discountAmt ?? redeemOrder.coupon?.discountAmt
+      const discountAmt = rawDiscount ? Number(rawDiscount) : 0
+
       if (discountAmt === 0) {
         // 免费兑换：立即标记为 ¥0，无需付款
         quotedPrice = '0'
-        notes.push(`[服务套餐: ${redeemOrder.shopItem.name}（免费兑换）]`)
+        notes.push(`[服务套餐: ${itemName}（免费兑换）]`)
       } else {
-        // 折扣服务：等管理员报价后自动扣减
-        notes.push(`[服务套餐: ${redeemOrder.shopItem.name}（折扣¥${discountAmt}）]`)
+        // 折扣：等管理员报价后自动扣减
+        notes.push(`[服务套餐: ${itemName}（折扣¥${discountAmt}）]`)
       }
     }
 
@@ -126,11 +133,16 @@ export async function getOrderDetail(orderId: string, userId?: string) {
   if (order.redeemItemId) {
     const redeemOrder = await prisma.redeemOrder.findUnique({
       where: { id: order.redeemItemId },
-      include: { shopItem: { select: { name: true, discountAmt: true } } },
+      include: {
+        shopItem: { select: { name: true, discountAmt: true } },
+        coupon: { select: { discountAmt: true } },
+      },
     })
     if (redeemOrder) {
-      const discountAmt = redeemOrder.shopItem.discountAmt ? Number(redeemOrder.shopItem.discountAmt) : 0
-      redeemService = { name: redeemOrder.shopItem.name, discountAmt, isFree: discountAmt === 0 }
+      const itemName = redeemOrder.shopItem?.name ?? redeemOrder.prizeName ?? '转盘奖品'
+      const rawDiscount = redeemOrder.shopItem?.discountAmt ?? redeemOrder.coupon?.discountAmt
+      const discountAmt = rawDiscount ? Number(rawDiscount) : 0
+      redeemService = { name: itemName, discountAmt, isFree: discountAmt === 0 }
     }
   }
 
@@ -236,9 +248,13 @@ export async function setQuotedPrice(orderId: string, price: string): Promise<Or
   if (order.redeemItemId) {
     const redeemOrder = await prisma.redeemOrder.findUnique({
       where: { id: order.redeemItemId },
-      include: { shopItem: { select: { discountAmt: true } } },
+      include: {
+        shopItem: { select: { discountAmt: true } },
+        coupon: { select: { discountAmt: true } },
+      },
     })
-    const discountAmt = redeemOrder?.shopItem?.discountAmt ? Number(redeemOrder.shopItem.discountAmt) : 0
+    const rawDiscount = redeemOrder?.shopItem?.discountAmt ?? redeemOrder?.coupon?.discountAmt
+    const discountAmt = rawDiscount ? Number(rawDiscount) : 0
     if (discountAmt > 0) {
       const original = parseFloat(price)
       const final = Math.max(0, original - discountAmt)

@@ -204,8 +204,8 @@ export async function adminPointsRoutes(fastify: FastifyInstance) {
 
     await deductFrozen(order.userId, order.pointsCost, id)
 
-    // 折扣券类型：生成优惠码
-    if (order.shopItem.type === 'COUPON' && order.shopItem.discountAmt) {
+    // 折扣券类型：生成优惠码（仅积分商城兑换，转盘中奖已在抽奖时自动生成）
+    if (order.shopItem?.type === 'COUPON' && order.shopItem.discountAmt) {
       const code = await generateCouponCode()
       const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
       await prisma.coupon.create({
@@ -237,13 +237,15 @@ export async function adminPointsRoutes(fastify: FastifyInstance) {
       data: { status: 'REJECTED', adminNote: parse.data.note },
     })
 
-    // 归还库存（仅有限库存商品，stock=-1 表示无限库存，不需要归还）
-    const item = await prisma.shopItem.findUnique({ where: { id: order.shopItemId }, select: { stock: true } })
-    if (item && item.stock >= 0) {
-      await prisma.shopItem.update({
-        where: { id: order.shopItemId },
-        data: { stock: { increment: 1 } },
-      }).catch(() => {})
+    // 归还库存（仅积分商城有限库存商品，stock=-1 表示无限库存；转盘来源无 shopItemId）
+    if (order.shopItemId) {
+      const item = await prisma.shopItem.findUnique({ where: { id: order.shopItemId }, select: { stock: true } })
+      if (item && item.stock >= 0) {
+        await prisma.shopItem.update({
+          where: { id: order.shopItemId },
+          data: { stock: { increment: 1 } },
+        }).catch(() => {})
+      }
     }
 
     await unfreeze(order.userId, order.pointsCost, id)

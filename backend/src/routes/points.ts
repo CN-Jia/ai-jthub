@@ -198,19 +198,24 @@ export async function pointsRoutes(fastify: FastifyInstance) {
       },
       include: {
         shopItem: { select: { id: true, name: true, type: true, discountAmt: true, description: true } },
+        coupon: { select: { discountAmt: true } },
       },
       orderBy: { createdAt: 'desc' },
     })
 
-    const formatted = items.map(r => ({
+    // 过滤：无 shopItem 且无 coupon 的条目（即 CASH_REDEEM 现金大奖，不可用于下单）
+    const usable = items.filter(r => r.shopItem !== null || r.coupon !== null)
+
+    const formatted = usable.map(r => ({
       id: r.id,
       shopItemId: r.shopItemId,
-      name: r.shopItem.name,
-      type: r.shopItem.type,
-      discountAmt: r.shopItem.discountAmt,
-      description: r.shopItem.description,
+      name: r.shopItem?.name ?? r.prizeName ?? '转盘奖品',
+      type: r.shopItem?.type ?? 'SERVICE',
+      discountAmt: r.shopItem?.discountAmt ?? r.coupon?.discountAmt ?? null,
+      description: r.shopItem?.description ?? '🎰 转盘中奖获得',
       expiresAt: r.expiresAt,
       pointsCost: r.pointsCost,
+      isWheelPrize: !r.shopItemId,
     }))
 
     return reply.send(successResponse(formatted))
@@ -225,6 +230,7 @@ export async function pointsRoutes(fastify: FastifyInstance) {
       include: {
         shopItem: { select: { name: true, type: true } },
         coupon: { select: { code: true, discountAmt: true, status: true, expiresAt: true } },
+        spinResult: { select: { redeemCode: true, isRedeemed: true } },
       },
     })
 
@@ -232,10 +238,14 @@ export async function pointsRoutes(fastify: FastifyInstance) {
       list: list.map(o => ({
         id: o.id,
         shopItem: o.shopItem,
+        prizeName: o.prizeName,
+        isWheelPrize: !!o.spinResultId,
         pointsCost: o.pointsCost,
         status: o.status,
         adminNote: o.adminNote,
         coupon: o.coupon,
+        redeemCode: o.spinResult?.redeemCode ?? null,
+        isRedeemed: o.spinResult?.isRedeemed ?? null,
         createdAt: o.createdAt,
       })),
     }))

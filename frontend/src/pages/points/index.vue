@@ -62,18 +62,31 @@
       <div class="redeem-list">
         <div v-for="r in redeems" :key="r.id" class="redeem-item card">
           <div class="redeem-header">
-            <span class="redeem-name">{{ r.shopItem.name }}</span>
+            <div class="redeem-title-row">
+              <span v-if="r.isWheelPrize" class="wheel-badge">🎰 转盘</span>
+              <span class="redeem-name">{{ r.shopItem?.name ?? r.prizeName ?? '转盘奖品' }}</span>
+            </div>
             <span class="redeem-status" :class="redeemStatusClass(r.status)">{{ redeemStatusLabel(r.status) }}</span>
           </div>
           <div class="redeem-meta">
-            <span>消耗 {{ r.pointsCost }} 积分</span>
+            <span>{{ r.pointsCost > 0 ? `消耗 ${r.pointsCost} 积分` : '转盘中奖' }}</span>
             <span>{{ formatDate(r.createdAt) }}</span>
           </div>
           <div v-if="r.adminNote" class="redeem-note">备注：{{ r.adminNote }}</div>
+          <!-- 折扣券（ORDER_DISCOUNT） -->
           <div v-if="r.coupon" class="coupon-chip">
-            优惠券：<strong>{{ r.coupon.code }}</strong>
+            <span class="coupon-label">折扣券</span>
+            <strong>{{ r.coupon.code }}</strong>
             <span v-if="r.coupon.discountAmt"> · 面值 ¥{{ r.coupon.discountAmt }}</span>
             · 有效期至 {{ formatDate(r.coupon.expiresAt) }}
+          </div>
+          <!-- 现金大奖兑换码（CASH_REDEEM） -->
+          <div v-if="r.redeemCode" class="coupon-chip cash-chip">
+            <span class="coupon-label">兑换码</span>
+            <strong>{{ r.redeemCode }}</strong>
+            <span :class="r.isRedeemed ? 'badge-used' : 'badge-unused'">
+              {{ r.isRedeemed ? '已核销' : '待核销' }}
+            </span>
           </div>
         </div>
       </div>
@@ -202,11 +215,17 @@ onMounted(() => {
 
 .redeem-list { display: flex; flex-direction: column; gap: 12px; }
 .redeem-item { padding: 16px; }
-.redeem-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+.redeem-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+.redeem-title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .redeem-name { font-weight: 600; color: var(--text-1); }
+.wheel-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background: linear-gradient(90deg, #7c3aed, #db2777); color: #fff; white-space: nowrap; }
 .redeem-meta { font-size: 12px; color: var(--text-3); display: flex; gap: 16px; flex-wrap: wrap; }
 .redeem-note { margin-top: 8px; font-size: 12px; color: var(--text-3); }
-.coupon-chip { margin-top: 8px; padding: 6px 10px; background: rgba(234,179,8,0.1); border-radius: 6px; font-size: 12px; color: #fbbf24; }
+.coupon-chip { margin-top: 8px; padding: 6px 10px; background: rgba(234,179,8,0.1); border-radius: 6px; font-size: 12px; color: #fbbf24; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cash-chip { background: rgba(124,58,237,0.12); color: #a78bfa; }
+.coupon-label { padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); font-size: 11px; }
+.badge-used { padding: 1px 8px; border-radius: 10px; background: #4ade80; color: #052e16; font-size: 11px; font-weight: 600; }
+.badge-unused { padding: 1px 8px; border-radius: 10px; background: rgba(251,191,36,0.2); color: #fbbf24; font-size: 11px; font-weight: 600; }
 
 .status-pending { background: rgba(251,191,36,0.1); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 .status-success { background: rgba(52,211,153,0.1); color: #34d399; padding: 2px 8px; border-radius: 4px; font-size: 12px; }

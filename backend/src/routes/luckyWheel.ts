@@ -125,7 +125,7 @@ export async function luckyWheelRoutes(fastify: FastifyInstance) {
         }
 
         // 6. 记录抽奖结果
-        await tx.spinResult.create({
+        const spinResult = await tx.spinResult.create({
           data: {
             userId,
             prizeId: winner.id,
@@ -133,6 +133,43 @@ export async function luckyWheelRoutes(fastify: FastifyInstance) {
             redeemCode,
           },
         })
+
+        // 7. 同步到兑换记录（非谢谢参与奖品）
+        if (winner.type !== 'NONE') {
+          const expiresAt = new Date()
+          expiresAt.setDate(expiresAt.getDate() + 60)
+
+          const redeemOrder = await tx.redeemOrder.create({
+            data: {
+              userId,
+              spinResultId: spinResult.id,
+              prizeName: winner.label,
+              pointsCost: 0,
+              status: 'COMPLETED',
+              expiresAt,
+            },
+          })
+
+          // ORDER_DISCOUNT: 同时生成折扣券供下单时使用
+          if (winner.type === 'ORDER_DISCOUNT' && winner.value) {
+            let couponCode = ''
+            for (let i = 0; i < 10; i++) {
+              const candidate = 'WJ' + crypto.randomBytes(3).toString('hex').toUpperCase()
+              const exists = await tx.coupon.findUnique({ where: { code: candidate } })
+              if (!exists) { couponCode = candidate; break }
+            }
+            if (!couponCode) throw new Error('COUPON_CODE_GENERATION_FAILED')
+            await tx.coupon.create({
+              data: {
+                code: couponCode,
+                userId,
+                redeemOrderId: redeemOrder.id,
+                discountAmt: winner.value,
+                expiresAt,
+              },
+            })
+          }
+        }
 
         // 7. 找到中奖扇区索引
         const prizeIndex = prizes.findIndex(p => p.id === winner.id)
