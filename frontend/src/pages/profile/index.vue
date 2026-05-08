@@ -279,7 +279,6 @@ async function doVerifyCode() {
   .banner-name { font-size: 18px; }
 }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .feedback-msg.success { background: rgba(82,196,26,0.12); color: #73d13d; }
-[data-theme="dark"] .feedback-msg.error { background: rgba(255,77,79,0.12); color: #ff7875; }
+.feedback-msg.success { background: rgba(52,211,153,0.1); color: #34d399; }
+.feedback-msg.error { background: rgba(248,113,113,0.1); color: #f87171; }
 </style>

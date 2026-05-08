@@ -155,8 +155,8 @@ onMounted(async () => {
 .invitee-name { font-weight: 600; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .invitee-time { font-size: 12px; color: var(--text-3); margin-top: 2px; }
 .badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; }
-.badge-success { background: #dcfce7; color: #16a34a; }
-.badge-pending { background: #fef3c7; color: #d97706; }
+.badge-success { background: rgba(52,211,153,0.12); color: #34d399; }
+.badge-pending { background: rgba(251,191,36,0.12); color: #fbbf24; }
 
 .empty-state { text-align: center; padding: 48px; color: var(--text-3); }
 
@@ -169,9 +169,6 @@ onMounted(async () => {
   .invite-stats { gap: 16px; }
 }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .badge-success { background: rgba(82,196,26,0.12); color: #73d13d; }
-[data-theme="dark"] .badge-pending { background: rgba(250,140,22,0.12); color: #ffa940; }
-[data-theme="dark"] .stat-item.success .stat-num { color: #73d13d; }
-[data-theme="dark"] .toast { background: #e6edf3; color: #0d1117; }
+.stat-item.success .stat-num { color: #34d399; }
+.toast { background: #f1f5f9; color: #0d1117; }
 </style>

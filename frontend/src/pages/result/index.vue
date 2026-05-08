@@ -69,8 +69,25 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 </script>
 
 <style scoped>
-.result-page { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; padding: 48px 24px; background: var(--bg); }
-.result-card { background: var(--card-bg); border-radius: 24px; padding: 56px 48px; max-width: 560px; width: 100%; text-align: center; box-shadow: var(--shadow-lg); }
+.result-page {
+  min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center;
+  padding: 48px 24px;
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1a2d5a 100%);
+  position: relative; overflow: hidden;
+}
+.result-page::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(59,130,246,0.06) 1px, transparent 1px);
+  background-size: 32px 32px; pointer-events: none;
+}
+.result-card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px; padding: 56px 48px; max-width: 560px; width: 100%; text-align: center;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+  position: relative; z-index: 1;
+}
 
 @media (max-width: 640px) {
   .result-page { padding: 20px 14px 80px; align-items: flex-start; }
@@ -97,8 +114,8 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 .ring-3 { inset: -28px; animation-delay: 0.6s; }
 @keyframes ring-pulse { 0% { opacity: 0.6; } 100% { opacity: 0; transform: scale(1.3); } }
 
-.result-title { font-size: 32px; font-weight: 800; color: var(--text-1); margin-bottom: 8px; }
-.result-sub { font-size: 15px; color: var(--text-3); margin-bottom: 32px; }
+.result-title { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.result-sub { font-size: 15px; color: rgba(255,255,255,0.5); margin-bottom: 32px; }
 
 .order-no-box { background: var(--primary-light); border-radius: 14px; padding: 24px; margin-bottom: 24px; }
 .order-no-label { font-size: 12px; font-weight: 600; color: var(--primary); letter-spacing: 3px; margin-bottom: 8px; }
@@ -106,9 +123,9 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 .copy-btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
 .copy-btn:hover { background: var(--primary-dark); }
 
-.free-notice { background: #f6ffed; border: 1.5px solid #b7eb8f; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; font-size: 15px; color: #389e0d; text-align: center; }
-.steps-card { background: #f6f8fb; border-radius: 14px; padding: 24px; margin-bottom: 28px; text-align: left; }
-.steps-title { font-size: 15px; font-weight: 700; color: var(--text-1); margin-bottom: 18px; }
+.free-notice { background: rgba(52,211,153,0.1); border: 1.5px solid rgba(52,211,153,0.25); border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; font-size: 15px; color: #34d399; text-align: center; }
+.steps-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 24px; margin-bottom: 28px; text-align: left; }
+.steps-title { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.85); margin-bottom: 18px; }
 .steps { display: flex; flex-direction: column; gap: 14px; }
 .step-item { display: flex; gap: 14px; align-items: flex-start; }
 .step-dot {
@@ -118,17 +135,13 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 3px 10px rgba(22,119,255,0.25);
 }
-.step-main { font-size: 14px; color: var(--text-2); line-height: 1.7; padding-top: 4px; }
+.step-main { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.7; padding-top: 4px; }
 .wechat-btn { color: var(--primary); cursor: pointer; }
 .wechat-btn:hover { text-decoration: underline; }
 
 .result-actions { display: flex; gap: 12px; }
 .btn-solid { flex: 1; background: linear-gradient(135deg, var(--primary), #4096ff); color: #fff; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 700; text-align: center; box-shadow: 0 6px 20px rgba(22,119,255,0.3); transition: box-shadow 0.15s; }
 .btn-solid:hover { box-shadow: 0 10px 28px rgba(22,119,255,0.4); }
-.btn-outline { flex: 1; border: 1.5px solid var(--border); color: var(--text-2); border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 500; text-align: center; transition: border-color 0.15s, color 0.15s; }
-.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-
-/* ── 暗色模式 ── */
-[data-theme="dark"] .steps-card { background: #161b22; }
-[data-theme="dark"] .free-notice { background: rgba(82,196,26,0.08); border-color: rgba(82,196,26,0.25); color: #73d13d; }
+.btn-outline { flex: 1; border: 1.5px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 500; text-align: center; transition: border-color 0.15s, color 0.15s; }
+.btn-outline:hover { border-color: #60a5fa; color: #60a5fa; }
 </style>

@@ -96,7 +96,7 @@ onMounted(async () => {
 .btn-new:hover { background: var(--primary-dark); }
 
 .skeleton-list { display: flex; flex-direction: column; gap: 12px; }
-.skeleton-order { height: 88px; border-radius: var(--radius); background: linear-gradient(90deg, #f0f2f5 25%, #e8edf2 50%, #f0f2f5 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+.skeleton-order { height: 88px; border-radius: var(--radius); background: linear-gradient(90deg, #1c2333 25%, #252d3f 50%, #1c2333 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
 .empty-state { text-align: center; padding: 80px 0; }
@@ -119,32 +119,23 @@ onMounted(async () => {
 .ACCEPTED .order-status-bar { background: var(--primary); }
 .IN_PROGRESS .order-status-bar { background: #13c2c2; }
 .COMPLETED .order-status-bar { background: var(--success); }
-.CLOSED .order-status-bar    { background: #d0d7de; }
+.CLOSED .order-status-bar    { background: #30363d; }
 .order-main { padding: 20px 20px 20px 20px; flex: 1; min-width: 0; }
 .order-course { font-size: 17px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .order-meta { display: flex; gap: 8px; font-size: 13px; color: var(--text-3); margin-bottom: 6px; flex-wrap: wrap; }
-.meta-type { background: #f0f2f5; padding: 2px 8px; border-radius: 5px; color: var(--text-2); }
+.meta-type { background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 5px; color: var(--text-2); }
 .meta-sep { color: var(--border); }
-.order-no { font-size: 12px; color: #d0d7de; font-family: monospace; }
+.order-no { font-size: 12px; color: var(--text-3); font-family: monospace; }
 .card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding: 20px 20px; flex-shrink: 0; }
 .order-price { font-size: 15px; font-weight: 800; color: var(--primary); }
 .free-price { color: #52c41a; }
 .order-status-badge { font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.PENDING .order-status-badge  { background: #fff7e6; color: #d46b08; }
-.ACCEPTED .order-status-badge { background: var(--primary-light); color: var(--primary); }
-.IN_PROGRESS .order-status-badge { background: #e6fffb; color: #08979c; }
-.COMPLETED .order-status-badge { background: #f6ffed; color: #389e0d; }
-.CLOSED .order-status-badge    { background: #f5f5f5; color: #8c8c8c; }
-.card-arrow { font-size: 20px; color: #d0d7de; }
-
-/* ── 暗色模式 ── */
-[data-theme="dark"] .order-card { background: var(--card-bg); }
-[data-theme="dark"] .PENDING .order-status-badge  { background: rgba(250,140,22,0.12); color: #ffa940; }
-[data-theme="dark"] .ACCEPTED .order-status-badge { background: rgba(59,158,255,0.12); color: #3b9eff; }
-[data-theme="dark"] .IN_PROGRESS .order-status-badge { background: rgba(19,194,194,0.12); color: #36cfc9; }
-[data-theme="dark"] .COMPLETED .order-status-badge { background: rgba(82,196,26,0.12); color: #73d13d; }
-[data-theme="dark"] .CLOSED .order-status-badge    { background: rgba(255,255,255,0.06); color: #8b949e; }
-[data-theme="dark"] .PENDING .order-status-bar  { background: #ffa940; }
-[data-theme="dark"] .IN_PROGRESS .order-status-bar { background: #36cfc9; }
-[data-theme="dark"] .CLOSED .order-status-bar    { background: #30363d; }
+.PENDING .order-status-badge  { background: rgba(250,140,22,0.12); color: #ffa940; }
+.ACCEPTED .order-status-badge { background: rgba(59,130,246,0.12); color: #60a5fa; }
+.IN_PROGRESS .order-status-badge { background: rgba(19,194,194,0.12); color: #36cfc9; }
+.COMPLETED .order-status-badge { background: rgba(52,211,153,0.12); color: #34d399; }
+.CLOSED .order-status-badge    { background: rgba(255,255,255,0.06); color: #8b949e; }
+.card-arrow { font-size: 20px; color: var(--text-3); }
+.PENDING .order-status-bar  { background: #ffa940; }
+.IN_PROGRESS .order-status-bar { background: #36cfc9; }
 </style>

@@ -140,7 +140,7 @@ onMounted(load)
 .post-content :deep(h2) { font-size: 18px; }
 .post-content :deep(h3) { font-size: 16px; }
 .post-content :deep(p) { margin: 8px 0; }
-.post-content :deep(code) { background: #f5f7fa; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: var(--primary); }
+.post-content :deep(code) { background: #1c2333; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #60a5fa; }
 .post-content :deep(pre) { background: #1e1e2e; padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
 .post-content :deep(pre code) { background: none; color: #cdd6f4; font-size: 13px; }
 .post-content :deep(blockquote) { border-left: 3px solid var(--primary); padding: 4px 12px; margin: 8px 0; color: var(--text-3); background: var(--bg); border-radius: 0 6px 6px 0; }
@@ -163,7 +163,7 @@ onMounted(load)
 .comment-user { font-size: 13px; font-weight: 600; color: var(--text-1); }
 .comment-grade { font-size: 11px; color: var(--primary); background: var(--primary-light); padding: 1px 6px; border-radius: 10px; }
 .comment-time { font-size: 11px; color: var(--text-3); margin-left: auto; }
-.comment-del-btn { font-size: 11px; color: #f56c6c; background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; }
+.comment-del-btn { font-size: 11px; color: #f87171; background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; }
 .comment-del-btn:hover { background: rgba(245,108,108,0.1); }
 .comment-content { font-size: 14px; color: var(--text-2); line-height: 1.6; }
 
@@ -171,8 +171,4 @@ onMounted(load)
 .comment-login-hint { text-align: center; color: var(--text-3); font-size: 14px; padding: 16px; background: var(--bg); border-radius: 10px; }
 .auth-link { color: var(--primary); font-weight: 600; }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .post-content :deep(code) { background: #1c2333; }
-[data-theme="dark"] .comment-del-btn { color: #ff7875; }
-[data-theme="dark"] .comment-del-btn:hover { background: rgba(255,120,117,0.1); }
 </style>

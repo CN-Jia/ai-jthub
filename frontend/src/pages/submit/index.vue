@@ -279,13 +279,13 @@ async function doSubmit() {
 .input {
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   padding: 10px 14px; font-size: 15px; color: var(--text-1);
-  background: #fafbfc; outline: none;
+  background: var(--white); outline: none;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   width: 100%;
 }
 .input:focus {
-  border-color: var(--primary); background: #fff;
-  box-shadow: 0 0 0 3px rgba(22,119,255,0.1);
+  border-color: var(--primary); background: var(--white);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
 }
 .field-hint { font-size: 12px; color: var(--text-3); margin-top: -4px; }
 
@@ -303,9 +303,9 @@ async function doSubmit() {
 /* 提示栏 */
 .notice-bar {
   display: flex; align-items: flex-start; gap: 10px;
-  background: #fffbe6; border: 1px solid #ffe58f;
+  background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2);
   border-radius: var(--radius-sm); padding: 14px 16px;
-  font-size: 14px; color: #7d5a00; margin-bottom: 24px; line-height: 1.6;
+  font-size: 14px; color: #fbbf24; margin-bottom: 24px; line-height: 1.6;
 }
 .notice-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
 .wechat-id { color: var(--primary); cursor: pointer; }
@@ -363,9 +363,4 @@ async function doSubmit() {
 .mini-price:last-child { border-bottom: none; padding-bottom: 0; }
 .mini-price-val { font-weight: 700; color: var(--primary); }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .input { background: #0d1117; border-color: #30363d; color: #e6edf3; }
-[data-theme="dark"] .input:focus { background: #0d1117; border-color: #3b9eff; }
-[data-theme="dark"] .price-tip-desc { color: #79b8ff; }
-[data-theme="dark"] .notice-bar { background: rgba(250,219,20,0.08); border-color: rgba(250,219,20,0.2); color: #fbbf24; }
 </style>

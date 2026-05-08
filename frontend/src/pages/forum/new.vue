@@ -316,7 +316,7 @@ async function submit() {
 .md-preview :deep(h2) { font-size: 18px; }
 .md-preview :deep(h3) { font-size: 16px; }
 .md-preview :deep(p) { margin: 8px 0; }
-.md-preview :deep(code) { background: #f5f7fa; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: var(--primary); }
+.md-preview :deep(code) { background: #1c2333; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #60a5fa; }
 .md-preview :deep(pre) { background: #1e1e2e; padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
 .md-preview :deep(pre code) { background: none; color: #cdd6f4; font-size: 13px; }
 .md-preview :deep(blockquote) { border-left: 3px solid var(--primary); padding: 4px 12px; margin: 8px 0; color: var(--text-3); background: var(--bg); border-radius: 0 6px 6px 0; }
@@ -329,9 +329,4 @@ async function submit() {
 .md-preview :deep(th), .md-preview :deep(td) { border: 1px solid var(--border); padding: 6px 12px; font-size: 13px; }
 .md-preview :deep(th) { background: var(--bg); font-weight: 600; }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .required { color: #ff7875; }
-[data-theme="dark"] .cover-error { color: #ff7875; }
-[data-theme="dark"] .md-preview :deep(code) { background: #1c2333; }
-[data-theme="dark"] .md-table code { background: #1c2333; }
 </style>

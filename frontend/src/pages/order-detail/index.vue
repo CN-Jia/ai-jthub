@@ -201,11 +201,11 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: 24px 28px; display: flex; align-items: center; justify-content: space-between;
 }
-.PENDING.status-header  { background: #fff7e6; }
-.ACCEPTED.status-header { background: var(--primary-light); }
-.IN_PROGRESS.status-header { background: #e6fffb; }
-.COMPLETED.status-header { background: #f6ffed; }
-.CLOSED.status-header    { background: #f5f5f5; }
+.PENDING.status-header  { background: rgba(250,140,22,0.1); }
+.ACCEPTED.status-header { background: rgba(59,130,246,0.1); }
+.IN_PROGRESS.status-header { background: rgba(19,194,194,0.1); }
+.COMPLETED.status-header { background: rgba(52,211,153,0.1); }
+.CLOSED.status-header    { background: rgba(255,255,255,0.04); }
 .status-header-left { display: flex; align-items: center; gap: 14px; }
 .status-icon { font-size: 32px; }
 .status-text { font-size: 20px; font-weight: 800; color: var(--text-1); }
@@ -214,11 +214,11 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 
 /* ─── 详情表格 ─── */
 .info-table { background: var(--card); border-radius: 0 0 var(--radius-lg) var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
-.info-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 28px; border-bottom: 1px solid #f5f7fa; }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 28px; border-bottom: 1px solid var(--border); }
 .info-row:last-child { border-bottom: none; }
 .info-row.highlight { background: var(--primary-light); }
-.info-row.free-row { background: #f6ffed; }
-.info-row.discount-row { background: #fff7e6; }
+.info-row.free-row { background: rgba(52,211,153,0.06); }
+.info-row.discount-row { background: rgba(250,140,22,0.06); }
 .free-badge { background: #52c41a; color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
 .discount-badge { background: #fa8c16; color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; margin-right: 6px; }
 .info-key { font-size: 14px; color: var(--text-3); font-weight: 500; }
@@ -226,15 +226,15 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 .info-val.bold { font-weight: 700; font-size: 16px; }
 .info-val.price { font-size: 22px; font-weight: 900; color: var(--primary); }
 
-.free-card { border: 1.5px solid #b7eb8f; background: #f6ffed; }
-.discount-card { border: 1.5px solid #ffd591; background: #fffbe6; }
+.free-card { border: 1.5px solid rgba(52,211,153,0.3); background: rgba(52,211,153,0.06); }
+.discount-card { border: 1.5px solid rgba(250,140,22,0.3); background: rgba(250,140,22,0.06); }
 
 /* ─── 侧边栏 ─── */
 .side-col { display: flex; flex-direction: column; gap: 16px; }
 .side-card { background: var(--card); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
 .side-title { font-size: 15px; font-weight: 700; color: var(--text-1); margin-bottom: 10px; }
 .side-desc { font-size: 13px; color: var(--text-3); margin-bottom: 16px; }
-.wechat-box { background: #f6f8fb; border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.15s; }
+.wechat-box { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.15s; }
 .wechat-box:hover { background: var(--primary-light); }
 .wechat-label-sm { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
 .wechat-id { font-size: 18px; font-weight: 800; color: var(--text-1); }
@@ -265,25 +265,11 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 .tl-body { flex: 1; }
 .tl-status { font-size: 14px; font-weight: 600; color: var(--text-1); }
 .tl-time { font-size: 12px; color: var(--text-3); margin-top: 2px; }
-.tl-remark { font-size: 12px; color: var(--text-2); margin-top: 4px; background: #f6f8fb; border-radius: 4px; padding: 4px 8px; }
+.tl-remark { font-size: 12px; color: var(--text-2); margin-top: 4px; background: rgba(255,255,255,0.04); border-radius: 4px; padding: 4px 8px; }
 
 /* ─── 加载 ─── */
 .loading-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 120px 0; color: var(--text-3); font-size: 15px; }
 .loader { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .PENDING.status-header  { background: rgba(250,140,22,0.1); }
-[data-theme="dark"] .ACCEPTED.status-header { background: rgba(59,158,255,0.1); }
-[data-theme="dark"] .IN_PROGRESS.status-header { background: rgba(19,194,194,0.1); }
-[data-theme="dark"] .COMPLETED.status-header { background: rgba(82,196,26,0.1); }
-[data-theme="dark"] .CLOSED.status-header    { background: rgba(255,255,255,0.04); }
-[data-theme="dark"] .info-row { border-bottom-color: #21262d; }
-[data-theme="dark"] .wechat-box { background: #1c2333; }
-[data-theme="dark"] .wechat-box:hover { background: #252d3f; }
-[data-theme="dark"] .tl-remark { background: #161b22; }
-[data-theme="dark"] .info-row.free-row { background: rgba(82,196,26,0.08); }
-[data-theme="dark"] .info-row.discount-row { background: rgba(250,140,22,0.08); }
-[data-theme="dark"] .free-card { background: rgba(82,196,26,0.08); border-color: rgba(82,196,26,0.3); }
-[data-theme="dark"] .discount-card { background: rgba(250,140,22,0.08); border-color: rgba(250,140,22,0.3); }
 </style>

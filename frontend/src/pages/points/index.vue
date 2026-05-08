@@ -206,14 +206,14 @@ onMounted(() => {
 .redeem-name { font-weight: 600; color: var(--text-1); }
 .redeem-meta { font-size: 12px; color: var(--text-3); display: flex; gap: 16px; flex-wrap: wrap; }
 .redeem-note { margin-top: 8px; font-size: 12px; color: var(--text-3); }
-.coupon-chip { margin-top: 8px; padding: 6px 10px; background: #fef9c3; border-radius: 6px; font-size: 12px; color: #92400e; }
+.coupon-chip { margin-top: 8px; padding: 6px 10px; background: rgba(234,179,8,0.1); border-radius: 6px; font-size: 12px; color: #fbbf24; }
 
-.status-pending { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-.status-success { background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-.status-danger { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.status-pending { background: rgba(251,191,36,0.1); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.status-success { background: rgba(52,211,153,0.1); color: #34d399; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.status-danger { background: rgba(248,113,113,0.1); color: #f87171; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 
 .coupon-list { display: flex; flex-direction: column; gap: 12px; }
-.coupon-card { display: flex; align-items: center; gap: 16px; padding: 16px; background: linear-gradient(135deg, #fff7ed, #fffbeb); border: 1px dashed #f59e0b; border-radius: 12px; }
+.coupon-card { display: flex; align-items: center; gap: 16px; padding: 16px; background: linear-gradient(135deg, rgba(234,179,8,0.06), rgba(250,140,22,0.04)); border: 1px dashed rgba(245,158,11,0.3); border-radius: 12px; }
 .coupon-amount { font-size: 2rem; font-weight: 700; color: #d97706; min-width: 80px; text-align: center; }
 .coupon-info { flex: 1; }
 .coupon-code { font-family: monospace; font-size: 1rem; font-weight: 700; letter-spacing: 2px; color: var(--text-1); }
@@ -233,14 +233,4 @@ onMounted(() => {
   .log-item { flex-wrap: wrap; }
 }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .badge-green { background: rgba(82,196,26,0.12); color: #73d13d; }
-[data-theme="dark"] .badge-blue { background: rgba(22,119,255,0.12); color: #3b9eff; }
-[data-theme="dark"] .coupon-chip { background: rgba(234,179,8,0.1); color: #fbbf24; }
-[data-theme="dark"] .status-pending { background: rgba(250,140,22,0.12); color: #ffa940; }
-[data-theme="dark"] .status-success { background: rgba(82,196,26,0.12); color: #73d13d; }
-[data-theme="dark"] .status-danger { background: rgba(255,77,79,0.12); color: #ff7875; }
-[data-theme="dark"] .coupon-card { background: linear-gradient(135deg, rgba(234,179,8,0.06), rgba(250,140,22,0.04)); border-color: rgba(245,158,11,0.3); }
-[data-theme="dark"] .log-delta.positive { color: #73d13d; }
-[data-theme="dark"] .log-delta.negative { color: #ff7875; }
 </style>

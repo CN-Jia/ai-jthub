@@ -1,7 +1,40 @@
 /* ═══════════════════════════════════
-   Light Theme (默认) — 高级感配色
+   Dark Theme (默认) — 深邃星空风格
    ═══════════════════════════════════ */
 :root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: rgba(59,130,246,0.1);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --text-1: #f1f5f9;
+  --text-2: #94a3b8;
+  --text-3: #64748b;
+  --border: #1e293b;
+  --bg: #0b0f1a;
+  --white: #111827;
+  --card-bg: #111827;
+  --radius: 14px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
+  --nav-h: 64px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  /* 别名：供历史代码兼容 */
+  --card: var(--card-bg);
+  --radius-lg: 16px;
+  --radius-sm: 8px;
+  /* Navbar specific */
+  --navbar-bg: rgba(11,15,26,0.88);
+  --navbar-border: rgba(30,41,59,0.8);
+  --navbar-shadow: 0 1px 24px rgba(0,0,0,0.25);
+}
+
+/* ═══════════════════════════════════
+   Light Theme（可选切换）
+   ═══════════════════════════════════ */
+[data-theme="light"] {
   --primary: #2563eb;
   --primary-dark: #1d4ed8;
   --primary-light: rgba(37,99,235,0.06);
@@ -15,25 +48,15 @@
   --bg: #f8fafc;
   --white: #ffffff;
   --card-bg: #ffffff;
-  --radius: 14px;
   --shadow-sm: 0 1px 3px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.02);
   --shadow: 0 4px 16px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.03);
   --shadow-lg: 0 12px 48px rgba(15,23,42,0.08), 0 2px 8px rgba(15,23,42,0.03);
-  --nav-h: 64px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  /* 别名：供历史代码兼容 */
-  --card: var(--card-bg);
-  --radius-lg: 16px;
-  --radius-sm: 8px;
-  /* Navbar specific */
   --navbar-bg: rgba(255,255,255,0.88);
   --navbar-border: rgba(226,232,240,0.7);
   --navbar-shadow: 0 1px 24px rgba(15,23,42,0.05);
 }
 
-/* ═══════════════════════════════════
-   Dark Theme — 深邃星空风格
-   ═══════════════════════════════════ */
+/* [data-theme="dark"] 与 :root 相同，保留选择器避免 JS 切换失效 */
 [data-theme="dark"] {
   --primary: #3b82f6;
   --primary-dark: #2563eb;
@@ -51,7 +74,6 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
   --shadow: 0 4px 20px rgba(0,0,0,0.4);
   --shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
-  /* Navbar specific */
   --navbar-bg: rgba(11,15,26,0.88);
   --navbar-border: rgba(30,41,59,0.8);
   --navbar-shadow: 0 1px 24px rgba(0,0,0,0.25);
@@ -82,14 +104,17 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 
-/* 暗色模式全局点阵背景 — 与首页粒子星空氛围一致 */
-[data-theme="dark"] body {
+/* 全局点阵背景 — 与首页粒子星空氛围一致 */
+body {
   background-color: var(--bg);
   background-image:
     radial-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
     radial-gradient(rgba(148,163,184,0.02) 1px, transparent 1px);
   background-size: 40px 40px, 80px 80px;
   background-position: 0 0, 20px 20px;
+}
+[data-theme="light"] body {
+  background-image: none;
 }
 
 button { cursor: pointer; font-family: inherit; }
@@ -156,7 +181,7 @@ input, textarea, select { font-family: inherit; }
 .badge-blue { background: rgba(37,99,235,0.08); color: #2563eb; }
 .badge-green { background: rgba(16,185,129,0.08); color: #10b981; }
 .badge-orange { background: rgba(245,158,11,0.08); color: #f59e0b; }
-.badge-gray { background: #f1f5f9; color: #64748b; }
+.badge-gray { background: rgba(255,255,255,0.06); color: #94a3b8; }
 .badge-red { background: rgba(239,68,68,0.08); color: #ef4444; }
 
 [data-theme="dark"] .badge-blue { background: rgba(59,130,246,0.12); color: #60a5fa; }
@@ -175,7 +200,7 @@ input, textarea, select { font-family: inherit; }
 .status-ACCEPTED { background: rgba(37,99,235,0.08); color: #2563eb; }
 .status-IN_PROGRESS { background: rgba(6,182,212,0.08); color: #06b6d4; }
 .status-COMPLETED { background: rgba(16,185,129,0.08); color: #10b981; }
-.status-CLOSED { background: #f1f5f9; color: #64748b; }
+.status-CLOSED { background: rgba(255,255,255,0.05); color: #94a3b8; }
 .status-CREATED { background: rgba(37,99,235,0.08); color: #2563eb; }
 .status-PAID { background: rgba(245,158,11,0.08); color: #f59e0b; }
 .status-CANCELLED { background: rgba(239,68,68,0.08); color: #ef4444; }
@@ -222,9 +247,9 @@ input, textarea, select { font-family: inherit; }
   color: #f87171;
 }
 
-/* ── 暗色模式：认证页面背景 ── */
-[data-theme="dark"] .auth-page {
-  background: linear-gradient(135deg, #0b0f1a 0%, #111827 100%);
+/* ── 认证页面背景（默认深色，与首页一致） ── */
+.auth-page {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1a2d5a 100%) !important;
 }
 
 /* ── 暗色模式：提示栏/notice ── */

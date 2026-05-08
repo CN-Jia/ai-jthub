@@ -1,8 +1,10 @@
 <template>
   <div class="activity-page">
-    <div class="page-top">
-      <h1 class="page-title">活动 &amp; 公告</h1>
-      <p class="page-sub">最新优惠活动与系统公告</p>
+    <div class="page-banner">
+      <div class="page-banner-inner">
+        <h1 class="page-banner-title">活动 &amp; 公告</h1>
+        <p class="page-banner-sub">最新优惠活动与系统公告</p>
+      </div>
     </div>
 
     <div class="page-body">
@@ -71,18 +73,19 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 <style scoped>
 .activity-page { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
 
-.page-top {
-  background: linear-gradient(160deg, #0c1b4d 0%, #1677ff 100%);
-  padding: 60px 32px 48px; text-align: center;
+.page-banner {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1e3a5f 100%);
+  padding: 52px 32px 44px; text-align: center;
 }
-.page-title { font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 10px; }
-.page-sub { font-size: 15px; color: rgba(255,255,255,0.75); }
+.page-banner-inner { max-width: 1200px; margin: 0 auto; }
+.page-banner-title { font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 10px; }
+.page-banner-sub { font-size: 15px; color: rgba(255,255,255,0.5); }
 
 .page-body { max-width: 1200px; margin: 0 auto; padding: 48px 32px 80px; }
 
 @media (max-width: 640px) {
-  .page-top { padding: 40px 20px 32px; }
-  .page-title { font-size: 26px; }
+  .page-banner { padding: 32px 20px 28px; }
+  .page-banner-title { font-size: 26px; }
   .page-body { padding: 20px 14px 80px; }
   .activity-grid { grid-template-columns: 1fr; gap: 14px; }
   .activity-card { padding: 20px; }
@@ -97,7 +100,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 /* 骨架屏 */
 .skeleton-card {
   height: 180px; border-radius: var(--radius-lg);
-  background: linear-gradient(90deg, #f0f2f5 25%, #e8edf2 50%, #f0f2f5 75%);
+  background: linear-gradient(90deg, #1c2333 25%, #252d3f 50%, #1c2333 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -126,22 +129,16 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
   border-radius: 100px;
 }
 .type-notice .card-badge { background: var(--primary-light); color: var(--primary); }
-.type-promo .card-badge { background: #fff7e6; color: var(--warning); }
+.type-promo .card-badge { background: rgba(251,191,36,0.1); color: var(--warning); }
 
 .card-tags { display: flex; gap: 6px; }
-.tag-expired { font-size: 11px; padding: 3px 10px; border-radius: 100px; background: #f5f5f5; color: #999; }
-.tag-today   { font-size: 11px; padding: 3px 10px; border-radius: 100px; background: #fff2e8; color: #d46b08; }
-.tag-days    { font-size: 11px; padding: 3px 10px; border-radius: 100px; background: #e6fffb; color: #08979c; }
+.tag-expired { font-size: 11px; padding: 3px 10px; border-radius: 100px; background: rgba(255,255,255,0.05); color: #64748b; }
+.tag-today   { font-size: 11px; padding: 3px 10px; border-radius: 100px; background: rgba(251,140,22,0.1); color: #fb923c; }
+.tag-days    { font-size: 11px; padding: 3px 10px; border-radius: 100px; background: rgba(6,182,212,0.1); color: #22d3ee; }
 
 .card-title { font-size: 17px; font-weight: 700; color: var(--text-1); line-height: 1.4; }
 .card-content { font-size: 13px; color: var(--text-2); line-height: 1.8; flex: 1; }
 .card-date { font-size: 12px; color: var(--text-3); }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .skeleton-card {
-  background: linear-gradient(90deg, #1c2333 25%, #252d3f 50%, #1c2333 75%);
-  background-size: 200% 100%;
-}
-[data-theme="dark"] .type-promo .card-badge { background: rgba(250,140,22,0.12); }
-[data-theme="dark"] .activity-card.expired { border-top-color: #30363d; }
+.activity-card.expired { border-top-color: #1e293b; }
 </style>

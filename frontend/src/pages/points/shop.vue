@@ -162,12 +162,12 @@ onMounted(() => {
 .shop-cover-placeholder { display: flex; align-items: center; justify-content: center; font-size: 3rem; }
 .shop-body { padding: 16px; }
 .shop-type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-bottom: 8px; }
-.type-service { background: #dbeafe; color: #2563eb; }
-.type-free { background: #dcfce7; color: #16a34a; }
-.type-discount { background: #fef3c7; color: #d97706; }
+.type-service { background: rgba(37,99,235,0.15); color: #60a5fa; }
+.type-free { background: rgba(22,163,74,0.15); color: #4ade80; }
+.type-discount { background: rgba(217,119,6,0.12); color: #fbbf24; }
 .shop-name { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 6px; }
 .shop-desc { font-size: 12px; color: var(--text-3); margin-bottom: 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.shop-discount { font-size: 13px; color: #d97706; margin-bottom: 8px; }
+.shop-discount { font-size: 13px; color: #fbbf24; margin-bottom: 8px; }
 .shop-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .shop-cost { display: flex; align-items: baseline; gap: 4px; }
 .cost-num { font-size: 20px; font-weight: 800; color: var(--primary); }
@@ -189,10 +189,5 @@ onMounted(() => {
   .shop-grid { grid-template-columns: 1fr; }
 }
 
-/* ── 暗色模式 ── */
-[data-theme="dark"] .type-service { background: rgba(37,99,235,0.15); color: #60a5fa; }
-[data-theme="dark"] .type-free { background: rgba(22,163,74,0.15); color: #4ade80; }
-[data-theme="dark"] .type-discount { background: rgba(217,119,6,0.12); color: #fbbf24; }
-[data-theme="dark"] .shop-discount { color: #fbbf24; }
-[data-theme="dark"] .shop-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+.shop-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.3); }
 </style>
