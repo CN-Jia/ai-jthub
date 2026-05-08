@@ -392,6 +392,7 @@ function handleSubmit() {
 @media (max-width: 640px) {
   .main-content { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
   .hide-on-mobile { display: none !important; }
+  .navbar { padding-top: env(safe-area-inset-top, 0px); }
 }
 
 /* ═══════════════════════════════════

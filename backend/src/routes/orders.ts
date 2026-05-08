@@ -104,6 +104,7 @@ export async function orderRoutes(fastify: FastifyInstance) {
       orderId: order.id,
       orderNo: order.orderNo,
       status: order.status,
+      quotedPrice: order.quotedPrice ?? null,
       createdAt: order.createdAt,
       adminWechatId: env.ADMIN_WECHAT_ID,
     }))
@@ -123,6 +124,7 @@ export async function orderRoutes(fastify: FastifyInstance) {
     const user = request.user as { userId: string; role?: string }
     const order = await getOrderDetail(id, user.role === 'admin' ? undefined : user.userId)
     if (!order) return reply.code(404).send(errorResponse(ERROR_CODES.ORDER_NOT_FOUND, '订单不存在'))
-    return reply.send(successResponse({ ...order, adminNote: undefined }))
+    const { adminNote: _note, ...orderData } = order
+    return reply.send(successResponse(orderData))
   })
 }

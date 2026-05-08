@@ -35,7 +35,8 @@
             </div>
           </div>
           <div class="card-right">
-            <div v-if="o.quotedPrice" class="order-price">{{ o.quotedPrice }}</div>
+            <div v-if="o.quotedPrice === '0'" class="order-price free-price">🎁 免费</div>
+            <div v-else-if="o.quotedPrice" class="order-price">¥{{ o.quotedPrice }}</div>
             <span class="order-status-badge" :class="o.status">{{ statusLabel(o.status) }}</span>
             <span class="card-arrow">›</span>
           </div>
@@ -102,6 +103,7 @@ onMounted(async () => {
 .order-no { font-size: 12px; color: #d0d7de; font-family: monospace; }
 .card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding: 20px 20px; flex-shrink: 0; }
 .order-price { font-size: 15px; font-weight: 800; color: var(--primary); }
+.free-price { color: #52c41a; }
 .order-status-badge { font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
 .PENDING .order-status-badge  { background: #fff7e6; color: #d46b08; }
 .ACCEPTED .order-status-badge { background: var(--primary-light); color: var(--primary); }

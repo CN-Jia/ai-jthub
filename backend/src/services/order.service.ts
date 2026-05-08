@@ -20,10 +20,35 @@ export interface CreateOrderInput {
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const orderNo = generateOrderNo()
   return prisma.$transaction(async (tx) => {
-    // 组装备注信息（包含优惠券和服务套餐选择）
+    let quotedPrice: string | undefined
     const notes: string[] = []
-    if (input.redeemItemId) notes.push(`[服务套餐: ${input.redeemItemId}]`)
-    if (input.couponId) notes.push(`[优惠券: ${input.couponId}]`)
+
+    // 验证并使用服务套餐兑换
+    if (input.redeemItemId && input.userId) {
+      const redeemOrder = await tx.redeemOrder.findFirst({
+        where: {
+          id: input.redeemItemId,
+          userId: input.userId,
+          status: 'COMPLETED',
+          usedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        include: { shopItem: { select: { name: true, discountAmt: true } } },
+      })
+      if (!redeemOrder) {
+        throw Object.assign(new Error('服务套餐不可用或已过期'), { code: ERROR_CODES.VALIDATION_ERROR })
+      }
+
+      const discountAmt = redeemOrder.shopItem.discountAmt ? Number(redeemOrder.shopItem.discountAmt) : 0
+      if (discountAmt === 0) {
+        // 免费兑换：立即标记为 ¥0，无需付款
+        quotedPrice = '0'
+        notes.push(`[服务套餐: ${redeemOrder.shopItem.name}（免费兑换）]`)
+      } else {
+        // 折扣服务：等管理员报价后自动扣减
+        notes.push(`[服务套餐: ${redeemOrder.shopItem.name}（折扣¥${discountAmt}）]`)
+      }
+    }
 
     const order = await tx.order.create({
       data: {
@@ -38,8 +63,18 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         userId: input.userId ?? null,
         redeemItemId: input.redeemItemId ?? null,
         adminNote: notes.length > 0 ? notes.join(' ') : null,
+        ...(quotedPrice !== undefined && { quotedPrice }),
       },
     })
+
+    // 标记兑换记录已使用
+    if (input.redeemItemId) {
+      await tx.redeemOrder.update({
+        where: { id: input.redeemItemId },
+        data: { usedAt: new Date(), usedOrderId: order.id },
+      })
+    }
+
     await tx.statusHistory.create({
       data: {
         orderId: order.id,
@@ -77,13 +112,29 @@ export async function getMyOrders(userId: string, page = 1, pageSize = 20, statu
 /** 查询单个订单详情（用户视角，不含 adminNote） */
 export async function getOrderDetail(orderId: string, userId?: string) {
   const where = userId ? { id: orderId, userId } : { id: orderId }
-  return prisma.order.findFirst({
+  const order = await prisma.order.findFirst({
     where,
     include: {
       orderType: { select: { id: true, name: true, price: true } },
       statusHistory: { orderBy: { createdAt: 'asc' } },
     },
   })
+  if (!order) return null
+
+  // 附加服务套餐信息（用于前端展示折扣/免费标识）
+  let redeemService: { name: string; discountAmt: number; isFree: boolean } | null = null
+  if (order.redeemItemId) {
+    const redeemOrder = await prisma.redeemOrder.findUnique({
+      where: { id: order.redeemItemId },
+      include: { shopItem: { select: { name: true, discountAmt: true } } },
+    })
+    if (redeemOrder) {
+      const discountAmt = redeemOrder.shopItem.discountAmt ? Number(redeemOrder.shopItem.discountAmt) : 0
+      redeemService = { name: redeemOrder.shopItem.name, discountAmt, isFree: discountAmt === 0 }
+    }
+  }
+
+  return { ...order, redeemService }
 }
 
 /** 管理员查询订单列表（含各状态汇总） */
@@ -174,9 +225,35 @@ export async function addAdminNote(orderId: string, note: string): Promise<Order
   return prisma.order.update({ where: { id: orderId }, data: { adminNote: note } })
 }
 
-/** 管理员设置报价 */
+/** 管理员设置报价（若订单含折扣服务，自动扣减折扣） */
 export async function setQuotedPrice(orderId: string, price: string): Promise<Order> {
-  return prisma.order.update({ where: { id: orderId }, data: { quotedPrice: price } })
+  const order = await prisma.order.findUnique({ where: { id: orderId } })
+  if (!order) throw new Error('订单不存在')
+
+  let finalPrice = price
+  let noteAddition = ''
+
+  if (order.redeemItemId) {
+    const redeemOrder = await prisma.redeemOrder.findUnique({
+      where: { id: order.redeemItemId },
+      include: { shopItem: { select: { discountAmt: true } } },
+    })
+    const discountAmt = redeemOrder?.shopItem?.discountAmt ? Number(redeemOrder.shopItem.discountAmt) : 0
+    if (discountAmt > 0) {
+      const original = parseFloat(price)
+      const final = Math.max(0, original - discountAmt)
+      finalPrice = final.toFixed(2)
+      noteAddition = ` [原价¥${price}，折扣抵扣¥${discountAmt}，实付¥${finalPrice}]`
+    }
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      quotedPrice: finalPrice,
+      ...(noteAddition ? { adminNote: (order.adminNote ?? '') + noteAddition } : {}),
+    },
+  })
 }
 
 /** 获取统计数据 */

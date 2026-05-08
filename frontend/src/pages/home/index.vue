@@ -63,6 +63,30 @@
             <span class="stat-label">完成案例</span>
           </div>
         </div>
+
+        <!-- 价格参考（紧凑，嵌于 Hero） -->
+        <div class="hero-price" :class="{ visible: heroVis }">
+          <div class="hero-price-head">
+            <span class="hero-price-title">价格参考</span>
+            <span class="hero-price-hint">最终报价以管理员确认为准</span>
+          </div>
+          <div v-if="loadingTypes" class="hero-price-skeleton">
+            <div class="hero-skel-line" v-for="i in 3" :key="i" />
+          </div>
+          <div v-else class="hero-price-rows">
+            <div v-for="(t, i) in orderTypes" :key="t.id"
+              class="hero-price-row" @click="goSubmitWithType(t.id)">
+              <div class="hero-price-left">
+                <span class="hero-price-idx">{{ i + 1 }}</span>
+                <span class="hero-price-name">{{ t.name }}</span>
+              </div>
+              <div class="hero-price-right">
+                <span class="hero-price-tag">{{ t.price }}</span>
+                <svg class="hero-price-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 向下滚动提示 -->
@@ -147,65 +171,6 @@
         </div>
       </section>
 
-      <!-- 两栏：价格 + 提交入口 -->
-      <div class="two-col">
-        <!-- 价格参考 -->
-        <section class="section reveal">
-          <div class="section-head">
-            <h2 class="section-title">价格参考</h2>
-            <span class="section-hint">最终报价以管理员确认为准</span>
-          </div>
-          <div class="price-card">
-            <div v-if="loadingTypes" class="price-skeleton">
-              <div class="skeleton-line" v-for="i in 4" :key="i" />
-            </div>
-            <div v-else>
-              <div v-for="(t, i) in orderTypes" :key="t.id"
-                class="price-row" :class="{ last: i === orderTypes.length - 1 }"
-                @click="goSubmitWithType(t.id)">
-                <div class="price-left">
-                  <span class="price-idx">{{ i + 1 }}</span>
-                  <div>
-                    <div class="price-name">{{ t.name }}</div>
-                    <div v-if="t.description" class="price-desc">{{ t.description }}</div>
-                  </div>
-                </div>
-                <div class="price-right">
-                  <span class="price-tag">{{ t.price }}</span>
-                  <svg class="price-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 提交入口 CTA -->
-        <section class="section reveal" style="--delay:100ms">
-          <div class="cta-card">
-            <div class="cta-glow" />
-            <div class="cta-glow-2" />
-            <div class="cta-content">
-              <div class="cta-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              </div>
-              <h3 class="cta-title">提交您的需求</h3>
-              <p class="cta-desc">填写课程信息，管理员 1-2 小时内回复，价格透明无隐费</p>
-              <div class="cta-steps">
-                <div class="cta-step"><span class="step-n">1</span><span>登录并填写需求信息</span></div>
-                <div class="cta-step"><span class="step-n">2</span><span>添加管理员微信备注订单号</span></div>
-                <div class="cta-step"><span class="step-n">3</span><span>确认报价，完成交易</span></div>
-              </div>
-              <div class="cta-wechat">管理员微信：<strong>{{ adminWechat }}</strong></div>
-              <template v-if="store.isLoggedIn">
-                <router-link to="/submit" class="cta-btn">提交需求 →</router-link>
-              </template>
-              <template v-else>
-                <button class="cta-btn" @click="openLogin">登录后提交 →</button>
-              </template>
-            </div>
-          </div>
-        </section>
-      </div>
     </div>
   </div>
 </template>
@@ -739,6 +704,56 @@ onUnmounted(() => {
   background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.12), transparent);
 }
 
+/* Hero 价格参考（紧凑） */
+.hero-price {
+  opacity: 0; transform: translateY(32px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 32px;
+  width: 100%; max-width: 520px; margin-left: auto; margin-right: auto;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+.hero-price.visible { opacity: 1; transform: none; transition-delay: 0.62s; }
+.hero-price-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.hero-price-title { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 0.08em; text-transform: uppercase; }
+.hero-price-hint { font-size: 11px; color: rgba(255,255,255,0.28); }
+.hero-price-skeleton { padding: 10px 20px; }
+.hero-skel-line {
+  height: 13px; border-radius: 6px; margin-bottom: 8px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite;
+}
+.hero-price-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px; cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+.hero-price-row:last-child { border-bottom: none; }
+.hero-price-row:hover { background: rgba(255,255,255,0.05); }
+.hero-price-left { display: flex; align-items: center; gap: 10px; }
+.hero-price-idx {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: rgba(96,165,250,0.15); color: #60a5fa;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.hero-price-name { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.78); }
+.hero-price-right { display: flex; align-items: center; gap: 6px; }
+.hero-price-tag {
+  background: rgba(96,165,250,0.15); color: #60a5fa;
+  font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 6px;
+}
+.hero-price-arrow { color: rgba(255,255,255,0.22); transition: color 0.15s, transform 0.15s; flex-shrink: 0; }
+.hero-price-row:hover .hero-price-arrow { color: #60a5fa; transform: translateX(3px); }
+
 /* Scroll hint */
 .scroll-hint {
   position: absolute; bottom: 32px; left: 50%;
@@ -1057,6 +1072,9 @@ onUnmounted(() => {
   .stat-label { font-size: 11px; }
   .stat-divider { height: 32px; }
   .scroll-hint { display: none; }
+  .hero-price { margin-top: 24px; }
+  .hero-price-row { padding: 9px 16px; }
+  .hero-price-name { font-size: 12px; }
 
   .features-section { padding: 56px 0; }
   .features-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }

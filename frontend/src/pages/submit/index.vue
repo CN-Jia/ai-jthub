@@ -60,23 +60,21 @@
               <option value="">不使用服务套餐</option>
               <option v-for="s in availableServices" :key="s.id" :value="s.id">
                 {{ s.name }}
-                <template v-if="s.discountAmt">（抵扣 ¥{{ s.discountAmt }}）</template>
-                · {{ formatDate(s.expiresAt) }}到期
+                {{ (!s.discountAmt || Number(s.discountAmt) === 0) ? '（免费）' : `（抵扣 ¥${s.discountAmt}）` }}
+                <template v-if="s.expiresAt">· {{ formatDate(s.expiresAt) }}到期</template>
               </option>
             </select>
-            <p class="field-hint">使用积分兑换的服务套餐可抵扣订单金额</p>
-          </div>
-
-          <!-- 优惠券选择 -->
-          <div class="field" v-if="availableCoupons.length > 0">
-            <label>🎟️ 使用优惠券 <span class="opt">（可选）</span></label>
-            <select v-model="form.couponId" class="input">
-              <option value="">不使用优惠券</option>
-              <option v-for="c in availableCoupons" :key="c.id" :value="c.id">
-                {{ c.code }} · 面值 ¥{{ c.discountAmt }} · {{ formatDate(c.expiresAt) }}到期
-              </option>
-            </select>
-            <p class="field-hint">选择优惠券可在报价时自动抵扣</p>
+            <p class="field-hint">
+              <template v-if="selectedService">
+                <template v-if="!selectedService.discountAmt || Number(selectedService.discountAmt) === 0">
+                  🎁 使用后本订单<strong>完全免费</strong>，无需付款
+                </template>
+                <template v-else>
+                  🏷️ 管理员报价后自动扣减 ¥{{ selectedService.discountAmt }}
+                </template>
+              </template>
+              <template v-else>可选择积分兑换的服务套餐</template>
+            </p>
           </div>
         </div>
 
@@ -168,6 +166,7 @@ const form = reactive({
   couponId: '',
 })
 const selectedType = computed(() => orderTypes.value.find(t => t.id === form.orderTypeId) ?? null)
+const selectedService = computed(() => availableServices.value.find(s => s.id === form.redeemItemId) ?? null)
 const adminWechat = ref('Jt--04')
 
 function formatDate(d: string) {
@@ -226,7 +225,8 @@ async function doSubmit() {
     if (form.couponId) payload.couponId = form.couponId
 
     const res: any = await api.createOrder(payload)
-    router.push(`/result?orderNo=${res.data.orderNo}&adminWechat=${res.data.adminWechatId ?? 'Jt--04'}`)
+    const isFree = res.data.quotedPrice === '0'
+    router.push(`/result?orderNo=${res.data.orderNo}&adminWechat=${res.data.adminWechatId ?? 'Jt--04'}${isFree ? '&free=1' : ''}`)
   } catch (e: any) {
     alert(e.message ?? '提交失败，请重试')
   } finally {

@@ -10,16 +10,18 @@
 
       <el-table :data="items" v-loading="loading" style="width:100%">
         <el-table-column prop="name" label="商品名称" min-width="160" />
-        <el-table-column label="类型" width="100">
+        <el-table-column label="类型" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.type === 'COUPON' ? 'warning' : 'primary'" size="small">
-              {{ row.type === 'COUPON' ? '折扣券' : '服务套餐' }}
-            </el-tag>
+            <el-tag v-if="!row.discountAmt || Number(row.discountAmt) === 0" type="success" size="small">免费兑换</el-tag>
+            <el-tag v-else type="warning" size="small">折扣服务 −¥{{ row.discountAmt }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="pointsCost" label="所需积分" width="110" />
-        <el-table-column label="折扣面值" width="100">
-          <template #default="{ row }">{{ row.discountAmt ? `¥${row.discountAmt}` : '—' }}</template>
+        <el-table-column label="折扣金额" width="110">
+          <template #default="{ row }">
+            <span v-if="!row.discountAmt || Number(row.discountAmt) === 0" style="color:#52c41a;font-weight:600">免费</span>
+            <span v-else>−¥{{ row.discountAmt }}</span>
+          </template>
         </el-table-column>
         <el-table-column label="库存" width="80">
           <template #default="{ row }">{{ row.stock === -1 ? '∞' : row.stock }}</template>
@@ -43,17 +45,21 @@
         <el-form-item label="商品名称">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item label="商品类型">
-          <el-radio-group v-model="form.type">
-            <el-radio value="SERVICE">服务套餐</el-radio>
-            <el-radio value="COUPON">折扣券</el-radio>
-          </el-radio-group>
-        </el-form-item>
         <el-form-item label="所需积分">
           <el-input-number v-model="form.pointsCost" :min="1" style="width:100%" />
         </el-form-item>
-        <el-form-item v-if="form.type === 'COUPON'" label="折扣金额（元）">
-          <el-input-number v-model="form.discountAmt" :min="0.01" :precision="2" style="width:100%" />
+        <el-form-item>
+          <template #label>
+            折扣金额（元）
+            <el-tooltip content="填 0 = 兑换后下单完全免费；填具体金额 = 管理员报价后自动扣减该金额" placement="top">
+              <el-icon style="cursor:help;margin-left:4px"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </template>
+          <el-input-number v-model="form.discountAmt" :min="0" :precision="2" style="width:100%" placeholder="0 = 免费兑换" />
+          <div style="font-size:12px;color:#909399;margin-top:4px">
+            <span v-if="!form.discountAmt || form.discountAmt === 0">✅ 用户兑换后提交订单 → 直接免费，无需付款</span>
+            <span v-else>🏷️ 用户兑换后提交订单 → 管理员报价时自动扣减 ¥{{ form.discountAmt }}</span>
+          </div>
         </el-form-item>
         <el-form-item label="库存（-1 = 无限）">
           <el-input-number v-model="form.stock" :min="-1" style="width:100%" />
@@ -90,7 +96,7 @@ const dialog = ref(false)
 const editing = ref<any>(null)
 const saving = ref(false)
 
-const defaultForm = () => ({ name: '', type: 'SERVICE', pointsCost: 100, discountAmt: null as number | null, stock: -1, description: '', coverUrl: '', sortOrder: 0, isActive: true })
+const defaultForm = () => ({ name: '', type: 'SERVICE' as const, pointsCost: 100, discountAmt: 0 as number, stock: -1, description: '', coverUrl: '', sortOrder: 0, isActive: true })
 const form = ref(defaultForm())
 
 async function loadItems() {
@@ -108,8 +114,7 @@ async function handleSave() {
   if (!form.value.name) return ElMessage.warning('请填写商品名称')
   saving.value = true
   try {
-    const data = { ...form.value }
-    if (data.type !== 'COUPON') data.discountAmt = null
+    const data = { ...form.value, type: 'SERVICE' as const }
     editing.value ? await api.updateShopItem(editing.value.id, data) : await api.createShopItem(data)
     ElMessage.success(editing.value ? '更新成功' : '创建成功')
     dialog.value = false

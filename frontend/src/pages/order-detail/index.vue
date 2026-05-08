@@ -47,15 +47,39 @@
               <span class="info-key">联系微信</span>
               <span class="info-val">{{ order.contactWechat }}</span>
             </div>
-            <div v-if="order.quotedPrice" class="info-row highlight">
-              <span class="info-key">管理员报价</span>
-              <span class="info-val price">{{ order.quotedPrice }}</span>
+            <!-- 免费兑换标识 -->
+            <div v-if="order.redeemService?.isFree" class="info-row free-row">
+              <span class="info-key">服务套餐</span>
+              <span class="info-val"><span class="free-badge">🎁 积分兑换 · 免费</span></span>
+            </div>
+            <!-- 折扣服务标识 -->
+            <div v-else-if="order.redeemService && order.redeemService.discountAmt > 0" class="info-row discount-row">
+              <span class="info-key">服务套餐</span>
+              <span class="info-val">
+                <span class="discount-badge">优惠 −¥{{ order.redeemService.discountAmt }}</span>
+                {{ order.redeemService.name }}
+              </span>
+            </div>
+            <!-- 管理员报价（免费订单不显示） -->
+            <div v-if="order.quotedPrice && order.quotedPrice !== '0'" class="info-row highlight">
+              <span class="info-key">实付金额</span>
+              <span class="info-val price">¥{{ order.quotedPrice }}</span>
             </div>
           </div>
         </div>
 
         <!-- 侧边栏 -->
         <aside class="side-col">
+          <!-- 免费订单提示卡 -->
+          <div v-if="order.redeemService?.isFree" class="side-card free-card">
+            <div class="side-title">🎁 积分兑换免费订单</div>
+            <p class="side-desc">本订单通过积分兑换服务套餐，<strong>无需付款</strong>，管理员接单后直接开始处理。</p>
+          </div>
+          <!-- 折扣服务提示卡 -->
+          <div v-else-if="order.redeemService && order.redeemService.discountAmt > 0" class="side-card discount-card">
+            <div class="side-title">🏷️ 折扣服务已应用</div>
+            <p class="side-desc">已为本订单应用服务套餐优惠 <strong>−¥{{ order.redeemService.discountAmt }}</strong>，管理员报价后自动显示优惠后价格。</p>
+          </div>
           <div class="side-card">
             <div class="side-title">💬 联系管理员</div>
             <p class="side-desc">有任何问题，请直接联系管理员微信</p>
@@ -68,7 +92,6 @@
             </div>
           </div>
 
-          <!-- 状态历史时间线 -->
           <div class="side-card status-card">
             <div class="side-title">状态变更记录</div>
             <div v-if="order.statusHistory && order.statusHistory.length" class="timeline">
@@ -171,10 +194,17 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 .info-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 28px; border-bottom: 1px solid #f5f7fa; }
 .info-row:last-child { border-bottom: none; }
 .info-row.highlight { background: var(--primary-light); }
+.info-row.free-row { background: #f6ffed; }
+.info-row.discount-row { background: #fff7e6; }
+.free-badge { background: #52c41a; color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+.discount-badge { background: #fa8c16; color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; margin-right: 6px; }
 .info-key { font-size: 14px; color: var(--text-3); font-weight: 500; }
 .info-val { font-size: 15px; color: var(--text-1); text-align: right; }
 .info-val.bold { font-weight: 700; font-size: 16px; }
 .info-val.price { font-size: 22px; font-weight: 900; color: var(--primary); }
+
+.free-card { border: 1.5px solid #b7eb8f; background: #f6ffed; }
+.discount-card { border: 1.5px solid #ffd591; background: #fffbe6; }
 
 /* ─── 侧边栏 ─── */
 .side-col { display: flex; flex-direction: column; gap: 16px; }
@@ -229,4 +259,8 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 [data-theme="dark"] .wechat-box { background: #1c2333; }
 [data-theme="dark"] .wechat-box:hover { background: #252d3f; }
 [data-theme="dark"] .tl-remark { background: #161b22; }
+[data-theme="dark"] .info-row.free-row { background: rgba(82,196,26,0.08); }
+[data-theme="dark"] .info-row.discount-row { background: rgba(250,140,22,0.08); }
+[data-theme="dark"] .free-card { background: rgba(82,196,26,0.08); border-color: rgba(82,196,26,0.3); }
+[data-theme="dark"] .discount-card { background: rgba(250,140,22,0.08); border-color: rgba(250,140,22,0.3); }
 </style>

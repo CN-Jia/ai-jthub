@@ -16,6 +16,11 @@
         <button class="copy-btn" @click="copyOrderNo">复制订单号</button>
       </div>
 
+      <!-- 免费订单专属提示 -->
+      <div v-if="isFree" class="free-notice">
+        🎁 本订单通过积分兑换服务套餐，<strong>完全免费</strong>，无需付款！
+      </div>
+
       <div class="steps-card">
         <div class="steps-title">📌 接下来需要做什么？</div>
         <div class="steps">
@@ -37,7 +42,8 @@
           <div class="step-item">
             <div class="step-dot">3</div>
             <div class="step-body">
-              <div class="step-main">等待管理员确认报价并处理</div>
+              <div v-if="isFree" class="step-main">等待管理员接单，<strong style="color:#52c41a">无需付款</strong>，直接开始处理</div>
+              <div v-else class="step-main">等待管理员确认报价并处理</div>
             </div>
           </div>
         </div>
@@ -57,6 +63,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const orderNo = computed(() => route.query.orderNo as string ?? '')
 const adminWechat = computed(() => route.query.adminWechat as string ?? 'Jt--04')
+const isFree = computed(() => route.query.free === '1')
 function copyOrderNo() { navigator.clipboard.writeText(orderNo.value).then(() => alert('✅ 订单号已复制')) }
 function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(() => alert(`✅ 已复制：${adminWechat.value}`)) }
 </script>
@@ -91,6 +98,7 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 .copy-btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
 .copy-btn:hover { background: var(--primary-dark); }
 
+.free-notice { background: #f6ffed; border: 1.5px solid #b7eb8f; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; font-size: 15px; color: #389e0d; text-align: center; }
 .steps-card { background: #f6f8fb; border-radius: 14px; padding: 24px; margin-bottom: 28px; text-align: left; }
 .steps-title { font-size: 15px; font-weight: 700; color: var(--text-1); margin-bottom: 18px; }
 .steps { display: flex; flex-direction: column; gap: 14px; }
@@ -114,4 +122,5 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 
 /* ── 暗色模式 ── */
 [data-theme="dark"] .steps-card { background: #161b22; }
+[data-theme="dark"] .free-notice { background: rgba(82,196,26,0.08); border-color: rgba(82,196,26,0.25); color: #73d13d; }
 </style>

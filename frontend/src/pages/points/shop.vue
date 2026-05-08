@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">积分商城</h1>
-        <p class="page-sub">用积分兑换作业服务或优惠券</p>
+        <p class="page-sub">用积分兑换免费服务或折扣服务套餐</p>
       </div>
       <div class="my-balance">
         <span class="balance-label">可用积分</span>
@@ -16,7 +16,6 @@
     <div class="filter-bar">
       <button :class="['filter-btn', filter === '' && 'active']" @click="filter = ''; loadItems()">全部</button>
       <button :class="['filter-btn', filter === 'SERVICE' && 'active']" @click="filter = 'SERVICE'; loadItems()">服务套餐</button>
-      <button :class="['filter-btn', filter === 'COUPON' && 'active']" @click="filter = 'COUPON'; loadItems()">折扣券</button>
     </div>
 
     <div v-if="loading" class="loading-state">加载中…</div>
@@ -28,16 +27,16 @@
           <img :src="item.coverUrl" :alt="item.name" />
         </div>
         <div v-else class="shop-cover shop-cover-placeholder">
-          <span>{{ item.type === 'COUPON' ? '🎟' : '📚' }}</span>
+          <span>📚</span>
         </div>
         <div class="shop-body">
-          <div class="shop-type-badge" :class="item.type === 'COUPON' ? 'type-coupon' : 'type-service'">
-            {{ item.type === 'COUPON' ? '折扣券' : '服务套餐' }}
-          </div>
+          <div v-if="!item.discountAmt || Number(item.discountAmt) === 0"
+               class="shop-type-badge type-free">🎁 免费兑换</div>
+          <div v-else class="shop-type-badge type-discount">🏷️ 折扣服务 −¥{{ item.discountAmt }}</div>
           <div class="shop-name">{{ item.name }}</div>
           <div v-if="item.description" class="shop-desc">{{ item.description }}</div>
-          <div v-if="item.type === 'COUPON' && item.discountAmt" class="shop-discount">
-            可抵扣 <strong>¥{{ item.discountAmt }}</strong>
+          <div v-if="item.discountAmt && Number(item.discountAmt) > 0" class="shop-discount">
+            报价时自动抵扣 <strong>¥{{ item.discountAmt }}</strong>
           </div>
           <div class="shop-footer">
             <div class="shop-cost">
@@ -66,7 +65,12 @@
       <div class="modal">
         <h3 class="modal-title">确认兑换</h3>
         <p>确定用 <strong>{{ confirmItem.pointsCost }}</strong> 积分兑换「{{ confirmItem.name }}」？</p>
-        <p class="modal-note">兑换后积分立即扣除，兑换结果即时生效。</p>
+        <p class="modal-note" v-if="!confirmItem.discountAmt || Number(confirmItem.discountAmt) === 0">
+          🎁 兑换后提交订单将<strong>完全免费</strong>，无需付款。积分立即扣除。
+        </p>
+        <p class="modal-note" v-else>
+          🏷️ 兑换后提交订单时，管理员报价将自动扣减 ¥{{ confirmItem.discountAmt }}。积分立即扣除。
+        </p>
         <div class="modal-actions">
           <button class="btn btn-secondary" @click="confirmItem = null">取消</button>
           <button class="btn btn-primary" :disabled="submitting === confirmItem.id" @click="submitRedeem">
@@ -120,8 +124,10 @@ async function submitRedeem() {
     await api.submitRedeem(confirmItem.value.id)
     await loadBalance()
     await loadItems()
+    const item = confirmItem.value
     confirmItem.value = null
-    alert('兑换成功！请在有效期内使用。')
+    const isFree = !item.discountAmt || Number(item.discountAmt) === 0
+    alert(isFree ? '兑换成功！提交订单时选择此服务套餐即可免费使用。' : `兑换成功！提交订单时选择此服务套餐，自动抵扣 ¥${item.discountAmt}。`)
   } catch (err: any) {
     alert(err?.message ?? '兑换失败，请稍后重试')
   } finally {
@@ -157,7 +163,8 @@ onMounted(() => {
 .shop-body { padding: 16px; }
 .shop-type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; margin-bottom: 8px; }
 .type-service { background: #dbeafe; color: #2563eb; }
-.type-coupon { background: #fef3c7; color: #d97706; }
+.type-free { background: #dcfce7; color: #16a34a; }
+.type-discount { background: #fef3c7; color: #d97706; }
 .shop-name { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
 .shop-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .shop-discount { font-size: 0.85rem; color: #d97706; margin-bottom: 8px; }
@@ -180,7 +187,8 @@ onMounted(() => {
 
 /* ── 暗色模式 ── */
 [data-theme="dark"] .type-service { background: rgba(37,99,235,0.15); color: #60a5fa; }
-[data-theme="dark"] .type-coupon { background: rgba(217,119,6,0.12); color: #fbbf24; }
+[data-theme="dark"] .type-free { background: rgba(22,163,74,0.15); color: #4ade80; }
+[data-theme="dark"] .type-discount { background: rgba(217,119,6,0.12); color: #fbbf24; }
 [data-theme="dark"] .shop-discount { color: #fbbf24; }
 [data-theme="dark"] .shop-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.3); }
 </style>

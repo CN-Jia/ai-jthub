@@ -20,6 +20,7 @@
   --shadow: 0 4px 16px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.03);
   --shadow-lg: 0 12px 48px rgba(15,23,42,0.08), 0 2px 8px rgba(15,23,42,0.03);
   --nav-h: 64px;
+  --safe-top: env(safe-area-inset-top, 0px);
   /* Navbar specific */
   --navbar-bg: rgba(255,255,255,0.88);
   --navbar-border: rgba(226,232,240,0.7);
@@ -50,6 +51,12 @@
   --navbar-bg: rgba(11,15,26,0.88);
   --navbar-border: rgba(30,41,59,0.8);
   --navbar-shadow: 0 1px 24px rgba(0,0,0,0.25);
+}
+
+@media (max-width: 640px) {
+  :root {
+    --nav-h: calc(64px + env(safe-area-inset-top, 0px));
+  }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
