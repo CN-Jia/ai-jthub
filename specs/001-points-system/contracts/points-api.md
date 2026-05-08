@@ -111,7 +111,7 @@
 ```
 
 ### POST /shop/redeem
-提交兑换申请
+提交兑换申请（自动审核，立即生效）
 
 **Body**
 ```json
@@ -122,15 +122,18 @@
 ```json
 {
   "redeemOrderId": "zzz",
-  "status": "PENDING",
-  "frozenPoints": 500,
-  "message": "兑换申请已提交，积分已冻结，等待管理员审核"
+  "status": "COMPLETED",
+  "expiresAt": "2026-05-15T00:00:00Z",
+  "pointsCost": 500,
+  "message": "兑换成功！请在有效期内使用"
 }
 ```
 
+> 兑换流程无需管理员审核，提交后积分立即扣减，订单状态直接为 `COMPLETED`。  
+> 折扣券类商品同时生成对应 `Coupon` 记录（有效期7天）；服务套餐有效期30天。
+
 **Error 400**: 积分不足  
-**Error 400**: 库存不足  
-**Error 409**: 同一商品已有待审核订单
+**Error 400**: 库存不足
 
 ### GET /shop/redeem/my
 我的兑换记录
@@ -157,7 +160,7 @@
 ## 优惠券
 
 ### GET /coupons/my
-我的可用优惠券
+我的全部优惠券（含已使用、已过期）
 
 **Response 200**
 ```json
@@ -168,8 +171,19 @@
       "code": "JT8X9Y2Z",
       "discountAmt": "50.00",
       "status": "UNUSED",
-      "expiresAt": "2026-07-28T00:00:00Z"
+      "expiresAt": "2026-05-15T00:00:00Z",
+      "usedAt": null
+    },
+    {
+      "id": "ddd",
+      "code": "JTA1B2C3",
+      "discountAmt": "30.00",
+      "status": "USED",
+      "expiresAt": "2026-04-15T00:00:00Z",
+      "usedAt": "2026-04-10T08:30:00Z"
     }
   ]
 }
 ```
+
+> 返回该用户所有优惠券（UNUSED/USED/EXPIRED）；前端提交订单时，下拉列表只展示 UNUSED 且未过期的优惠券。

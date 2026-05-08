@@ -18,7 +18,7 @@
           <router-link to="/forum" class="nav-link" active-class="active">论坛</router-link>
           <template v-if="store.isLoggedIn">
             <!-- <router-link to="/products" class="nav-link" active-class="active">立即选购</router-link> -->
-            <router-link to="/orders" class="nav-link" active-class="active">我的订单</router-link>
+            <router-link to="/my-orders" class="nav-link" active-class="active">我的订单</router-link>
             <router-link to="/points" class="nav-link" active-class="active">积分</router-link>
             <router-link to="/invite" class="nav-link" active-class="active">邀请</router-link>
             <router-link to="/lucky-wheel" class="nav-link nav-lucky" active-class="active">🎰 转盘</router-link>
@@ -81,7 +81,7 @@
         <router-link to="/forum" class="mobile-link" @click="closeMobileMenu">论坛</router-link>
         <template v-if="store.isLoggedIn">
           <!-- <router-link to="/products" class="mobile-link" @click="closeMobileMenu">立即选购</router-link> -->
-          <router-link to="/orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
+          <router-link to="/my-orders" class="mobile-link" @click="closeMobileMenu">我的订单</router-link>
           <router-link to="/points" class="mobile-link" @click="closeMobileMenu">我的积分</router-link>
           <router-link to="/invite" class="mobile-link" @click="closeMobileMenu">邀请好友</router-link>
           <router-link to="/lucky-wheel" class="mobile-link" @click="closeMobileMenu">🎰 幸运转盘</router-link>
@@ -126,7 +126,7 @@
       </div>
 
       <template v-if="store.isLoggedIn">
-        <router-link to="/orders" class="bn-item" active-class="bn-active">
+        <router-link to="/my-orders" class="bn-item" active-class="bn-active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           <span>订单</span>
         </router-link>

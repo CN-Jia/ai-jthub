@@ -163,7 +163,7 @@
               <div class="cta-step"><span class="step-n">2</span><span>添加管理员微信备注订单号</span></div>
               <div class="cta-step"><span class="step-n">3</span><span>确认报价，完成交易</span></div>
             </div>
-            <div class="cta-wechat">管理员微信：<strong>Jt--04</strong></div>
+            <div class="cta-wechat">管理员微信：<strong>{{ adminWechat }}</strong></div>
             <template v-if="store.isLoggedIn">
               <router-link to="/submit" class="cta-btn">提交需求 →</router-link>
             </template>
@@ -200,9 +200,15 @@ const fmtDate = (d: string) => {
   const dt = new Date(d)
   return `${dt.getFullYear()}年${dt.getMonth() + 1}月`
 }
+const adminWechat = ref('Jt--04')
+
 function openLogin() { router.push('/login') }
 function goSubmitWithType(id: string) {
-  store.isLoggedIn ? router.push('/submit') : openLogin()
+  if (store.isLoggedIn) {
+    router.push({ path: '/submit', query: { typeId: id } })
+  } else {
+    openLogin()
+  }
 }
 
 const features = [
@@ -312,10 +318,13 @@ function initReveal() {
 
 async function fetchData(silent = false) {
   try {
-    const [a, t, c]: any[] = await Promise.all([api.getActivities(), api.getOrderTypes(), api.getCarousel()])
+    const [a, t, c, cfg]: any[] = await Promise.all([
+      api.getActivities(), api.getOrderTypes(), api.getCarousel(), api.getConfig(),
+    ])
     activities.value = a.data?.list ?? a.data ?? []
     orderTypes.value = t.data ?? []
     carousel.value = c.data ?? []
+    if (cfg.data?.adminWechatId) adminWechat.value = cfg.data.adminWechatId
   } finally {
     if (!silent) { loadingActivities.value = false; loadingTypes.value = false }
   }

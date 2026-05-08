@@ -189,8 +189,11 @@ onMounted(async () => {
   const allRedeems = servicesRes.data ?? []
   availableServices.value = allRedeems.filter((r: any) => r.type === 'SERVICE')
 
-  // 优惠券
-  availableCoupons.value = couponsRes.data?.list ?? []
+  // 只展示未使用且未过期的优惠券
+  const now = Date.now()
+  availableCoupons.value = (couponsRes.data?.list ?? []).filter(
+    (c: any) => c.status === 'UNUSED' && new Date(c.expiresAt).getTime() > now,
+  )
 
   // 从首页价格行跳转时预选类型
   const preTypeId = route.query.typeId as string

@@ -24,21 +24,19 @@
 
 ### 4. 折扣券实现方式
 
-- **Decision**: 兑换"折扣券"类商品时，系统生成一条 `Coupon` 记录，包含唯一优惠码（8位）、折扣金额、有效期（默认 90 天）、状态（unused/used/expired）。用户提交订单时携带优惠码，订单备注中体现折扣，后端验证并标记已用。
+- **Decision**: 兑换"折扣券"类商品时，系统生成一条 `Coupon` 记录，包含唯一优惠码（`JT` + 3字节hex共8位）、折扣金额、有效期（折扣券 **7天**，服务套餐 **30天**）、状态（UNUSED/USED/EXPIRED）。用户提交需求订单时携带 `couponId`，订单备注中体现折扣，后端记录优惠码信息。
 - **Rationale**: 与现有 Order 表解耦，不修改订单金额字段，管理员核单时可见优惠码信息。
 - **Alternatives considered**: 直接修改订单价格（破坏现有结构），前端展示折扣（无法防止绕过）。
 
-### 5. 兑换状态机
+### 5. 兑换状态机（自动审核）
 
 ```
-提交 → PENDING（积分冻结）
-         ↓ 管理员通过     ↓ 管理员拒绝
-      COMPLETED         REJECTED
-    （正式扣积分）      （积分解冻）
+提交 → COMPLETED（积分立即冻结+扣减，自动审核通过）
 ```
 
-- **Decision**: 冻结字段存于 `PointBalance.frozenPoints`，`COMPLETED` 时从 `frozenPoints` 移除并从 `totalPoints` 扣减；`REJECTED` 时仅将 `frozenPoints` 归零（归还可用）。
-- **Rationale**: 冻结机制防止用户在兑换审核期间重复消费同一批积分。
+- **Decision**: 兑换提交后系统自动审核通过（无需管理员手动审批），`RedeemOrder.status` 直接置为 `COMPLETED`，积分在同一请求中完成冻结（`REDEEM_FREEZE`）和扣减（`REDEEM_DEDUCT`）两步。管理后台的审核接口（approve/reject）保留但当前前端不走。
+- **Rationale**: 降低运营成本，用户体验更好（无需等待），当前业务场景无需人工审批。
+- **积分计算**：`freezePoints` 调用时 `totalPoints -= N, frozenPoints += N`；`deductFrozen` 调用时 `frozenPoints -= N`（`totalPoints` 已在冻结步骤减过，不再重复扣）。
 
 ### 6. 事件类型枚举（PointEventType）
 
