@@ -69,7 +69,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-.activity-page { background: var(--bg); min-height: calc(100vh - 64px); }
+.activity-page { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
 
 .page-top {
   background: linear-gradient(160deg, #0c1b4d 0%, #1677ff 100%);
@@ -79,6 +79,14 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .page-sub { font-size: 15px; color: rgba(255,255,255,0.75); }
 
 .page-body { max-width: 1200px; margin: 0 auto; padding: 48px 32px 80px; }
+
+@media (max-width: 640px) {
+  .page-top { padding: 40px 20px 32px; }
+  .page-title { font-size: 26px; }
+  .page-body { padding: 20px 14px 80px; }
+  .activity-grid { grid-template-columns: 1fr; gap: 14px; }
+  .activity-card { padding: 20px; }
+}
 
 .activity-grid {
   display: grid;

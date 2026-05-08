@@ -21,6 +21,10 @@
   --shadow-lg: 0 12px 48px rgba(15,23,42,0.08), 0 2px 8px rgba(15,23,42,0.03);
   --nav-h: 64px;
   --safe-top: env(safe-area-inset-top, 0px);
+  /* 别名：供历史代码兼容 */
+  --card: var(--card-bg);
+  --radius-lg: 16px;
+  --radius-sm: 8px;
   /* Navbar specific */
   --navbar-bg: rgba(255,255,255,0.88);
   --navbar-border: rgba(226,232,240,0.7);

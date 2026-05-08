@@ -1,8 +1,13 @@
 <template>
-  <div class="page-container">
+  <div class="invite-wrap">
+    <div class="page-banner">
+      <div class="page-banner-inner">
+        <h1 class="page-banner-title">邀请好友</h1>
+        <p class="page-banner-sub">邀请注册得 50 积分，好友首购再得 100 积分</p>
+      </div>
+    </div>
+    <div class="page-container">
     <div class="page-header">
-      <h1 class="page-title">邀请好友</h1>
-      <p class="page-sub">邀请好友注册得 <strong>50</strong> 积分，好友首次下单完成再得 <strong>100</strong> 积分；好友也获 <strong>30</strong> 积分！</p>
     </div>
 
     <!-- 邀请码卡片 -->
@@ -63,6 +68,7 @@
     </div>
 
     <div v-if="copied" class="toast">链接已复制！</div>
+    </div>
   </div>
 </template>
 
@@ -112,42 +118,56 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.invite-wrap { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
+.page-banner {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1e3a5f 100%);
+  padding: 40px 32px 36px; text-align: center;
+}
+.page-banner-inner { max-width: 700px; margin: 0 auto; }
+.page-banner-title { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+.page-banner-sub { font-size: 14px; color: rgba(255,255,255,0.55); }
+
 .page-container { max-width: 700px; margin: 0 auto; padding: 24px 16px; }
-.page-header { margin-bottom: 24px; }
-.page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-.page-sub { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+.page-header { margin-bottom: 4px; }
 
 .invite-card { padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 16px; }
 .invite-code-section { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-.invite-code-label { font-size: 0.8rem; color: var(--text-muted); }
-.invite-code { font-family: monospace; font-size: 2rem; font-weight: 700; letter-spacing: 4px; color: var(--color-primary); }
+.invite-code-label { font-size: 12px; color: var(--text-3); }
+.invite-code { font-family: monospace; font-size: 28px; font-weight: 700; letter-spacing: 4px; color: var(--primary); }
 
-.invite-stats { display: flex; gap: 24px; }
+.invite-stats { display: flex; gap: 24px; flex-shrink: 0; }
 .stat-item { text-align: center; }
-.stat-num { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); }
+.stat-num { font-size: 26px; font-weight: 800; color: var(--text-1); }
 .stat-item.success .stat-num { color: #22c55e; }
-.stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.stat-label { font-size: 12px; color: var(--text-3); margin-top: 2px; }
 
 .rules-card { padding: 20px; margin-bottom: 24px; }
-.rules-title { font-size: 1rem; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
-.rule-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 0.9rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); }
+.rules-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--text-1); }
+.rule-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 14px; color: var(--text-2); border-bottom: 1px solid var(--border); }
 .rule-item:last-child { border-bottom: none; }
 .rule-icon { font-size: 1rem; flex-shrink: 0; }
 
-.section-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+.section-title { font-size: 15px; font-weight: 700; color: var(--text-1); margin-bottom: 12px; }
 .invitee-list { display: flex; flex-direction: column; gap: 10px; }
 .invitee-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
-.invitee-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
-.invitee-info { flex: 1; }
-.invitee-name { font-weight: 600; color: var(--text-primary); }
-.invitee-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
-.badge { padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
+.invitee-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+.invitee-info { flex: 1; min-width: 0; }
+.invitee-name { font-weight: 600; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.invitee-time { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; }
 .badge-success { background: #dcfce7; color: #16a34a; }
 .badge-pending { background: #fef3c7; color: #d97706; }
 
-.empty-state { text-align: center; padding: 48px; color: var(--text-muted); }
+.empty-state { text-align: center; padding: 48px; color: var(--text-3); }
 
-.toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; z-index: 9999; }
+.toast { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 9999; white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .page-banner { padding: 28px 20px 24px; }
+  .page-banner-title { font-size: 22px; }
+  .invite-card { flex-direction: column; align-items: flex-start; }
+  .invite-stats { gap: 16px; }
+}
 
 /* ── 暗色模式 ── */
 [data-theme="dark"] .badge-success { background: rgba(82,196,26,0.12); color: #73d13d; }

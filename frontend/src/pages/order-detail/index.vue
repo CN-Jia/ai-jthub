@@ -1,10 +1,12 @@
 <template>
   <div class="detail-page">
-    <div v-if="order" class="detail-inner">
-      <!-- 面包屑 -->
-      <div class="breadcrumb">
-        <router-link to="/my-orders" class="bc-back">← 我的订单</router-link>
+    <div class="page-banner">
+      <div class="page-banner-inner">
+        <router-link to="/my-orders" class="banner-back">← 我的订单</router-link>
+        <h1 class="page-banner-title">订单详情</h1>
       </div>
+    </div>
+    <div v-if="order" class="detail-inner">
 
       <div class="detail-layout">
         <!-- 主信息 -->
@@ -164,8 +166,29 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 </script>
 
 <style scoped>
-.detail-page { padding: 32px 32px 80px; background: var(--bg); min-height: calc(100vh - 64px); }
-.detail-inner { max-width: 1000px; margin: 0 auto; }
+.page-banner {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1e3a5f 100%);
+  padding: 28px 32px;
+}
+.page-banner-inner { max-width: 1000px; margin: 0 auto; }
+.banner-back { font-size: 13px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 6px; transition: color 0.15s; }
+.banner-back:hover { color: rgba(255,255,255,0.9); }
+.page-banner-title { font-size: 22px; font-weight: 800; color: #fff; }
+
+.detail-page { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
+.detail-inner { max-width: 1000px; margin: 0 auto; padding: 24px 32px 80px; }
+
+@media (max-width: 640px) {
+  .page-banner { padding: 20px 16px; }
+  .page-banner-title { font-size: 18px; }
+  .detail-inner { padding: 16px 14px 80px; }
+  .status-header { padding: 16px 16px; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .status-text { font-size: 17px; }
+  .info-row { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .info-val { text-align: left; }
+  .info-val.price { font-size: 18px; }
+  .side-card { padding: 16px; }
+}
 .breadcrumb { margin-bottom: 20px; }
 .bc-back { font-size: 14px; color: var(--text-3); transition: color 0.15s; }
 .bc-back:hover { color: var(--primary); }

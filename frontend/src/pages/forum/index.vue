@@ -1,9 +1,12 @@
 <template>
-  <div class="page-container">
-    <div class="forum-header">
-      <h1 class="forum-title">论坛社区</h1>
-      <p class="forum-sub">公告、服务说明、常见问题、用户交流</p>
+  <div class="forum-wrap">
+    <div class="page-banner">
+      <div class="page-banner-inner">
+        <h1 class="page-banner-title">论坛社区</h1>
+        <p class="page-banner-sub">公告、服务说明、常见问题、用户交流</p>
+      </div>
     </div>
+    <div class="page-container">
 
     <!-- 板块 tab -->
     <div class="board-tabs">
@@ -53,6 +56,7 @@
       <button class="btn btn-outline" @click="loadMore" :disabled="loading">
         {{ loading ? '加载中...' : '加载更多' }}
       </button>
+    </div>
     </div>
   </div>
 </template>
@@ -115,9 +119,14 @@ onMounted(() => fetchPosts(true))
 </script>
 
 <style scoped>
-.forum-header { margin-bottom: 24px; }
-.forum-title { font-size: 26px; font-weight: 800; color: var(--text-1); margin-bottom: 4px; }
-.forum-sub { font-size: 14px; color: var(--text-3); }
+.forum-wrap { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
+.page-banner {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1e3a5f 100%);
+  padding: 40px 32px 36px; text-align: center;
+}
+.page-banner-inner { max-width: 900px; margin: 0 auto; }
+.page-banner-title { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+.page-banner-sub { font-size: 14px; color: rgba(255,255,255,0.55); }
 
 /* 板块 tabs */
 .board-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -161,7 +170,11 @@ onMounted(() => fetchPosts(true))
 .load-more { display: flex; justify-content: center; padding: 24px 0; }
 
 @media (max-width: 640px) {
+  .page-banner { padding: 28px 20px 24px; }
+  .page-banner-title { font-size: 22px; }
   .board-tabs { gap: 6px; }
   .board-tab { padding: 6px 14px; font-size: 13px; }
+  .post-card { padding: 16px; }
+  .post-title { font-size: 15px; }
 }
 </style>

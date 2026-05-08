@@ -1,7 +1,14 @@
 <template>
-  <div class="page-container">
+  <div class="points-wrap">
+    <div class="page-banner">
+      <div class="page-banner-inner">
+        <h1 class="page-banner-title">我的积分</h1>
+        <p class="page-banner-sub">邀请好友、完成订单即可获得积分</p>
+      </div>
+    </div>
+    <div class="page-container">
     <div class="page-header">
-      <h1 class="page-title">我的积分</h1>
+      <span></span>
       <router-link to="/points/shop" class="btn btn-primary">积分商城</router-link>
     </div>
 
@@ -72,6 +79,7 @@
       </div>
     </div>
 
+    </div>
   </div>
 </template>
 
@@ -153,66 +161,76 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+.points-wrap { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
+.page-banner {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1e3a5f 100%);
+  padding: 40px 32px 36px; text-align: center;
+}
+.page-banner-inner { max-width: 800px; margin: 0 auto; }
+.page-banner-title { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+.page-banner-sub { font-size: 14px; color: rgba(255,255,255,0.55); }
+
+.page-header { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; }
 
 .balance-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-.balance-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-align: center; }
-.balance-card.available { border-color: var(--color-primary); background: linear-gradient(135deg, var(--color-primary) 0%, #5b8cff 100%); color: #fff; }
+.balance-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+.balance-card.available { border-color: var(--primary); background: linear-gradient(135deg, var(--primary) 0%, #5b8cff 100%); color: #fff; }
 .balance-card.available .balance-label, .balance-card.available .balance-value { color: #fff; }
-.balance-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
-.balance-value { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); }
+.balance-label { font-size: 12px; color: var(--text-3); margin-bottom: 6px; }
+.balance-value { font-size: 26px; font-weight: 800; color: var(--text-1); }
 
-.tab-bar { display: flex; gap: 4px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
-.tab-btn { padding: 8px 16px; border: none; background: none; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; border-bottom: 2px solid transparent; transition: all .2s; }
-.tab-btn.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.tab-bar { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.tab-btn { padding: 8px 16px; border: none; background: none; cursor: pointer; color: var(--text-3); font-size: 14px; border-bottom: 2px solid transparent; transition: all .2s; }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 
 .log-list { display: flex; flex-direction: column; gap: 10px; }
-.log-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; }
+.log-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; }
 .log-left { display: flex; flex-direction: column; gap: 4px; }
-.log-right { text-align: right; }
-.log-remark { font-size: 0.8rem; color: var(--text-muted); }
-.log-delta { font-size: 1.1rem; font-weight: 700; }
+.log-right { text-align: right; flex-shrink: 0; margin-left: 12px; }
+.log-remark { font-size: 12px; color: var(--text-3); }
+.log-delta { font-size: 16px; font-weight: 700; }
 .log-delta.positive { color: #22c55e; }
 .log-delta.negative { color: #ef4444; }
-.log-time { font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 2px; }
+.log-time { font-size: 11px; color: var(--text-3); display: block; margin-top: 2px; }
 
 .badge-green { background: #dcfce7; color: #16a34a; }
 .badge-blue { background: #dbeafe; color: #2563eb; }
-.badge-gray { background: var(--bg-secondary); color: var(--text-muted); }
-.log-event-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+.badge-gray { background: var(--bg); color: var(--text-3); }
+.log-event-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
 
 .load-more { text-align: center; margin-top: 16px; }
 
 .redeem-list { display: flex; flex-direction: column; gap: 12px; }
 .redeem-item { padding: 16px; }
-.redeem-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.redeem-name { font-weight: 600; color: var(--text-primary); }
-.redeem-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 16px; }
-.redeem-note { margin-top: 8px; font-size: 0.8rem; color: var(--text-muted); }
-.coupon-chip { margin-top: 8px; padding: 6px 10px; background: #fef9c3; border-radius: 6px; font-size: 0.8rem; color: #92400e; }
+.redeem-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+.redeem-name { font-weight: 600; color: var(--text-1); }
+.redeem-meta { font-size: 12px; color: var(--text-3); display: flex; gap: 16px; flex-wrap: wrap; }
+.redeem-note { margin-top: 8px; font-size: 12px; color: var(--text-3); }
+.coupon-chip { margin-top: 8px; padding: 6px 10px; background: #fef9c3; border-radius: 6px; font-size: 12px; color: #92400e; }
 
-.status-pending { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
-.status-success { background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
-.status-danger { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
+.status-pending { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.status-success { background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.status-danger { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 
 .coupon-list { display: flex; flex-direction: column; gap: 12px; }
 .coupon-card { display: flex; align-items: center; gap: 16px; padding: 16px; background: linear-gradient(135deg, #fff7ed, #fffbeb); border: 1px dashed #f59e0b; border-radius: 12px; }
 .coupon-amount { font-size: 2rem; font-weight: 700; color: #d97706; min-width: 80px; text-align: center; }
 .coupon-info { flex: 1; }
-.coupon-code { font-family: monospace; font-size: 1rem; font-weight: 700; letter-spacing: 2px; color: var(--text-primary); }
-.coupon-expire { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
-.coupon-status { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+.coupon-code { font-family: monospace; font-size: 1rem; font-weight: 700; letter-spacing: 2px; color: var(--text-1); }
+.coupon-expire { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+.coupon-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .cs-unused { background: #22c55e; color: #fff; }
 .cs-used { background: #94a3b8; color: #fff; }
 .cs-expired { background: #ef4444; color: #fff; }
 .coupon-card--inactive { opacity: 0.55; filter: grayscale(0.4); }
 
-.empty-state { text-align: center; padding: 48px 0; color: var(--text-muted); }
+.empty-state { text-align: center; padding: 48px 0; color: var(--text-3); }
 @media (max-width: 600px) {
+  .page-banner { padding: 28px 20px 24px; }
+  .page-banner-title { font-size: 22px; }
   .balance-cards { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .balance-value { font-size: 1.2rem; }
+  .balance-value { font-size: 20px; }
+  .log-item { flex-wrap: wrap; }
 }
 
 /* ── 暗色模式 ── */

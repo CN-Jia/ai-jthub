@@ -1,7 +1,15 @@
 <template>
-  <div class="page-container">
-    <h1 class="page-title">个人中心</h1>
+  <div class="profile-wrap">
+    <!-- 顶部 Banner -->
+    <div class="page-banner">
+      <div class="banner-avatar">{{ avatarChar }}</div>
+      <div class="banner-info">
+        <div class="banner-name">{{ info.nickname }}</div>
+        <div class="banner-username">@{{ info.username }}</div>
+      </div>
+    </div>
 
+    <div class="page-container">
     <div class="profile-layout">
       <!-- 基本信息 -->
       <div class="card profile-card">
@@ -93,6 +101,7 @@
           <router-link to="/forum" class="quick-link">📝 论坛社区</router-link>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -211,7 +220,24 @@ async function doVerifyCode() {
 </script>
 
 <style scoped>
-.page-title { font-size: 24px; font-weight: 800; margin-bottom: 24px; }
+.profile-wrap { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
+
+/* Banner */
+.page-banner {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1e3a5f 100%);
+  padding: 40px 32px; display: flex; align-items: center; gap: 20px;
+  justify-content: center;
+}
+.banner-avatar {
+  width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
+  color: #fff; font-size: 28px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+}
+.banner-name { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.banner-username { font-size: 13px; color: rgba(255,255,255,0.5); }
+
 .profile-layout { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: flex-start; }
 .section-title { font-size: 14px; font-weight: 700; color: var(--text-2); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
 .avatar-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
@@ -247,6 +273,10 @@ async function doVerifyCode() {
 
 @media (max-width: 768px) {
   .profile-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .page-banner { padding: 28px 20px; flex-direction: column; text-align: center; }
+  .banner-name { font-size: 18px; }
 }
 
 /* ── 暗色模式 ── */

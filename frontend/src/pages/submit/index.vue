@@ -1,5 +1,11 @@
 <template>
   <div class="submit-page">
+    <div class="page-banner">
+      <div class="page-banner-inner">
+        <h1 class="page-banner-title">提交需求</h1>
+        <p class="page-banner-sub">填写完整信息，管理员 1-2 小时内回复</p>
+      </div>
+    </div>
     <div class="submit-inner">
       <!-- 左侧表单 -->
       <div class="form-panel">
@@ -236,9 +242,26 @@ async function doSubmit() {
 </script>
 
 <style scoped>
-.submit-page { padding: 40px 32px 80px; background: var(--bg); min-height: calc(100vh - 64px); }
-.submit-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 360px; gap: 32px; align-items: start; }
+.page-banner {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1e3a5f 100%);
+  padding: 40px 32px 36px; text-align: center;
+}
+.page-banner-inner { max-width: 1100px; margin: 0 auto; }
+.page-banner-title { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+.page-banner-sub { font-size: 14px; color: rgba(255,255,255,0.55); }
+
+.submit-page { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
+.submit-inner { max-width: 1100px; margin: 0 auto; padding: 40px 32px 80px; display: grid; grid-template-columns: 1fr 360px; gap: 32px; align-items: start; }
 @media (max-width: 900px) { .submit-inner { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .page-banner { padding: 28px 20px 24px; }
+  .page-banner-title { font-size: 22px; }
+  .submit-inner { padding: 16px 14px 80px; }
+  .form-panel { padding: 20px 16px; }
+  .form-header { margin-bottom: 20px; padding-bottom: 16px; }
+  .form-title { font-size: 20px; }
+  .info-panel { display: none; }
+}
 
 /* ─── 左侧表单面板 ─── */
 .form-panel { background: var(--card); border-radius: var(--radius-lg); padding: 40px; box-shadow: var(--shadow); }

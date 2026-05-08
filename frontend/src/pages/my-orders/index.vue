@@ -1,8 +1,15 @@
 <template>
   <div class="orders-page">
+    <!-- 页头 Banner -->
+    <div class="page-banner">
+      <div class="page-banner-inner">
+        <h1 class="page-banner-title">我的订单</h1>
+        <p class="page-banner-sub">查看和跟踪所有需求进度</p>
+      </div>
+    </div>
     <div class="orders-inner">
       <div class="page-head">
-        <h1 class="page-title">我的订单</h1>
+        <span class="orders-count" v-if="!loading && orders.length">共 {{ orders.length }} 条</span>
         <router-link to="/submit" class="btn-new">+ 提交新需求</router-link>
       </div>
 
@@ -63,10 +70,28 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.orders-page { padding: 48px 32px 80px; background: var(--bg); min-height: calc(100vh - 64px); }
-.orders-inner { max-width: 800px; margin: 0 auto; }
-.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-.page-title { font-size: 26px; font-weight: 800; color: var(--text-1); }
+/* ── Banner ── */
+.page-banner {
+  background: linear-gradient(135deg, #060d1f 0%, #0f1f4d 55%, #1e3a5f 100%);
+  padding: 40px 32px 36px; text-align: center;
+}
+.page-banner-inner { max-width: 800px; margin: 0 auto; }
+.page-banner-title { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+.page-banner-sub { font-size: 14px; color: rgba(255,255,255,0.55); }
+
+.orders-page { background: var(--bg); min-height: calc(100vh - var(--nav-h)); }
+.orders-inner { max-width: 800px; margin: 0 auto; padding: 28px 24px 80px; }
+.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.orders-count { font-size: 13px; color: var(--text-3); }
+
+@media (max-width: 640px) {
+  .page-banner { padding: 28px 20px 24px; }
+  .page-banner-title { font-size: 22px; }
+  .orders-inner { padding: 16px 14px 80px; }
+  .order-main { padding: 14px 14px 14px 14px; }
+  .order-course { font-size: 15px; }
+  .card-right { padding: 14px 14px; }
+}
 .btn-new { background: var(--primary); color: #fff; border-radius: 9px; padding: 9px 20px; font-size: 14px; font-weight: 600; transition: background 0.15s; }
 .btn-new:hover { background: var(--primary-dark); }
 

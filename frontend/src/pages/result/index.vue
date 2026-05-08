@@ -69,8 +69,16 @@ function copyWechat() { navigator.clipboard.writeText(adminWechat.value).then(()
 </script>
 
 <style scoped>
-.result-page { min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; padding: 48px 24px; background: var(--bg); }
-.result-card { background: var(--card); border-radius: 24px; padding: 56px 48px; max-width: 560px; width: 100%; text-align: center; box-shadow: var(--shadow-lg); }
+.result-page { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; padding: 48px 24px; background: var(--bg); }
+.result-card { background: var(--card-bg); border-radius: 24px; padding: 56px 48px; max-width: 560px; width: 100%; text-align: center; box-shadow: var(--shadow-lg); }
+
+@media (max-width: 640px) {
+  .result-page { padding: 20px 14px 80px; align-items: flex-start; }
+  .result-card { padding: 28px 20px; border-radius: 16px; }
+  .result-title { font-size: 24px; }
+  .order-no { font-size: 20px; letter-spacing: 1px; }
+  .result-actions { flex-direction: column; }
+}
 
 .success-anim { position: relative; width: 100px; height: 100px; margin: 0 auto 28px; }
 .success-core {
